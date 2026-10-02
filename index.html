@@ -139,6 +139,7 @@ aside{background:color-mix(in srgb,var(--sf) 78%,transparent);backdrop-filter:bl
 .nv{position:relative;overflow:hidden}
 .nv.on{box-shadow:inset 3px 0 0 var(--c,var(--br)),0 0 28px -8px var(--c,var(--br));background:color-mix(in srgb,var(--c,var(--br)) 10%,var(--sf2))}
 .nv:hover .i{transform:scale(1.15) rotate(-6deg)}.nv .i{transition:transform .25s}
+.cpb{border:1px dashed var(--ln);margin-bottom:6px}.cpb kbd{margin-left:auto;font:600 11px inherit;padding:1px 7px;border:1px solid var(--ln);border-radius:6px}
 h1{background:linear-gradient(90deg,var(--ink) 30%,var(--br),#2f8fe0,var(--ink) 70%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shim 8s linear infinite}
 h1.ty::after{content:"▍";-webkit-text-fill-color:var(--br);animation:bl 1s steps(1) infinite;margin-left:3px}
 .card{background:color-mix(in srgb,var(--sf) 70%,transparent);backdrop-filter:blur(14px) saturate(1.3);border-color:color-mix(in srgb,var(--ln) 78%,var(--br) 22%)}
@@ -159,7 +160,6 @@ h1.ty::after{content:"▍";-webkit-text-fill-color:var(--br);animation:bl 1s ste
 .hud span{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:99px;border:1px solid var(--ln);background:color-mix(in srgb,var(--sf) 65%,transparent);backdrop-filter:blur(10px);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
 .live{width:8px;height:8px;border-radius:50%;background:#1f9d6b;animation:pulse 2s infinite}
 .hud b{color:var(--br)}
-.hud em{font-style:normal}
 #pill{backdrop-filter:blur(14px);box-shadow:0 12px 40px -8px var(--br)}
 #hx-gr{margin:2px 0 14px;color:var(--mu);font-weight:600}#hx-gr.hx-ph{visibility:hidden}
 .rv{opacity:0;animation:rv .4s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(min(var(--i,0),8)*30ms)}
@@ -426,7 +426,8 @@ body.xc-on{overflow:hidden}body.xc-on #pill{display:none!important}
 }
 /* keep the HSC Hub header pinned: no rubber-band bounce dragging the page (and its sticky bar) away from the top, and the sidebar logo stays put while the menu list scrolls */
 html{overscroll-behavior-y:none}
-aside .brand{position:static;background:none}
+aside .brand{position:sticky;top:-20px;z-index:2;background:var(--sf)}
+:root[data-nav=rail] body aside .brand{top:-16px}
 #bnav{display:none}
 :root[data-nav=bottom] #bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;gap:2px;padding:6px 8px calc(6px + calc(env(safe-area-inset-bottom,0px)/var(--uz)));background:color-mix(in srgb,var(--sf) 90%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--ln);transition:transform .25s}
 #bnav button{flex:1;min-width:0;min-height:var(--tap,48px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;border-radius:12px;color:var(--mu);font-size:calc(11px*var(--fs));font-weight:600}
@@ -558,7 +559,7 @@ body.calm *::after{transition:none!important;animation:none!important}
 :root[data-contrast=high] .card{background:var(--sf);backdrop-filter:none}
 :root[data-contrast=high] .card{border:2px solid var(--ln)}
 :root[data-contrast=high] .sc{background:var(--sf);border:2px solid var(--ln);animation:none}
-:root[data-contrast=high] :is(.btn,.chip,.pre,input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=time],select,textarea){border:2px solid var(--ink)}
+:root[data-contrast=high] :is(.btn,.chip,.pre,.cpb,input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=time],select,textarea){border:2px solid var(--ink)}
 :root[data-contrast=high] :is(.btn.p,.chip.on){background:var(--brx);color:#fff;border-color:var(--ink);box-shadow:none}
 :root[data-contrast=high][data-theme=dark] :is(.btn.p,.chip.on){color:#000}
 :root[data-contrast=high] .btn.p::after{display:none}
@@ -15163,9 +15164,8 @@ function renderDiagramJumpBar(){
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'diagram-jump-pill' + (i === currentDiagramIndex ? ' active' : '');
-    const dec = h => { const t = document.createElement('textarea'); t.innerHTML = h; return t.value; };
-    pill.textContent = (i+1) + '. ' + dec(d.title.replace(/&#8212;.*$/,'').replace(/\(.*?\)/,'').trim());
-    pill.title = dec(d.title);
+    pill.textContent = (i+1) + '. ' + d.title.replace(/&#8212;.*$/,'').replace(/\(.*?\)/,'').trim();
+    pill.title = d.title;
     pill.addEventListener('click', () => {
       currentDiagramIndex = i;
       renderDiagramJumpBar();
@@ -41877,7 +41877,7 @@ function render(){
  const r=location.hash.slice(1).split('/')[0]||'dash',s=sub(r);
  if(s){S.last=s.id;save()}
  const item=(id,t,d,c)=>`<button class="nv ${r===id?'on':''}" ${c?`style="--c:${c}"`:''} data-go="${id}" title="${t}" aria-label="${t}">${ic(d)}${t}</button>`;
- $('#nav').innerHTML=`<div class="brand"><span class="logo"></span>HSC Hub</div>${item('dash','Dashboard',ICON.dash)}<div class="grp">Subjects</div>${SUBJECTS.map(x=>item(x.id,x.name,x.d,x.c)).join('')}<div class="grp">Study</div>${item('quick','Study Timer',ICON.quick)}${item('exam','Exam Centre',ICON.exam)}${item('progress','Progress',ICON.prog)}${item('saved','Saved',ICON.saved)}<div style="flex:1"></div>${item('settings','Settings',ICON.set)}`;
+ $('#nav').innerHTML=`<div class="brand"><span class="logo"></span>HSC Hub</div><button class="nv cpb" data-cp title="Search" aria-label="Search">${ic('M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5')}Search<kbd>⌘K</kbd></button>${item('dash','Dashboard',ICON.dash)}<div class="grp">Subjects</div>${SUBJECTS.map(x=>item(x.id,x.name,x.d,x.c)).join('')}<div class="grp">Study</div>${item('quick','Study Timer',ICON.quick)}${item('exam','Exam Centre',ICON.exam)}${item('progress','Progress',ICON.prog)}${item('saved','Saved',ICON.saved)}<div style="flex:1"></div>${item('settings','Settings',ICON.set)}`;
  {let bn=$('#bnav');if(!bn){bn=document.createElement('nav');bn.id='bnav';bn.setAttribute('aria-label','Quick navigation');document.body.appendChild(bn)}
   const bi=(id,t,d)=>`<button class="${r===id?'on':''}" data-go="${id}" ${r===id?'aria-current="page"':''}>${ic(d)}<span>${t}</span></button>`;
   bn.innerHTML=bi('dash','Home',ICON.dash)+bi('quick','Study',ICON.quick)+bi('exam','Exams',ICON.exam)+bi('progress','Progress',ICON.prog)+`<button class="${['dash','quick','exam','progress'].includes(r)?'':'on'}" data-a="nav" aria-label="Open menu">${ic('M4 7h16M4 12h16M4 17h16')}<span>Menu</span></button>`}
@@ -42097,7 +42097,7 @@ document.addEventListener('input',e=>{const i=e.target.id||'';if(i==='acc'){HubS
 const osr=()=>matchMedia('(prefers-reduced-motion:reduce)').matches,fx=k=>!calmOn()&&!!S.fx[k];
 function hud(){const t0=new Date().setHours(0,0,0,0),tm=Math.round(dayMinAll(Date.now())),
  nx=nextAny();
- return `<div class="hud"><span><i class="live"></i>Hub online</span><span id="clk"></span><span id="net"></span><span>Today <b>${tm} min</b></span><span><em><b>${SUBJECTS.filter(s=>s.src).length}</b>/${SUBJECTS.length} linked</em></span>${nx?`<span>${nx.x.name} <b class="cdt" data-t="${nx.t}"></b></span>`:''}</div>`}
+ return `<div class="hud"><span><i class="live"></i>Hub online</span><span id="clk"></span><span id="net"></span><span>Today <b>${tm} min</b></span><span><b>${SUBJECTS.filter(s=>s.src).length}</b>/${SUBJECTS.length} linked</span>${nx?`<span>${nx.x.name} <b class="cdt" data-t="${nx.t}"></b></span>`:''}</div>`}
 setInterval(()=>{const c=$('#clk');if(c)c.textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
 let ty=0;
 let postRt='';
