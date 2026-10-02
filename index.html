@@ -418,6 +418,11 @@ body.focus.f-bg #fx{display:none}
 
 /* ===== Phase 8: accessibility ===== */
 :root{--uz:1;--vh:calc(100vh/var(--uz));--vw:calc(1vw/var(--uz))}
+/* mobile fix: 100vh is taller than the visible screen on phones (it ignores the browser toolbar), which pushed the end of the sidebar - Settings - off-screen and out of scroll reach. Use the dynamic viewport height where supported. */
+@supports(height:100dvh){:root{--vh:calc(100dvh/var(--uz))}}
+/* the nav buttons are overflow:hidden, which lets a flex column shrink them to fit instead of overflowing - so the sidebar never had anything to scroll and the touch scrolled the page. Keep every item full size. */
+#nav>*{flex-shrink:0}
+aside{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px)/var(--uz))}
 :root[data-size=xxlarge]{--fs:1.4;--sbw:316px}
 /* text size also reaches the Exam Centre and other fixed-size text */
 :root[data-size] .brand{font-size:calc(18px*var(--fs))}
