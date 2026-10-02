@@ -422,7 +422,7 @@ body.focus.f-bg #fx{display:none}
 @supports(height:100dvh){:root{--vh:calc(100dvh/var(--uz))}}
 /* the nav buttons are overflow:hidden, which lets a flex column shrink them to fit instead of overflowing - so the sidebar never had anything to scroll and the touch scrolled the page. Keep every item full size. */
 #nav>*{flex-shrink:0}
-aside{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px)/var(--uz))}
+aside#nav{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px)/var(--uz))}
 :root[data-size=xxlarge]{--fs:1.4;--sbw:316px}
 /* text size also reaches the Exam Centre and other fixed-size text */
 :root[data-size] .brand{font-size:calc(18px*var(--fs))}
@@ -42755,7 +42755,7 @@ addEventListener('online',net);addEventListener('offline',net);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)reg.update().catch(function(){})});
   return navigator.serviceWorker.ready}).then(function(r){
   var sheet=document.querySelector('link[rel=stylesheet]');
-  var u=[location.href,sheet&&sheet.href,new URL('hub-bridge.js',location.href).href].concat(SUBJECTS.filter(function(s){return s.src&&!(window.HubNative&&window.HubNative[s.id])}).map(function(s){return new URL(s.src,location.href).href})).filter(Boolean);
+  var u=[location.href,sheet&&sheet.href].concat(SUBJECTS.filter(function(s){return s.src&&!(window.HubNative&&window.HubNative[s.id])}).map(function(s){return new URL(s.src,location.href).href})).filter(Boolean);
   (r.active||navigator.serviceWorker.controller).postMessage({cache:u});swOk=true;if(location.hash.startsWith('#settings'))render()}).catch(function(){});
  /* ask the browser to keep Hub data (settings, progress, exam history) instead of clearing it when storage runs low */
  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});

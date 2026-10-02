@@ -3,20 +3,20 @@
  * TO SHIP AN UPDATE: change files, then bump VERSION below. Installed copies fetch everything fresh, show an
  * "Update available" prompt, and the old cache is deleted when the new version takes over.
  *
- * TO RECONNECT A SUBJECT: set its path in LINK in hsc-hub.html. The Hub itself tells this worker to cache every
+ * TO RECONNECT A SUBJECT: set its path in LINK in index.html. The Hub itself tells this worker to cache every
  * connected subject, so offline works automatically. Listing it in SUBJECT_FILES as well makes it download on
  * install, so it is ready the very first time, not just after the first visit.
  */
-const VERSION = 'v17';
+const VERSION = 'v19';
 const CORE_CACHE = 'hsc-hub-core-' + VERSION;   // versioned: replaced on every update
 const FONT_CACHE = 'hsc-hub-fonts-v1';          // Google font files: kept across updates, they never change
 const KEEP = [CORE_CACHE, FONT_CACHE];
 
 const CORE_FILES = [
-  './', 'index.html', 'hsc-hub.html', 'hub-bridge.js',
+  './', 'index.html',
   'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'icon-180.png'
 ];
-/* Subject modules shipped as separate files (files that do not exist are skipped quietly). All five subjects are built into hsc-hub.html now, so there are none. */
+/* Subject modules shipped as separate files (files that do not exist are skipped quietly). All five subjects are built into index.html now, so there are none. */
 const SUBJECT_FILES = [];
 
 const abs = p => new URL(p, self.registration.scope).href;
@@ -71,7 +71,7 @@ async function networkFirst(req, e) {
   const cache = await caches.open(CORE_CACHE);
   const saved = async () => (await cache.match(req, { ignoreSearch: true })) ||
     (req.mode === 'navigate'
-      ? (await cache.match(abs('./'))) || (await cache.match(abs('index.html'))) || (await cache.match(abs('hsc-hub.html')))
+      ? (await cache.match(abs('./'))) || (await cache.match(abs('index.html')))
       : undefined);
   try {
     const res = await Promise.race([fetch(req, { cache: 'no-cache' }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]);
