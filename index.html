@@ -711,8 +711,8 @@ body{overscroll-behavior-y:none}
 .gd.rise .gp{animation:gpg .9s cubic-bezier(.2,.9,.3,1.25) both;animation-delay:calc(var(--k)*.045s)}
 @keyframes gpg{from{transform:scale(0)}}
 /* ===== Part 4: micro-interactions ===== */
-#sc{position:fixed;inset:0;z-index:2147483002;display:grid;place-items:center;background:rgba(5,6,20,.62);backdrop-filter:blur(6px);animation:scf .3s ease both}
-#sc>div{width:min(420px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-radius:24px;padding:24px;box-shadow:0 30px 80px -20px #000;animation:scu .5s cubic-bezier(.2,.9,.3,1.15) both}
+#scd{position:fixed;inset:0;z-index:2147483002;display:grid;place-items:center;background:rgba(5,6,20,.62);backdrop-filter:blur(6px);animation:scf .3s ease both}
+#scd>div{width:min(420px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-radius:24px;padding:24px;box-shadow:0 30px 80px -20px #000;animation:scu .5s cubic-bezier(.2,.9,.3,1.15) both}
 .sc-big{font-size:calc(60px*var(--fs));font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;color:var(--c,var(--br))}.sc-big small{font-size:18px;letter-spacing:0;color:var(--mu);font-weight:600}
 .sc-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
 .sc-g div{padding:10px 12px;border-radius:14px;background:var(--sf2);border:1px solid var(--ln);animation:scu .5s cubic-bezier(.2,.9,.3,1.15) both;animation-delay:calc(.25s + var(--k)*.12s)}
@@ -724,7 +724,7 @@ body{overscroll-behavior-y:none}
 @keyframes tkr{from{transform:scale(.4);opacity:.9}to{transform:scale(1.9);opacity:0}}
 @keyframes tkb{from{transform:rotate(var(--a)) translateX(6px)}to{transform:rotate(var(--a)) translateX(28px) scale(.3);opacity:0}}
 @keyframes tkp{50%{transform:scale(1.3)}}.tk-pop{animation:tkp .38s cubic-bezier(.3,1.6,.5,1)}
-body.calm :is(.tk-b,.tk-b::before,.tk-b i,.pl-lit,.gp,#sc,#sc>div,.sc-g div,#wpop,.tk-pop){animation:none!important}
+body.calm :is(.tk-b,.tk-b::before,.tk-b i,.pl-lit,.gp,#scd,#scd>div,.sc-g div,#wpop,.tk-pop){animation:none!important}
 </style>
 <style id="pwa-css">
 #offpill{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px)/var(--uz,1) + 8px);transform:translate(-50%,-160%);opacity:0;pointer-events:none;z-index:9999;padding:6px 14px;border-radius:99px;background:var(--ink);color:var(--sf);font:600 12px/1.2 system-ui,-apple-system,sans-serif;white-space:nowrap;transition:transform .25s,opacity .25s}
@@ -41893,7 +41893,7 @@ function render(){
  $('#main').dataset.view=s?'subject':r;document.body.classList.toggle('insub',!!s);
  $('#main').innerHTML=s?subjView(s):(V[r==='dash'?'dash':r]||V.dash)();
  if(s&&s.native)mountNative(s);
- if(keepNav){keepNav=false;if(!document.body.classList.contains('nav'))document.body.classList.remove('nav')}else document.body.classList.remove('nav');syncHubTop();scrollTo(0,keep?y:0);quiet=keep;post();quiet=false;
+ if(keepNav&&s){keepNav=false}else{keepNav=false;document.body.classList.remove('nav')}syncHubTop();scrollTo(0,keep?y:0);quiet=keep;post();quiet=false;
  if(fk){const el=[...document.querySelectorAll('#main [data-a]')].find(n=>n.dataset.a===fk[0]&&n.dataset.v===fk[1]);if(el)el.focus({preventScroll:true})}
  const sa=$('.set-nav .on');if(sa)sa.parentElement.scrollLeft=sa.offsetLeft-16;
  {const nn=$('.set-nav');if(nn&&keep)nn.scrollTop=snt}
@@ -43036,7 +43036,7 @@ document.addEventListener('click',e=>{const t=(e.composedPath&&e.composedPath()[
 function cu(el,to,f){if(!el)return;if(document.body.classList.contains('calm')){el.textContent=f(to);return}const t0=performance.now();(function s(t){const p=Math.min(1,(t-t0)/900);el.textContent=f(Math.round(to*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(s)})(t0)}
 function scDone(r,min,gw){if(document.body.classList.contains('xc-on'))return;const s=r.subj?sub(r.subj):null,now=Date.now(),sk=streak(),gl=g('progress.weeklyGoal')||0,wk=Math.round(last7().reduce((a,t)=>a+dayMinAll(t),0)),td=Math.round(dayMinAll(now)),la=s?Math.round(uLit(s.id)*100):0,
  tile=(k,l,v,x)=>`<div style="--k:${k}"><span class="mu sm">${l}</span><b ${x||''}>${v}</b></div>`;
- const o0=$('#sc');if(o0)o0.remove();const o=document.createElement('div');o.id='sc';
+ const o0=$('#scd');if(o0)o0.remove();const o=document.createElement('div');o.id='scd';
  o.innerHTML=`<div role="dialog" aria-modal="true" aria-labelledby="sct" style="--c:${s?s.c:'var(--br)'}"><h2 id="sct" style="margin:0 0 2px">Session complete</h2><p class="mu sm" style="margin:0 0 14px">${LABEL[r.kind]||'Session'}${s?' · '+s.name:''}</p><div class="sc-big"><span data-cu="${min}">${min}</span> <small>min</small></div>
 <div class="sc-g">${tile(0,'Today',hm(td),'data-hm="'+td+'"')}${tile(1,'Study streak',sk+(sk===1?' day':' days'))}${s?tile(2,s.name.replace('Standard ','').replace('Mathematics','Maths')+' light',la+'%','data-pc="'+la+'"'):tile(2,'Last 7 days',hm(wk),'data-hm="'+wk+'"')}${tile(3,'Garden',gw?'+1 plant':'Not recorded')}</div>
 ${gl?`<div class="mu sm" style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Weekly goal</span><span>${hm(wk)} of ${hm(gl)}</span></div><div class="bar" style="--c:${s?s.c:'var(--br)'}"><i style="width:0" data-w="${Math.min(100,Math.round(wk/gl*100))}%"></i></div>`:''}
@@ -43045,8 +43045,8 @@ ${gl?`<div class="mu sm" style="display:flex;justify-content:space-between;margi
  o.querySelectorAll('[data-hm]').forEach(e=>cu(e,+e.dataset.hm,hm));o.querySelectorAll('[data-pc]').forEach(e=>cu(e,+e.dataset.pc,v=>v+'%'));
  requestAnimationFrame(()=>requestAnimationFrame(()=>{const i=o.querySelector('.bar i');if(i)i.style.width=i.dataset.w}));
  o.querySelector('.btn.p').focus({preventScroll:true});if(gl&&wk>=gl&&wk-min<gl&&window.hubCelebrate)setTimeout(hubCelebrate,500)}
-document.addEventListener('click',e=>{const o=$('#sc');if(o&&(e.target===o||e.target.closest('[data-a=scx]')))o.remove()});
-document.addEventListener('keydown',e=>{const o=$('#sc');if(o&&e.key==='Escape')o.remove()});
+document.addEventListener('click',e=>{const o=$('#scd');if(o&&(e.target===o||e.target.closest('[data-a=scx]')))o.remove()});
+document.addEventListener('keydown',e=>{const o=$('#scd');if(o&&e.key==='Escape')o.remove()});
 imInit();imSync();
 
 if(!dc('migrated')){   /* Phase 4 kept "open on last subject" and "show Continue studying" under Study Experience; they now live in Dashboard settings */
@@ -43252,6 +43252,51 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
  }
  addEventListener('touchend',release,{passive:true});
  addEventListener('touchcancel',release,{passive:true});
+})();
+</script>
+<script>
+/* Slide-out menu: close it by swiping it away or by tapping/clicking anywhere outside it, on every page and subject.
+   Works whenever the menu is acting as an overlay (drawer, bottom-bar Menu, or the iPad menu inside a subject). */
+(function(){
+ var B=document.body,nav=document.getElementById('nav');if(!nav)return;
+ var overlay=function(){return B.classList.contains('nav')&&getComputedStyle(nav).position==='fixed'};
+ var close=function(){B.classList.remove('nav')};
+ /* click / tap outside the menu (the dimmed scrim normally catches this; this also covers a missing or covered scrim) */
+ document.addEventListener('click',function(e){
+  if(!overlay())return;
+  var t=e.target;
+  if(!t||!t.closest)return;
+  if(t.closest('#nav')||t.closest('[data-a="nav"]')||t.closest('.xc-modal,#cp,[role=alertdialog]'))return;
+  close();e.preventDefault();e.stopPropagation();
+ },true);
+ /* swipe left to close, with the menu following your finger */
+ var x0=0,y0=0,t0=0,dx=0,drag=false,on=false;
+ var reset=function(){nav.style.transition='';nav.style.transform=''};
+ document.addEventListener('touchstart',function(e){
+  on=false;drag=false;dx=0;
+  if(!overlay()||e.touches.length!==1)return;
+  x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();on=true;
+ },{passive:true});
+ document.addEventListener('touchmove',function(e){
+  if(!on)return;
+  var t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;
+  if(!drag){
+   if(Math.abs(my)>10&&Math.abs(my)>Math.abs(mx)){on=false;return}   /* vertical scroll: leave it alone */
+   if(mx<-10&&Math.abs(mx)>Math.abs(my)){drag=true;nav.style.transition='none'}else return;
+  }
+  dx=Math.min(0,mx);nav.style.transform='translateX('+dx+'px)';
+ },{passive:true});
+ var end=function(){
+  if(!on)return;on=false;
+  if(!drag)return;drag=false;
+  var fast=Date.now()-t0<300&&dx<-30;
+  nav.style.transition='';
+  if(dx<-70||fast)close();
+  nav.style.transform='';
+  /* swiping the menu away also swallows the tap that would follow */
+ };
+ document.addEventListener('touchend',end,{passive:true});
+ document.addEventListener('touchcancel',end,{passive:true});
 })();
 </script>
 </body>
