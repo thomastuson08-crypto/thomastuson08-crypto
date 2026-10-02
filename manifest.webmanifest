@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "HSC Master Hub",
+  "short_name": "HSC Hub",
+  "description": "Offline-ready HSC study hub: English, Economics, Business, Modern History and Maths.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#eef1f7",
+  "theme_color": "#6b4cf6",
+  "lang": "en-AU",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
