@@ -139,7 +139,6 @@ aside{background:color-mix(in srgb,var(--sf) 78%,transparent);backdrop-filter:bl
 .nv{position:relative;overflow:hidden}
 .nv.on{box-shadow:inset 3px 0 0 var(--c,var(--br)),0 0 28px -8px var(--c,var(--br));background:color-mix(in srgb,var(--c,var(--br)) 10%,var(--sf2))}
 .nv:hover .i{transform:scale(1.15) rotate(-6deg)}.nv .i{transition:transform .25s}
-.cpb{border:1px dashed var(--ln);margin-bottom:6px}.cpb kbd{margin-left:auto;font:600 11px inherit;padding:1px 7px;border:1px solid var(--ln);border-radius:6px}
 h1{background:linear-gradient(90deg,var(--ink) 30%,var(--br),#2f8fe0,var(--ink) 70%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shim 8s linear infinite}
 h1.ty::after{content:"▍";-webkit-text-fill-color:var(--br);animation:bl 1s steps(1) infinite;margin-left:3px}
 .card{background:color-mix(in srgb,var(--sf) 70%,transparent);backdrop-filter:blur(14px) saturate(1.3);border-color:color-mix(in srgb,var(--ln) 78%,var(--br) 22%)}
@@ -160,6 +159,7 @@ h1.ty::after{content:"▍";-webkit-text-fill-color:var(--br);animation:bl 1s ste
 .hud span{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:99px;border:1px solid var(--ln);background:color-mix(in srgb,var(--sf) 65%,transparent);backdrop-filter:blur(10px);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
 .live{width:8px;height:8px;border-radius:50%;background:#1f9d6b;animation:pulse 2s infinite}
 .hud b{color:var(--br)}
+.hud em{font-style:normal}
 #pill{backdrop-filter:blur(14px);box-shadow:0 12px 40px -8px var(--br)}
 #hx-gr{margin:2px 0 14px;color:var(--mu);font-weight:600}#hx-gr.hx-ph{visibility:hidden}
 .rv{opacity:0;animation:rv .4s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(min(var(--i,0),8)*30ms)}
@@ -220,6 +220,7 @@ body.calm .wt{transition:none}body.calm .wt:hover{transform:none}
 /* ===== motion options ===== */
 body.no-bg #fx,body.calm #fx{display:none}
 body.no-glow::before,body.no-glow .card::after{display:none}
+body.no-touchfx .hx-rp,body.no-touchfx .card::after{display:none!important}
 body.no-loop .logo,body.no-loop h1,body.no-loop h1.ty::after,body.no-loop .live,body.no-loop .bar i{animation:none!important}
 body.no-hover .sc:hover,body.no-hover .btn:hover{transform:none!important;animation:none!important}
 body.no-hover .nv:hover .i,body.no-hover .sc:hover .tile{transform:none!important}
@@ -314,8 +315,12 @@ body.xc-on{overflow:hidden}body.xc-on #pill{display:none!important}
 :where(:root[data-w~=le-780]) .set-nav .sg,:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav .sg{display:none}
 .sflash{border-radius:10px;animation:sfl 2.4s ease-out}@keyframes sfl{0%,55%{background:color-mix(in srgb,var(--br) 20%,transparent)}100%{background:transparent}}
 @media(prefers-reduced-motion:reduce){.sflash{animation:none;background:color-mix(in srgb,var(--br) 20%,transparent)}}
-.set{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;align-items:start;margin-top:24px}
-.set-nav{position:sticky;top:20px;display:flex;flex-direction:column;gap:2px}
+.set{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px 28px;align-items:start;margin-top:0}
+.set-top{grid-column:2;grid-row:1;min-width:0}
+.set-top h1{margin:0 0 4px}.set-top p{margin:0}
+.set-nav{grid-column:1;grid-row:1/span 2;position:sticky;top:20px;max-height:calc(var(--vh) - 40px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding:0 4px 20px 0;display:flex;flex-direction:column;gap:2px}
+.set-nav>*{flex-shrink:0}
+.set-body{grid-column:2;grid-row:2}
 .set-body{min-width:0}.set-body .card+.card{margin-top:16px}
 .set-head{margin:0 0 16px}.set-head h2{font-size:24px;letter-spacing:-.02em;margin:0 0 2px}.set-head p{margin:0}
 .set-body .card h3{font-size:17px;font-weight:700;letter-spacing:-.01em;margin:0 0 4px}
@@ -403,6 +408,25 @@ body.xc-on{overflow:hidden}body.xc-on #pill{display:none!important}
 :root[data-nav=drawer] body.nav #sc,:root[data-nav=bottom] body.nav #sc{opacity:1;pointer-events:auto}
 :root[data-nav=drawer] body .frame{height:calc(var(--vh) - 190px)}
 :root[data-nav=bottom] body .frame{height:calc(var(--vh) - 220px)}
+/* ===== touch devices (iPad): inside a subject the sidebar / icon rail tucks away and the slim "HSC Hub" bar with the menu button takes over.
+   Tap the menu button to slide the full menu out; it closes again after you pick something. Dashboard and the other pages keep the normal sidebar. ===== */
+@media(pointer:coarse){
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub:not(.focus) .app{display:block}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub .top{display:flex;align-items:center;gap:12px;padding:12px 16px;position:sticky;top:calc(env(safe-area-inset-top,0px)/var(--uz));background:var(--bg);z-index:20;border-bottom:1px solid var(--ln)}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub aside{position:fixed;inset:0 auto 0 0;width:270px;height:var(--vh);z-index:40;transform:translateX(-102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);box-shadow:var(--sh);padding:20px 14px}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub.nav aside{transform:none}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub #sc{display:block;position:fixed;inset:0;background:rgba(5,8,20,.5);z-index:35;opacity:0;pointer-events:none;transition:opacity .3s}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub.nav #sc{opacity:1;pointer-events:auto}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub .frame{height:calc(var(--vh) - 190px)}
+/* the icon rail hides its labels; the slide-out menu needs them back */
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub .brand{justify-content:flex-start;padding:4px 10px 18px;font-size:18px}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub aside .nv{justify-content:flex-start;gap:12px;padding:9px 12px;font-size:inherit}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub aside .nv kbd{display:revert}
+:root:is([data-nav=sidebar],[data-nav=rail]) body.insub .grp{height:auto;margin:0;padding:14px 12px 4px;font-size:12px;background:none}
+}
+/* keep the HSC Hub header pinned: no rubber-band bounce dragging the page (and its sticky bar) away from the top, and the sidebar logo stays put while the menu list scrolls */
+html{overscroll-behavior-y:none}
+aside .brand{position:static;background:none}
 #bnav{display:none}
 :root[data-nav=bottom] #bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;gap:2px;padding:6px 8px calc(6px + calc(env(safe-area-inset-bottom,0px)/var(--uz)));background:color-mix(in srgb,var(--sf) 90%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--ln);transition:transform .25s}
 #bnav button{flex:1;min-width:0;min-height:var(--tap,48px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;border-radius:12px;color:var(--mu);font-size:calc(11px*var(--fs));font-weight:600}
@@ -430,6 +454,9 @@ body.xc-on{overflow:hidden}body.xc-on #pill{display:none!important}
 :root[data-device=phone] .set-nav{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}
 :root[data-device=phone] .set-nav .nv{width:auto;flex:none;white-space:nowrap;border:1px solid var(--ln);padding:8px 14px}
 :root[data-device=phone] .set-nav .nv.on{box-shadow:none;border-color:var(--br)}
+:where(:root[data-w~=le-780]) :is(.set-top,.set-nav,.set-body),:where(:root[data-w~=le-980]):where([data-nav=rail]) :is(.set-top,.set-nav,.set-body),:root[data-device=phone] :is(.set-top,.set-nav,.set-body){grid-column:auto;grid-row:auto}
+:where(:root[data-w~=le-780]) .set-nav,:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav,:root[data-device=phone] .set-nav{max-height:none;padding:0 0 6px}
+:where(:root[data-w~=le-780]) .set,:where(:root[data-w~=le-980]):where([data-nav=rail]) .set,:root[data-device=phone] .set{margin-top:0}
 .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.dcz{margin-top:4px}
 .dw+.dw{margin-top:24px}main[data-view=dash] .dw>.sec{margin-top:0}
 .dwr{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--ln)}.dwr:first-child{border-top:0}
@@ -531,7 +558,7 @@ body.calm *::after{transition:none!important;animation:none!important}
 :root[data-contrast=high] .card{background:var(--sf);backdrop-filter:none}
 :root[data-contrast=high] .card{border:2px solid var(--ln)}
 :root[data-contrast=high] .sc{background:var(--sf);border:2px solid var(--ln);animation:none}
-:root[data-contrast=high] :is(.btn,.chip,.pre,.cpb,input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=time],select,textarea){border:2px solid var(--ink)}
+:root[data-contrast=high] :is(.btn,.chip,.pre,input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=time],select,textarea){border:2px solid var(--ink)}
 :root[data-contrast=high] :is(.btn.p,.chip.on){background:var(--brx);color:#fff;border-color:var(--ink);box-shadow:none}
 :root[data-contrast=high][data-theme=dark] :is(.btn.p,.chip.on){color:#000}
 :root[data-contrast=high] .btn.p::after{display:none}
@@ -707,6 +734,16 @@ body.calm :is(.tk-b,.tk-b::before,.tk-b i,.pl-lit,.gp,#sc,#sc>div,.sc-g div,#wpo
 #updbar button{font:inherit;border:0;border-radius:9px;padding:7px 12px;cursor:pointer;background:var(--br);color:#fff}
 #updbar button.x{background:transparent;color:inherit;padding:7px 8px;opacity:.7}
 @media (prefers-reduced-motion:reduce){#offpill{transition:none}}
+
+/* ===== dashboard pull-to-refresh: the top bar stays put, only the page content is pulled down ===== */
+#ptr{position:absolute;left:0;right:0;top:-64px;height:64px;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#ptr i{width:30px;height:30px;border-radius:50%;border:3px solid color-mix(in srgb,var(--br) 25%,transparent);border-top-color:var(--br);box-sizing:border-box;opacity:0;transform:scale(.6) rotate(0);transition:opacity .15s}
+#ptr.go i{background:color-mix(in srgb,var(--br) 14%,transparent)}
+#ptr.spin i{animation:ptrs .7s linear infinite}
+@keyframes ptrs{to{transform:scale(1) rotate(360deg)}}
+body.ptr-on main{position:relative;will-change:transform}
+body.ptr-snap main{transition:transform .38s cubic-bezier(.2,.9,.25,1.15)}
+body.calm #ptr.spin i{animation:none}
 </style>
 </head>
 <body>
@@ -15126,8 +15163,9 @@ function renderDiagramJumpBar(){
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'diagram-jump-pill' + (i === currentDiagramIndex ? ' active' : '');
-    pill.textContent = (i+1) + '. ' + d.title.replace(/&#8212;.*$/,'').replace(/\(.*?\)/,'').trim();
-    pill.title = d.title;
+    const dec = h => { const t = document.createElement('textarea'); t.innerHTML = h; return t.value; };
+    pill.textContent = (i+1) + '. ' + dec(d.title.replace(/&#8212;.*$/,'').replace(/\(.*?\)/,'').trim());
+    pill.title = dec(d.title);
     pill.addEventListener('click', () => {
       currentDiagramIndex = i;
       renderDiagramJumpBar();
@@ -41507,7 +41545,7 @@ HubSettings.register('device',{mode:'auto',nav:'auto',width:'auto',cards:'auto',
 HubSettings.register('progress',{weeklyGoal:0,examDates:{},trackSessions:true,trackActive:true,trackPractice:true,saveExams:true,recordActivity:true,detectWeak:true});
 HubSettings.register('notifications',{system:false,quietOn:true,quietFrom:'22:00',quietTo:'07:00',study:false,studyTime:'16:00',studyDays:[1,2,3,4,5],studySkip:true,exam:false,examLead:[7,1,0],done:true,daily:false,dailyTime:'07:30',milestones:false});
 const PT=k=>HubSettings.get('progress.'+k)!==false;   /* Phase 6: is this kind of progress being recorded? */
-HubSettings.register('accessibility',{calm:false,fx:{bg:1,glow:1,shine:1,intro:1,loop:1,hover:1,blur:1},followSystem:true,uiScale:100,contrast:'system',spacing:'normal',focus:'standard'});
+HubSettings.register('accessibility',{calm:false,fx:{bg:1,glow:1,shine:1,intro:1,loop:1,hover:1,blur:1},followSystem:true,uiScale:100,contrast:'system',spacing:'normal',focus:'standard',pullRefresh:true,touchFx:true});
 /* the hub's older code still reads S.name, S.theme and so on; keep those mirrored from the store */
 const LEG={name:'personalisation.name',theme:'personalisation.theme',look:'personalisation.look',calm:'accessibility.calm',fx:'accessibility.fx',goal:'progress.weeklyGoal',ea:'progress.examDates'};
 if(HubSettings.fresh)Object.entries(LEG).forEach(([f,p])=>HubSettings.set(p,S[f]));   /* first run: carry over what the hub already holds */
@@ -41590,7 +41628,7 @@ function applyPers(){
 const mq=matchMedia('(prefers-color-scheme:dark)');
 const calmOn=()=>!!S.calm||(HubSettings.get('accessibility.followSystem')!==false&&matchMedia('(prefers-reduced-motion:reduce)').matches);
 const applyA11y=()=>{HubA11y.apply(HubSettings.section('accessibility'))};
-function theme(){document.documentElement.dataset.theme=S.theme==='system'?(mq.matches?'dark':'light'):S.theme;document.documentElement.dataset.look=S.look;applyA11y();applyPers();applyDevice();document.body.classList.toggle('calm',calmOn());FXK.forEach(k=>document.body.classList.toggle('no-'+k,!S.fx[k]));const f=document.querySelector('iframe');if(f)a11yFrame(f);if(f&&f.contentWindow)f.contentWindow.postMessage({hsc:1,type:'theme',theme:document.documentElement.dataset.theme,calm:calmOn(),look:S.look,vars:pal()},'*');Object.values(NATIVE).forEach(n=>n&&n.ctl&&n.ctl.theme(nativeEnv()))}
+function theme(){document.documentElement.dataset.theme=S.theme==='system'?(mq.matches?'dark':'light'):S.theme;document.documentElement.dataset.look=S.look;document.body.classList.toggle('no-touchfx',HubSettings.get('accessibility.touchFx')===false);applyA11y();applyPers();applyDevice();document.body.classList.toggle('calm',calmOn());FXK.forEach(k=>document.body.classList.toggle('no-'+k,!S.fx[k]));const f=document.querySelector('iframe');if(f)a11yFrame(f);if(f&&f.contentWindow)f.contentWindow.postMessage({hsc:1,type:'theme',theme:document.documentElement.dataset.theme,calm:calmOn(),look:S.look,vars:pal()},'*');Object.values(NATIVE).forEach(n=>n&&n.ctl&&n.ctl.theme(nativeEnv()))}
 mq.addEventListener('change',theme);matchMedia('(prefers-reduced-motion:reduce)').addEventListener('change',theme);matchMedia('(prefers-contrast: more)').addEventListener('change',theme);
 
 /* pieces */
@@ -41716,7 +41754,7 @@ const SETSEC=[
 {id:'data',t:'Data & Backup',d:'Back up, restore or reset what the Hub holds.',i:'M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3'},
 {id:'accessibility',t:'Accessibility',d:'Text, contrast, motion, touch and focus.',i:'M12 5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM4 8l8 1 8-1M12 9v5M9 22l3-8 3 8'},
 {id:'shortcuts',t:'Keyboard Shortcuts',d:'Keys you can use around the Hub.',i:'M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M7 14h10'},
-{id:'about',t:'About',d:'Version, storage and which subjects are connected.',i:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5M12 8h.01'}];
+{id:'about',t:'About',d:'Version, data location and which subjects are connected.',i:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v5M12 8h.01'}];
 let askReset=null,rmsg=null;
 const SETRESET=['personalisation','device','study','dashboard','progress','notifications','accessibility','shortcuts','immersive'],g=p=>HubSettings.get(p);
 const setRow=(t,d,c)=>`<div class="set-row"><div class="set-lbl"><b>${t}</b>${d?`<span class="mu sm">${d}</span>`:''}</div><div class="set-ctl">${c}</div></div>`;
@@ -41752,7 +41790,7 @@ const SETV_DEVICE=()=>{const s=HubDevice.st,m=g('device.mode');
  return `<div class="card"><h3>Device</h3><p class="mu sm" style="margin:0 0 12px">Each device gets its own arrangement of navigation, cards, spacing and touch sizes. Auto detects your device, and your choice here always overrides it.</p><div class="pre-g four" role="group" aria-label="Device">${DEVT.map(([id,n,d])=>`<button class="pre ${m===id?'on':''}" aria-pressed="${m===id}" data-a="dev" data-k="mode" data-v="${id}"><b>${n}</b><span class="mu sm">${id==='auto'?'Detects your device. Right now: '+LBD[s.detected]:d}</span></button>`).join('')}</div>
  <p class="det mu sm" id="detd">${detText()}</p>${m!=='auto'&&m!==s.detected?`<p class="mu sm" style="margin:6px 0 0">This screen looks like a ${LBD[s.detected].toLowerCase()}. You are using the ${LBD[m].toLowerCase()} layout instead, so it may feel cramped or roomy. Choose Auto to go back to detection.</p>`:''}</div>
 <div class="card"><h3>Navigation</h3>${dopt('nav','Navigation style')}${setRow('Hide bottom bar while scrolling','Slides away as you scroll down and returns when you scroll up. Applies when the bottom bar is in use.',swg('device.bottomAutoHide',g('device.bottomAutoHide'),'Hide bottom bar while scrolling'))}</div>
-<div class="card"><h3>Layout and touch</h3>${dopt('width','Content width')}${dopt('cards','Card layout')}${dopt('dashDensity','Dashboard density')}${dopt('touch','Touch target size')}</div>`};
+<div class="card"><h3>Layout</h3>${dopt('width','Content width')}${dopt('cards','Card layout')}</div>`};
 const MOD=/Mac|iPhone|iPad/.test(navigator.platform)?'⌘':'Ctrl',kk=(...k)=>k.map(x=>`<kbd>${x}</kbd>`).join('');
 const sw2=(k,l)=>`<button class="sw" role="switch" aria-checked="${!!g('study.'+k)}" aria-label="${l}" data-a="stt" data-v="${k}"></button>`;
 const sch=(k,l,d,o)=>setRow(l,d,grp(l,o.map(([x,n])=>`<button class="chip ${String(g('study.'+k))===x?'on':''}" aria-pressed="${String(g('study.'+k))===x}" data-a="st" data-k="${k}" data-v="${x}">${n}</button>`).join('')));
@@ -41771,7 +41809,7 @@ const SETV_DASH=()=>{const L=dwList(),ds=dc('defaultSubject'),land=dc('landing')
  rows=L.map((w,i)=>`<div class="dwr ${dwOn(w.id)?'':'off'}"><button class="sw" role="switch" aria-checked="${dwOn(w.id)}" aria-label="Show ${w.t}" data-a="dwt" data-v="${w.id}"></button><div class="set-lbl"><b>${w.t}</b><span class="mu sm">${w.d}</span></div><div class="mv"><button aria-label="Move ${w.t} up" aria-disabled="${i===0}" data-a="dwmv" data-v="${w.id}:-1">${ic('M6 15l6-6 6 6')}</button><button aria-label="Move ${w.t} down" aria-disabled="${i===L.length-1}" data-a="dwmv" data-v="${w.id}:1">${ic('M6 9l6 6 6-6')}</button></div></div>`).join('');
  return `<div class="card"><h3>Widgets</h3><p class="mu sm" style="margin:0 0 12px">${nOn} of ${L.length} showing. Switch a widget off to hide it, and use the arrows to change the order. The dashboard updates straight away.</p>${grp('Layout presets',[['standard','Standard'],['essentials','Essentials only'],['everything','Show everything']].map(([k,n])=>cb('dwp',k,false,n)).join(''))}<div style="margin-top:6px">${rows}</div></div>
 <div class="card"><h3>Start</h3>${setRow('Default landing page',land==='subject'&&!ds?'Choose a default subject below first. Until then the Hub opens on the Dashboard.':'Where the Hub opens',grp('Default landing page',DLAND.map(([x,n])=>cb('dwl',x,land===x,n)).join('')))}${setRow('Default subject','Used by Continue studying and Today\'s mission when there is nothing to resume, and preselected in the Study Timer',grp('Default subject',[cb('dwds','',!ds,'None'),...SUBJECTS.map(x=>cb('dwds',x.id,ds===x.id,x.name,'--c:'+x.c))].join('')))}</div>
-<div class="card"><h3>Keep it tidy</h3>${dsw('status','Status bar','The strip at the top with the clock, today\'s minutes and the next exam')}${dsw('hideEmpty','Hide empty widgets','Recent activity and Weak areas disappear until they have something to show')}</div>`};
+<div class="card"><h3>Keep it tidy</h3>${dsw('status','Status bar','The strip at the top with the clock, today\'s minutes and the next exam')}${dsw('hideEmpty','Hide empty widgets','Recent activity and Weak areas disappear until they have something to show')}${dopt('dashDensity','Dashboard density')}${setRow('Pull to refresh','Pull the Dashboard down from the top with your finger to refresh it. The top bar stays in place. Turn off if it triggers by accident.',`<button class="sw" role="switch" aria-checked="${g('accessibility.pullRefresh')!==false}" aria-label="Pull to refresh the Dashboard" data-a="acpr"></button>`)}</div>`};
 const SETV={
 device:()=>SETV_DEVICE(),
 personalisation:()=>{
@@ -41781,7 +41819,7 @@ personalisation:()=>{
  return `<div class="card"><h3>Presets</h3><p class="mu sm" style="margin:0 0 12px">${mine?'A starting point for background, spacing, corners, text size and animation. Your theme and accent colour stay as they are.':'You are using a custom mix. Pick a preset to start again from one of these.'}</p><div class="pre-g">${Object.entries(PBUNDLE).map(([id,b])=>`<button class="pre ${mine===id?'on':''}" aria-pressed="${mine===id}" data-a="bundle" data-v="${id}"><b>${b.name}</b><span class="mu sm">${b.d}</span></button>`).join('')}</div></div>
 <div class="card"><h3>Profile</h3>${setRow('Your name','Shown in the dashboard greeting',`<input type="text" id="nm" value="${esc(P('name'))}" placeholder="Name" maxlength="40" aria-label="Your name">`)}</div>
 <div class="card"><h3>Colour</h3>${setRow('Theme','Follow your device, or pick one',grp('Theme',['system','light','dark'].map(t=>cb('theme',t,P('theme')===t,t[0].toUpperCase()+t.slice(1))).join('')))}${setRow('Accent colour','Used for buttons, highlights and progress across the Hub and its subjects',grp('Accent colour',LOOKS.map(([k,n,c])=>cb('look',k,P('look')===k,n,'--c:'+c)).join('')+`<label class="chip acc ${P('look')==='custom'?'on':''}" style="--c:${accentFor(acc,false)}"><input type="color" id="acc" data-a="accent" value="${/^#[0-9a-f]{6}$/i.test(acc)?acc:'#6b4cf6'}" aria-label="Custom accent colour">Custom</label>`))}${opt('background','Background style')}</div>
-<div class="card"><h3>Layout and feel</h3>${opt('density','Density')}${opt('corners','Corners')}${opt('fontSize','Text size')}${setRow('Animation level',cur==='custom'?'A custom mix of effects':({full:'All motion and effects',subtle:'Gentle motion only',off:'No animation'})[cur],grp('Animation level',[['full','Full'],['subtle','Subtle'],['off','Off']].map(([k,n])=>cb('preset',k,cur===k,n)).join('')))}<p class="mu sm" style="margin:6px 0 0">Switch individual effects on or off in <button class="lnk" data-go="settings/accessibility">Accessibility</button>. Your device's reduce-motion setting is always respected.</p></div>`},
+<div class="card"><h3>Layout and feel</h3>${opt('density','Density')}${opt('corners','Corners')}<p class="mu sm" style="margin:6px 0 0">Text size, animation and touch settings are in <button class="lnk" data-go="settings/accessibility">Accessibility</button>.</p></div>`},
 study:()=>SETV_STUDY(),immersive:()=>imView(),dashboard:()=>SETV_DASH(),notifications:()=>ntView(),
 progress:()=>progCards()+`<div class="card"><h3>Weekly goal</h3>${setRow('Study goal','Minutes per week, tracked on the dashboard',`<input type="number" id="goal" min="0" step="30" value="${g('progress.weeklyGoal')||''}" placeholder="e.g. 300" aria-label="Weekly study goal in minutes">`)}</div>
 <div class="card"><h3>Exam dates</h3>${EXAMS.map(x=>`<div class="set-row" style="--c:${xc(x)}"><span class="dot"></span><label class="set-lbl" for="ea-${x.id}"><b>${x.name}</b></label><input type="datetime-local" id="ea-${x.id}" style="width:auto" value="${g('progress.examDates')[x.id]||x.at}"></div>`).join('')}</div>
@@ -41789,14 +41827,14 @@ progress:()=>progCards()+`<div class="card"><h3>Weekly goal</h3>${setRow('Study 
 data:()=>bkView(),
 accessibility:()=>acView(),
 shortcuts:()=>kbView(),
-about:()=>{let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);n+=k.length+(localStorage.getItem(k)||'').length}}catch(e){}
- return `<div class="card"><h3>HSC Hub</h3>${setRow('Settings format','Used by the Hub and its subject modules','Version 1')}${setRow('Linked subjects','',SUBJECTS.filter(s=>s.src).length+' of '+SUBJECTS.length)}${setRow('Data location','Nothing is sent anywhere','This device only')}${setRow('Browser storage in use','Approximate, excluding exam history',(n*2/1024).toFixed(1)+' KB')}</div>`}};
+about:()=>{
+ return `<div class="card"><h3>HSC Hub</h3>${setRow('Settings format','Used by the Hub and its subject modules','Version 1')}${setRow('Data location','Nothing is sent anywhere','This device only')}</div>`}};
 /* ===== settings layout: groups, moved cards, searchable index ===== */
-const SETGRP=[['Look and feel',['personalisation','device','accessibility']],['Studying',['study','immersive']],['Home and progress',['dashboard','progress','notifications']],['The Hub',['data','shortcuts','about']]];
+const SETGRP=[['Look and feel',['personalisation','style','device','accessibility']],['Studying',['study','immersive']],['Home and progress',['dashboard','progress','notifications']],['The Hub',['data','shortcuts','about']]];
 /* [from section, card title, to section, insert before this card ('' = end)] */
 const MV=[['study','Continue where I left off','dashboard','Keep it tidy'],['progress','Subject connections','about','']];
 /* [section, row label, from card, to card] */
-const ROWMV=[['personalisation','Background style','Colour','Layout and feel']];
+const ROWMV=[['personalisation','Background style','Colour','Layout and feel'],['dashboard','Return to my place in a subject','Continue where I left off','Start','end']];
 const h3t=el=>((el.querySelector&&el.querySelector('h3'))||{}).textContent||'';
 const setPieces=id=>{const t=document.createElement('template');t.innerHTML=SETV[id]();return[...t.content.children]};
 function secHtml(id){
@@ -41805,12 +41843,12 @@ function secHtml(id){
   const mv=setPieces(src).filter(el=>h3t(el)===title);
   mv.forEach(el=>el.querySelectorAll('[data-go="settings/dashboard"]').forEach(b=>{const r=b.closest('.set-row');if(r)r.remove()}));
   const at=before?out.findIndex(el=>h3t(el)===before):-1;if(at<0)out.push(...mv);else out.splice(at,0,...mv)}
- for(const[sec,lab,from,to]of ROWMV){if(sec!==id)continue;
+ for(const[sec,lab,from,to,end]of ROWMV){if(sec!==id)continue;
   const f=out.find(el=>h3t(el)===from),d=out.find(el=>h3t(el)===to);if(!f||!d)continue;
   const row=[...f.querySelectorAll('.set-row')].find(r=>((r.querySelector('.set-lbl b')||{}).textContent===lab));
-  if(row){const h=d.querySelector('h3');h.after(row)}}
+  if(row){if(end)d.appendChild(row);else d.querySelector('h3').after(row);if(!f.querySelector('.set-row'))out.splice(out.indexOf(f),1)}}
  return out.map(el=>el.outerHTML).join('\n')}
-const SSYN={personalisation:'name theme dark light night mode colour color accent background look appearance density corners',device:'phone ipad tablet laptop desktop screen layout sidebar menu navigation width cards touch',study:'timer pomodoro focus sound chime beep exam autosave save warning',immersive:'worlds ambient sound music rain focus minimal calm atmosphere',dashboard:'home widgets landing start order resume',notifications:'reminder alert push quiet hours',progress:'goal weekly exam date tracking record',data:'backup restore export import reset delete clear storage offline',accessibility:'text size font zoom contrast motion reduce animation touch focus outline spacing',shortcuts:'keyboard keys hotkeys',about:'version storage subjects connected'};
+const SSYN={personalisation:'name theme dark light night mode colour color accent background look appearance density corners',device:'phone ipad tablet laptop desktop screen layout sidebar menu navigation width cards',study:'timer pomodoro focus sound chime beep exam autosave save warning',immersive:'worlds ambient sound music rain focus minimal calm atmosphere',dashboard:'home widgets landing start order resume density spacing pull refresh swipe gesture',notifications:'reminder alert push quiet hours',progress:'goal weekly exam date tracking record',data:'backup restore export import reset delete clear storage offline',accessibility:'text size font zoom contrast motion reduce animation touch target focus outline spacing glow ripple circle tap finger',shortcuts:'keyboard keys hotkeys',about:'version subjects connected'};
 function setIndex(){const o=[];
  for(const s of SETSEC){const syn=SSYN[s.id]||'';o.push({sec:s.id,card:'',row:'',t:s.t,n:'Settings',k:(s.d+' '+syn).toLowerCase()});
   try{const t=document.createElement('template');t.innerHTML=secHtml(s.id);
@@ -41827,9 +41865,9 @@ function renderSettings(){
  const id=location.hash.slice(1).split('/')[1],cur=SETSEC.find(x=>x.id===id)||SETSEC[0];
  const btn=x=>`<button class="nv ${x===cur?'on':''}" data-go="settings/${x.id}" ${x===cur?'aria-current="page"':''}>${ic(x.i)}${x.t}</button>`,nav=SETGRP.map(([n,ids])=>`<div class="sg">${n}</div>`+ids.map(i=>btn(SETSEC.find(x=>x.id===i))).join('')).join('');
  if(askReset!==cur.id)askReset=null;if(rmsg!==cur.id)rmsg=null;
- const ask=cur.id==='personalisation'?'Restore the appearance settings to their defaults? Your name is kept. Animation also goes back to Full.':cur.id==='device'?'Restore the Device & Layout settings to their defaults? Touch target size also goes back to Auto.':cur.id==='progress'?'Restore the Progress settings to their defaults? Your weekly goal and any exam dates you changed go back to the defaults. Recorded progress and activity are kept.':cur.id==='accessibility'?'Restore the Accessibility settings to their defaults? Text size and touch target size also go back to default.':'Restore the '+cur.t+' settings to their defaults?';
+ const ask=cur.id==='personalisation'?'Restore the appearance settings to their defaults? Your name is kept. Text size and animation are in Accessibility and are kept too.':cur.id==='device'?'Restore the Device & Layout settings to their defaults?':cur.id==='progress'?'Restore the Progress settings to their defaults? Your weekly goal and any exam dates you changed go back to the defaults. Recorded progress and activity are kept.':cur.id==='accessibility'?'Restore the Accessibility settings to their defaults? Text size and touch target size also go back to default. Pull to refresh stays as it is in Dashboard settings.':'Restore the '+cur.t+' settings to their defaults?'+(cur.id==='dashboard'?' This includes dashboard density, pull to refresh and returning to your place in a subject.':'');
  const foot=SETRESET.includes(cur.id)?`<div class="set-foot">${askReset===cur.id?`<div class="card" role="alertdialog" aria-label="Confirm restore"><p style="margin:0 0 12px"><b>${ask}</b></p><div class="chips"><button class="btn x" data-a="sreset-yes" data-v="${cur.id}">Restore</button><button class="btn" data-a="sreset-no">Cancel</button></div></div>`:`<button class="btn" data-a="sreset" data-v="${cur.id}">${cur.id==='personalisation'?'Restore appearance defaults':'Restore defaults'}</button>${rmsg===cur.id?`<span class="mu sm" role="status" style="margin-left:12px">Restored to defaults.</span>`:''}`}</div>`:'';
- return `<h1>Settings</h1><p class="mu">Stored on this device only.</p><p style="margin:12px 0 0"><button class="btn" data-cps>Search settings</button></p><div class="set"><nav class="set-nav" aria-label="Settings sections">${nav}</nav><section class="set-body" aria-labelledby="sth"><div class="set-head"><h2 id="sth">${cur.t}</h2><p class="mu">${cur.d}</p></div>${secHtml(cur.id)}${foot}</section></div>`}
+ return `<div class="set"><div class="set-top"><h1>Settings</h1><p class="mu">Stored on this device only.</p><p style="margin:12px 0 0"><button class="btn" data-cps>Search settings</button></p></div><nav class="set-nav" aria-label="Settings sections">${nav}</nav><section class="set-body" aria-labelledby="sth"><div class="set-head"><h2 id="sth">${cur.t}</h2><p class="mu">${cur.d}</p></div>${secHtml(cur.id)}${foot}</section></div>`}
 
 /* routing + render */
 let keepY=false,quiet=false;const rerender=()=>{keepY=true;render()};
@@ -41839,17 +41877,19 @@ function render(){
  const r=location.hash.slice(1).split('/')[0]||'dash',s=sub(r);
  if(s){S.last=s.id;save()}
  const item=(id,t,d,c)=>`<button class="nv ${r===id?'on':''}" ${c?`style="--c:${c}"`:''} data-go="${id}" title="${t}" aria-label="${t}">${ic(d)}${t}</button>`;
- $('#nav').innerHTML=`<div class="brand"><span class="logo"></span>HSC Hub</div><button class="nv cpb" data-cp title="Search" aria-label="Search">${ic('M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5')}Search<kbd>⌘K</kbd></button>${item('dash','Dashboard',ICON.dash)}<div class="grp">Subjects</div>${SUBJECTS.map(x=>item(x.id,x.name,x.d,x.c)).join('')}<div class="grp">Study</div>${item('quick','Study Timer',ICON.quick)}${item('exam','Exam Centre',ICON.exam)}${item('progress','Progress',ICON.prog)}${item('saved','Saved',ICON.saved)}<div style="flex:1"></div>${item('settings','Settings',ICON.set)}`;
+ $('#nav').innerHTML=`<div class="brand"><span class="logo"></span>HSC Hub</div>${item('dash','Dashboard',ICON.dash)}<div class="grp">Subjects</div>${SUBJECTS.map(x=>item(x.id,x.name,x.d,x.c)).join('')}<div class="grp">Study</div>${item('quick','Study Timer',ICON.quick)}${item('exam','Exam Centre',ICON.exam)}${item('progress','Progress',ICON.prog)}${item('saved','Saved',ICON.saved)}<div style="flex:1"></div>${item('settings','Settings',ICON.set)}`;
  {let bn=$('#bnav');if(!bn){bn=document.createElement('nav');bn.id='bnav';bn.setAttribute('aria-label','Quick navigation');document.body.appendChild(bn)}
   const bi=(id,t,d)=>`<button class="${r===id?'on':''}" data-go="${id}" ${r===id?'aria-current="page"':''}>${ic(d)}<span>${t}</span></button>`;
   bn.innerHTML=bi('dash','Home',ICON.dash)+bi('quick','Study',ICON.quick)+bi('exam','Exams',ICON.exam)+bi('progress','Progress',ICON.prog)+`<button class="${['dash','quick','exam','progress'].includes(r)?'':'on'}" data-a="nav" aria-label="Open menu">${ic('M4 7h16M4 12h16M4 17h16')}<span>Menu</span></button>`}
  {const st=$('#nstore');Object.values(NATIVE).forEach(n=>n&&st.appendChild(n.host))}   /* park native subjects (still attached, hidden) so their code keeps working */
- $('#main').dataset.view=s?'subject':r;
+ const snv=$('.set-nav'),snt=snv?snv.scrollTop:0;
+ $('#main').dataset.view=s?'subject':r;document.body.classList.toggle('insub',!!s);
  $('#main').innerHTML=s?subjView(s):(V[r==='dash'?'dash':r]||V.dash)();
  if(s&&s.native)mountNative(s);
  document.body.classList.remove('nav');scrollTo(0,keep?y:0);quiet=keep;post();quiet=false;
  if(fk){const el=[...document.querySelectorAll('#main [data-a]')].find(n=>n.dataset.a===fk[0]&&n.dataset.v===fk[1]);if(el)el.focus({preventScroll:true})}
  const sa=$('.set-nav .on');if(sa)sa.parentElement.scrollLeft=sa.offsetLeft-16;
+ {const nn=$('.set-nav');if(nn&&keep)nn.scrollTop=snt}
  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll('.arc').forEach(a=>a.style.strokeDasharray=a.dataset.v+' 100')));
  if(!keep&&!s)barsIn();
 }
@@ -42042,11 +42082,13 @@ document.addEventListener('click',e=>{
  else if(a==='actc'){HubSettings.set('device.touch',v);rerender()}
  else if(a==='acsp'){HubSettings.set('accessibility.spacing',v);rerender()}
  else if(a==='acfo'){HubSettings.set('accessibility.focus',v);rerender()}
+ else if(a==='actf'){HubSettings.set('accessibility.touchFx',g('accessibility.touchFx')===false);rerender()}
+ else if(a==='acpr'){HubSettings.set('accessibility.pullRefresh',g('accessibility.pullRefresh')===false);rerender()}
  else if(a==='acfs'){HubSettings.set('accessibility.followSystem',g('accessibility.followSystem')===false);rerender()}
  else if(a==='accent'){HubSettings.set('personalisation.look','custom')}
  else if(a==='sreset'&&SETRESET.includes(v)){askReset=v;rmsg=null;rerender();const y=$('[data-a=sreset-yes]');if(y)y.focus({preventScroll:true})}
  else if(a==='sreset-no')rerender()
- else if(a==='sreset-yes'&&SETRESET.includes(v)){const n=HubSettings.get('personalisation.name');HubSettings.reset(v);if(v==='accessibility'){HubSettings.set('personalisation.fontSize','medium');HubSettings.set('device.touch','auto');try{localStorage.removeItem('hsc-hub-a11y-setups')}catch(e){}}if(v==='personalisation'){HubSettings.set('personalisation.name',n);setMotion('full')}
+ else if(a==='sreset-yes'&&SETRESET.includes(v)){const n=HubSettings.get('personalisation.name'),fs=v==='personalisation'?g('personalisation.fontSize'):null,dv=v==='device'?[g('device.touch'),g('device.dashDensity')]:null,pr=v==='accessibility'?g('accessibility.pullRefresh'):null,rp=v==='study'?g('study.resumePos'):null;HubSettings.reset(v);if(dv){HubSettings.set('device.touch',dv[0]);HubSettings.set('device.dashDensity',dv[1])}if(pr!=null)HubSettings.set('accessibility.pullRefresh',pr);if(rp!=null)HubSettings.set('study.resumePos',rp);if(v==='dashboard'){HubSettings.set('device.dashDensity','auto');HubSettings.set('accessibility.pullRefresh',true);HubSettings.set('study.resumePos',true)}if(v==='accessibility'){HubSettings.set('personalisation.fontSize','medium');HubSettings.set('device.touch','auto');try{localStorage.removeItem('hsc-hub-a11y-setups')}catch(e){}}if(v==='personalisation'){HubSettings.set('personalisation.name',n);HubSettings.set('personalisation.fontSize',fs)}
   askReset=null;rmsg=v;rerender();const b=$('[data-a=sreset]');if(b)b.focus({preventScroll:true})}
 });
 document.addEventListener('input',e=>{const i=e.target.id||'';if(i==='acc'){HubSettings.set('personalisation.accent',e.target.value);HubSettings.set('personalisation.look','custom');const l=e.target.closest('.chip');if(l)l.style.setProperty('--c',accentFor(e.target.value,false))}else if(i==='nm')HubSettings.set('personalisation.name',e.target.value.trim());else if((i==='stq'||i==='stx')&&+e.target.value>=1)HubSettings.set('study.'+(i==='stq'?'quickMin':'examMin'),Math.min(i==='stq'?180:240,Math.round(+e.target.value)));else if(i==='goal')HubSettings.set('progress.weeklyGoal',Math.max(0,+e.target.value||0));else if(i.startsWith('ea-')){const d=HubSettings.get('progress.examDates');if(e.target.value)d[i.slice(3)]=e.target.value;else delete d[i.slice(3)];HubSettings.set('progress.examDates',d)}});
@@ -42055,7 +42097,7 @@ document.addEventListener('input',e=>{const i=e.target.id||'';if(i==='acc'){HubS
 const osr=()=>matchMedia('(prefers-reduced-motion:reduce)').matches,fx=k=>!calmOn()&&!!S.fx[k];
 function hud(){const t0=new Date().setHours(0,0,0,0),tm=Math.round(dayMinAll(Date.now())),
  nx=nextAny();
- return `<div class="hud"><span><i class="live"></i>Hub online</span><span id="clk"></span><span id="net"></span><span>Today <b>${tm} min</b></span><span><b>${SUBJECTS.filter(s=>s.src).length}</b>/${SUBJECTS.length} linked</span>${nx?`<span>${nx.x.name} <b class="cdt" data-t="${nx.t}"></b></span>`:''}</div>`}
+ return `<div class="hud"><span><i class="live"></i>Hub online</span><span id="clk"></span><span id="net"></span><span>Today <b>${tm} min</b></span><span><em><b>${SUBJECTS.filter(s=>s.src).length}</b>/${SUBJECTS.length} linked</em></span>${nx?`<span>${nx.x.name} <b class="cdt" data-t="${nx.t}"></b></span>`:''}</div>`}
 setInterval(()=>{const c=$('#clk');if(c)c.textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
 let ty=0;
 let postRt='';
@@ -42070,7 +42112,7 @@ function post(){
  if(fx('intro')&&!still)document.querySelectorAll('.ctr').forEach(e=>{const m=/^(\d+)(.*)$/.exec(e.textContent);if(!m)return;const n=+m[1],t0=performance.now();
   (function f(t){const p=Math.min(1,(t-t0)/1000);e.textContent=Math.round(n*(1-Math.pow(1-p,3)))+m[2];if(p<1)requestAnimationFrame(f)})(t0)})}
 /* cursor light */
-addEventListener('pointermove',e=>{const r=document.documentElement.style;const z=HubDevice.z||1;r.setProperty('--gx',e.clientX/z+'px');r.setProperty('--gy',e.clientY/z+'px');
+addEventListener('pointermove',e=>{const r=document.documentElement.style;const z=HubDevice.z||1;if(e.pointerType==='touch'&&document.body.classList.contains('no-touchfx'))return;r.setProperty('--gx',e.clientX/z+'px');r.setProperty('--gy',e.clientY/z+'px');
  const c=e.target.closest&&e.target.closest('.card');if(c){const b=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-b.left)/z+'px');c.style.setProperty('--my',(e.clientY-b.top)/z+'px')}},{passive:true});
 /* particle network */
 (function(){const cv=$('#fx'),x=cv.getContext('2d');let W,H,P=[],mx=-999,my=-999;
@@ -42589,11 +42631,11 @@ function acView(){
   ct=g('accessibility.contrast'),osHc=matchMedia('(prefers-contrast: more)').matches,osRm=matchMedia('(prefers-reduced-motion:reduce)').matches,fsys=g('accessibility.followSystem')!==false,tc=g('device.touch'),
   usc=ACU.map(s=>{const bad=(!sup&&s!==100)||s/100>mx;return `<button class="chip ${z===s?'on':''}" aria-pressed="${z===s}" data-a="acus" data-v="${s}" ${bad?'disabled aria-disabled="true" style="opacity:.45"':''}>${s}%</button>`}).join('');
  return `<div class="card"><h3>Quick setups</h3>${setRow('Start from a setup','Each one changes several settings at once. Tap a setup again to turn it off and go back to your earlier settings.',grp('Quick setups',ACPROF.map(p=>cb('acprof',p[0],acProfOn(p),p[1])).join('')))}</div>
-<div class="card"><h3>Text and size</h3>${setRow('Text size','Changes the size of text only. The same setting is in Personalisation.',acCh('acsz','Text size',g('personalisation.fontSize'),ACS))}
+<div class="card"><h3>Text and size</h3>${setRow('Text size','Changes the size of text only.',acCh('acsz','Text size',g('personalisation.fontSize'),ACS))}
 ${setRow('Interface scale',sup?'Scales everything together: text, buttons, icons and spacing. Larger scales need a wider screen'+(want!==z&&want>100?'. Your saved '+want+'% is too large for this screen, so '+z+'% is in use':''):'This browser cannot scale the whole interface. Use Text size instead.',grp('Interface scale',usc))}</div>
 <div class="card"><h3>Contrast</h3>${setRow('Contrast level','Higher darkens grey text and strengthens borders and keeps the Hub\'s look. Highest also makes colours flat and removes glass and glow effects.'+(ct==='system'?(osHc?' Your device is asking for more contrast, so Highest is on.':' Your device is not asking for more contrast, so Standard is on.'):''),acCh('acct','Contrast level',ct,ACC))}</div>
 <div class="card"><h3>Motion</h3>${setRow('Motion level','How much the Hub animates',grp('Motion level',[['full','Full'],['subtle','Subtle'],['off','Off']].map(([k,n])=>cb('preset',k,ps===k,n)).join('')))}${setRow('Follow my device','Turns animation off when your device asks for reduced motion.'+(fsys&&osRm?' Your device is asking for it now, so animation is off.':''),`<button class="sw" role="switch" aria-checked="${fsys}" aria-label="Follow my device reduce-motion setting" data-a="acfs"></button>`)}${[['bg','Background particles'],['glow','Cursor glow'],['shine','Glow and shine on headings and icons'],['intro','Entrance, typing and count-up'],['loop','Looping shimmer, spin and pulse'],['hover','Hover lift and animated borders'],['blur','Glass blur (turn off if it lags)']].map(([k,n])=>setRow(n,'',swt(k,!calm&&f[k],n))).join('')}</div>
-<div class="card"><h3>Touch and spacing</h3>${setRow('Touch target size','Minimum height of buttons and controls. Auto uses larger targets on touch screens ('+HubDevice.st.touch+' now). The same setting is in Device & Layout.',acCh('actc','Touch target size',tc,ACT))}${setRow('Spacing','More room between lines, words, rows and cards',acCh('acsp','Spacing',g('accessibility.spacing'),ACP))}</div>
+<div class="card"><h3>Touch and spacing</h3>${setRow('Touch target size','Minimum height of buttons and controls. Auto uses larger targets on touch screens ('+HubDevice.st.touch+' now).',acCh('actc','Touch target size',tc,ACT))}${setRow('Touch glow and tap circle','The glow that follows your finger on cards and the circle that pops where you tap. Turn off for a calmer, plainer touch.',`<button class="sw" role="switch" aria-checked="${g('accessibility.touchFx')!==false}" aria-label="Touch glow and tap circle" data-a="actf"></button>`)}${setRow('Spacing','More room between lines, words, rows and cards',acCh('acsp','Spacing',g('accessibility.spacing'),ACP))}</div>
 <div class="card"><h3>Focus indicator</h3>${setRow('Outline style','The outline that shows which control the keyboard (or an external keyboard on iPad) is on',acCh('acfo','Outline style',g('accessibility.focus'),ACF))}<p class="mu sm" style="margin:8px 0 6px">Press Tab to move onto these and see the outline:</p><div class="chips"><button class="btn">Sample button</button><button class="chip">Sample chip</button><input type="text" placeholder="Sample field" aria-label="Sample field" style="width:180px"></div></div>`}
 
 /* ---------- events ---------- */
@@ -42857,7 +42899,7 @@ function imView(){const cur=Object.keys(IMPRE).find(n=>Object.entries(IMPRE[n]).
  return wView()+mxView()+`<div class="card"><h3>Presets</h3><p class="mu sm" style="margin-top:0">Everything is off until you choose it. Pick a starting point, then adjust anything below.${calmOn()?' <b>Reduce motion is on</b>, so effects appear still instead of moving.':''}</p>${setRow('Preset','Gentle: soft pulse, vignette, timer ring and progress line. Immersive: adds aurora, dimmer focus and a clock.',grp('Preset',[['off','Off'],['gentle','Gentle'],['full','Immersive']].map(([v,n])=>`<button class="chip ${cur===v?'on':''}" aria-pressed="${cur===v}" data-a="impre" data-v="${v}">${n}</button>`).join('')))}
 <div class="chips" style="margin-top:12px"><button class="btn" data-a="impv">Preview for 6 seconds</button><span class="mu sm">${cur?'Current: '+({off:'Off',gentle:'Gentle',full:'Immersive'}[cur]):'Current: custom'}</span></div></div>
 <div class="card"><h3>Ambient background</h3>${setRow('Effect','A very quiet layer behind the Hub. Aurora drifts slowly, Grid is a faint lit lattice, Pulse breathes gently.',imC('ambient','Ambient effect',[['off','Off'],['aurora','Aurora'],['grid','Grid'],['pulse','Pulse']]))}${setRow('Show','',imC('ambientWhen','When to show',[['always','Always'],['session','During sessions']]))}${setRow('Strength','Low is the default and is meant to be barely noticed',imC('ambientLevel','Strength',[['low','Low'],['medium','Medium']]))}</div>
-<div class="card"><h3>Interface animations</h3>${setRow('Subtle interface animations','Pages ease in when you switch screens, cards glow softly on hover and buttons press in slightly. Used only when the opening animation below is off, so the two never stack.',imS('ui','Subtle interface animations'))}${setRow('Opening animation','The Hub\'s own typed greeting, staggered fade-in and count-up when a screen opens. Switch off for a screen that simply appears. Also under Accessibility, Motion.',swt('intro',!g('accessibility.calm')&&!!S.fx.intro,'Opening animation'))}</div>
+<div class="card"><h3>Interface animations</h3>${setRow('Subtle interface animations','Pages ease in when you switch screens, cards glow softly on hover and buttons press in slightly. Used only when Entrance, typing and count-up is off in Accessibility, so the two never stack.',imS('ui','Subtle interface animations'))}</div>
 <div class="card"><h3>Focus atmosphere</h3>${setRow('Atmosphere','Shown while Focus Mode is on. Vignette softly darkens the edges, Deep dims more, Horizon adds a low accent glow.',imC('atmosphere','Focus atmosphere',[['off','Off'],['vignette','Vignette'],['deep','Deep'],['horizon','Horizon']]))}${fm==='off'?'<p class="mu sm" style="margin:0">Focus Mode is off in Study Experience, so this only shows in the preview.</p>':''}</div>
 <div class="card"><h3>During a study session</h3>${setRow('Session visualisation','Timer ring sits in the timer bar. Focus orb is a faint ring behind the page in Focus Mode that fills as time passes.',imC('viz','Session visualisation',[['off','Off'],['ring','Timer ring'],['orb','Focus orb'],['both','Both']]))}${setRow('Progress indicator','A thin line across the top that fills as the session goes',imS('progress','Session progress indicator'))}${setRow('Clock','A small clock in the top corner',imC('clock','Clock',[['off','Off'],['session','During sessions'],['always','Always']]))}${setRow('24-hour clock','',imS('clock24','24-hour clock'))}${setRow('Show seconds','',imS('clockSec','Show seconds on the clock'))}</div>
 <div class="card"><h3>Minimal mode</h3>${setRow('Minimal mode','Hides the background effects, status bar and Customise button, fades the sidebar until you point at it, and narrows the page. The timer, clock and progress line stay.',imC('minimal','Minimal mode',[['off','Off'],['session','During sessions'],['always','Always']]))}</div>`}
@@ -43086,7 +43128,7 @@ window.hubCelebrate=party;
 const tz=document.getElementById('toast');if(tz)new MutationObserver(()=>{if(tz.classList.contains('on')&&/streak|goal|badge|level|achiev|unlock|complete/i.test(tz.textContent))party()}).observe(tz,{attributes:true,attributeFilter:['class']});
 /* taps */
 addEventListener('pointerdown',e=>{try{ac().resume()}catch(_){}
-if(S.tap&&!B.classList.contains('calm')){const d=document.createElement('i');d.className='hx-rp';d.style.cssText=`left:${e.clientX}px;top:${e.clientY}px`;B.appendChild(d);setTimeout(()=>d.remove(),650)}
+if(!B.classList.contains('no-touchfx')&&!B.classList.contains('calm')){const d=document.createElement('i');d.className='hx-rp';d.style.cssText=`left:${e.clientX}px;top:${e.clientY}px`;B.appendChild(d);setTimeout(()=>d.remove(),650)}
 if(S.snd&&e.target.closest&&e.target.closest('button,.btn,.nv,.chip,a'))beep(520,.05,'triangle')},{passive:true});
 /* greeting */
 const QT=[
@@ -43150,11 +43192,11 @@ tg=(k,l)=>`<label class=hx-r><span>${l}</span><input type=checkbox data-k=${k}${
 co=(k,l)=>`<label class=hx-r><span>${l}</span><input type=color data-k=${k} value="${S[k]||'#6b4cf6'}"></label>`;
 const F=[['','Default'],['system','System'],['serif','Serif'],['rounded','Rounded'],['mono','Mono'],['easy','Easy-read']];
 return `<h4>Background</h4>${sl('bgi','Intensity',0,100)}${co('bgc','Tint colour')}<button data-c=clr>No tint</button>${tg('sub','Tint changes per subject')}
-<h4>Cards</h4>${sl('cop','Card opacity',20,100)}${sl('cbl','Glass blur',0,30)}
+<h4>Cards</h4>${sl('cop','Card opacity',20,100)}${sl('cbl','Glass blur amount',0,30)}
 <h4>Theme pack</h4>${se('pack','Pack',[['','Hub default'],['oled','Midnight OLED'],['paper','Paper'],['neon','Neon'],['nord','Nord'],['cyber','Cyberpunk']])}
 <h4>Type and accent</h4>${se('hf','Headings',F)}${se('bf','Body',F)}${tg('ag','Accent gradient')}${co('a2','Second colour')}
-<h4>Feel</h4>${tg('tap','Tap ripple')}${tg('cel','Celebrations')}${se('cst','Style',[['confetti','Confetti'],['stars','Stars'],['flames','Flames'],['hearts','Hearts']])}<button data-c=party>Test</button>
-${tg('snd','Sounds')}${sl('vol','Volume',0,100)}
+<h4>Feel</h4>${tg('cel','Celebrations')}${se('cst','Style',[['confetti','Confetti'],['stars','Stars'],['flames','Flames'],['hearts','Hearts']])}<button data-c=party>Test</button>
+${tg('snd','Click and celebration sounds')}${sl('vol','Volume',0,100)}
 <h4>Greeting</h4>${tg('qt','Quote of the day')}
 <button data-c=reset>Reset all</button>`}
 const hxFill=()=>{const h=document.getElementById('hx-set');if(h)h.innerHTML=build()};
@@ -43166,6 +43208,44 @@ if(/^#settings/.test(location.hash))dispatchEvent(new HashChangeEvent('hashchang
 ap();{const m=document.getElementById('main');if(m){new MutationObserver(()=>{if(S.qt&&grNeed())gr()}).observe(m,{childList:true});if(S.qt&&grNeed())gr()}}
 addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn();ta();if(grNeed())gr()},1200);
 }catch(err){console.warn('Style studio',err)}})();
+</script>
+<script>
+/* Dashboard pull-to-refresh (touch). Only #main moves; the sticky top bar is outside it and never does. */
+(function(){
+ var main=document.getElementById('main');if(!main)return;
+ var MAXD=130,TH=64,y0=0,x0=0,on=false,armed=false,busy=false,d=0,ind=null;
+ var ok=function(t){return !(t&&t.closest&&t.closest('input,textarea,select,[contenteditable="true"],#cp,canvas'))};
+ var canStart=function(e){return !busy&&!(window.HubSettings&&HubSettings.get('accessibility.pullRefresh')===false)&&e.touches.length===1&&main.dataset.view==='dash'&&(window.scrollY||document.documentElement.scrollTop)<=0&&!document.body.classList.contains('nav')&&ok(e.target)};
+ function mk(){if(!ind){ind=document.createElement('div');ind.id='ptr';ind.setAttribute('aria-hidden','true');ind.innerHTML='<i></i>'}if(ind.parentNode!==main)main.insertBefore(ind,main.firstChild)}
+ function set(v){d=v;main.style.transform=v?'translate3d(0,'+v+'px,0)':'';if(ind){var p=Math.min(1,v/TH),i=ind.firstChild;i.style.opacity=p;if(!busy)i.style.transform='scale('+(.6+.4*p)+') rotate('+(p*270)+'deg)'}}
+ function end(){document.body.classList.remove('ptr-on','ptr-snap');main.style.transform='';main.style.willChange='';if(ind&&ind.parentNode)ind.remove();d=0;busy=false}
+ function snap(then){document.body.classList.add('ptr-snap');set(0);setTimeout(function(){end();if(then)then()},400)}
+ addEventListener('touchstart',function(e){on=false;armed=false;if(!canStart(e))return;y0=e.touches[0].clientY;x0=e.touches[0].clientX;on=true},{passive:true});
+ addEventListener('touchmove',function(e){
+  if(!on||busy)return;
+  var t=e.touches[0],dy=t.clientY-y0,dx=t.clientX-x0;
+  if(!armed){if(dy<=6&&Math.abs(dx)>10){on=false;return}if(dy<=6)return;if(Math.abs(dx)>dy){on=false;return}if((window.scrollY||0)>0){on=false;return}armed=true;mk();document.body.classList.remove('ptr-snap');document.body.classList.add('ptr-on')}
+  if(e.cancelable)e.preventDefault();
+  var v=MAXD*(1-Math.exp(-dy*.55/MAXD));
+  var was=ind&&ind.classList.contains('go');
+  set(v);
+  var now=v>=TH;ind.classList.toggle('go',now);
+  if(now&&!was&&navigator.vibrate)try{navigator.vibrate(8)}catch(_){}
+ },{passive:false});
+ function release(){
+  if(!on||!armed){on=false;return}
+  on=false;armed=false;
+  if(d>=TH){
+   busy=true;document.body.classList.add('ptr-snap');set(TH*.85);ind.classList.add('spin');ind.firstChild.style.opacity=1;ind.firstChild.style.transform='';
+   var t0=Date.now();
+   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(function(r){if(r)r.update().catch(function(){})}).catch(function(){})}catch(_){}
+   var done=function(){var wait=Math.max(0,700-(Date.now()-t0));setTimeout(function(){snap(function(){try{if(typeof render==='function'){render()}}catch(err){console.warn('refresh',err)}})},wait)};
+   done();
+  }else snap();
+ }
+ addEventListener('touchend',release,{passive:true});
+ addEventListener('touchcancel',release,{passive:true});
+})();
 </script>
 </body>
 </html>
