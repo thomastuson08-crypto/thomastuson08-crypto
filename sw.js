@@ -7,7 +7,7 @@
  * connected subject, so offline works automatically. Listing it in SUBJECT_FILES as well makes it download on
  * install, so it is ready the very first time, not just after the first visit.
  */
-const VERSION = 'v49';
+const VERSION = 'v65';
 const CORE_CACHE = 'hsc-hub-core-' + VERSION;   // versioned: replaced on every update
 const FONT_CACHE = 'hsc-hub-fonts-v1';          // Google font files: kept across updates, they never change
 const KEEP = [CORE_CACHE, FONT_CACHE];
