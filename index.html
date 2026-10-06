@@ -44054,7 +44054,7 @@ const clock=()=>{const h=new Date().getHours();return h>=20||h<5?'night':h>=17||
 function swCond(w){const vs=w.v,v=g('immersive.swVar'),W=vs.includes(v)?v:vs[0],tm=g('immersive.swTime');return{W,T:w.t&&tm!=='auto'?(tm==='live'?clock():tm):w.T}}
 function swLayers(w,T){const win=w.sk==='w',sk=win?((w.sks&&w.sks[T])||SKYT[T]):w.sk,hc=win?({day:w.hd||'#587794',sunset:w.hs||'#2a1d3a',night:w.hc})[T]:w.hc;
  const ce=w.ex==='earth'?CE.earth:w.ex==='moon'?CE.moon:win?(T==='night'?CE.moon:T==='sunset'?CE.sset:CE.sun):'';
- const tz=w.sty&&g('immersive.swStyle')==='toon',k=w.id+'|'+(win?T:'-')+(tz?'c':'');let ho=SWC[k];if(ho===undefined){ho=SWC[k]=w.ho?'data:image/svg+xml,'+enc(H(tz?w.ho:w.ho+'r',hc,w.a,w.id.length*31+w.id.charCodeAt(0),T)):'';SWC[k+'w']=w.ho&&H.w?H.w.map(x=>x?'data:image/svg+xml,'+enc(x):''):['','']}
+ const tz=w.sty&&g('immersive.swStyle')==='toon',k=w.id+'|'+(win?T:'-')+(tz?'c':'');let ho=SWC[k];if(ho===undefined){ho=SWC[k]=w.ho?'data:image/svg+xml,'+enc(H(w.sty&&!tz?w.ho+'r':w.ho,hc,w.a,w.id.length*31+w.id.charCodeAt(0),T)):'';SWC[k+'w']=w.ho&&H.w?H.w.map(x=>x?'data:image/svg+xml,'+enc(x):''):['','']}
  return{sky:`linear-gradient(180deg,${sk[0]},${sk[1]} 55%,${sk[2]})`,ce,ho,hw:SWC[k+'w']}}
 function swGrade(w,c){const t=[];if(c.W==='rain')t.push('rgba(12,20,40,.22)');if(c.W==='storm')t.push('rgba(8,12,30,.38)');if(c.W==='snow')t.push('rgba(225,235,245,.10)');if(c.W==='mist')t.push('rgba(190,205,225,.16)');
  if(w.sk!=='w'&&w.t){if(c.T==='sunset')t.push('rgba(255,140,70,.16)');if(c.T==='night')t.push('rgba(12,22,70,.42)')}
