@@ -41945,7 +41945,7 @@ const FXK=['bg','glow','shine','intro','loop','hover','blur'],SUB={bg:0,glow:0,s
 LOOKS=[['violet','Violet','#6b4cf6'],['ocean','Ocean','#0e7fc4'],['forest','Forest','#178a5c'],['sunset','Sunset','#e0592b'],['rose','Rose','#d02a68'],['mono','Mono','#2a2a2a']];
 S.fx=Object.assign({bg:1,glow:1,shine:1,intro:1,loop:1,hover:1,blur:1},S.fx);S.ea=S.ea||{};
 const pset=()=>S.calm?'off':FXK.every(k=>S.fx[k])?'full':FXK.every(k=>!!S.fx[k]===!!SUB[k])?'subtle':'custom';
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{if(window.__hubRestoring)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let IX={};try{IX=JSON.parse(localStorage.getItem('hsc-hub-idx'))||{}}catch(e){}const saveIx=()=>{try{localStorage.setItem('hsc-hub-idx',JSON.stringify(IX))}catch(e){}};
 
 /* ===== central settings store =====
@@ -42115,8 +42115,8 @@ const IDLE=()=>{const v=+HubSettings.get('progress.idleMin');return [2,3,5,10].i
 const SMIN=()=>{const v=+HubSettings.get('progress.streakMin');return v>=5&&v<=240?v:20};   /* minutes needed in a day to count towards the streak */
 const engKey=()=>{const id=curSubj();if(id)return id;const rt=location.hash.slice(1).split('/')[0];return rt==='exam'&&!document.body.classList.contains('xc-on')?'_hub':''};
 const engLive=()=>{const r=S.run;return !!engKey()&&!document.hidden&&PT('trackActive')&&!(r&&r.paused==null&&!r.over)&&Date.now()-lastIn<=IDLE()*6e4};
-function tdyDraw(){const e=document.getElementById('tdy');if(!e)return;const r=S.run,m=dayMinAll(Date.now())+(r?ranSec(r)/60:0)+(engLive()?tailS/60:0),
- w=r&&!r.over?(r.paused!=null?'timer paused':'timer running'):!PT('trackActive')?'auto-count off':engLive()?'counting':'paused, idle',h='Today <b>'+hm(Math.round(m))+'</b> · '+w;
+function tdyDraw(){const e=document.getElementById('tdy');if(!e)return;const r=S.run,sid=curSubj(),m=(sid?dayMinSub(sid,Date.now()):dayMinAll(Date.now()))+(r&&(!sid||r.subj===sid)?ranSec(r)/60:0)+(engLive()&&(!sid||tailK===sid||!tailK)?tailS/60:0),
+ w=r&&!r.over&&(!sid||r.subj===sid)?(r.paused!=null?'timer paused':'timer running'):!PT('trackActive')?'auto-count off':engLive()?'counting':'paused, idle',h='Today <b>'+hm(Math.round(m))+'</b> · '+w;
  if(e.dataset.h!==h){e.dataset.h=h;e.innerHTML=h}}
 setInterval(()=>{const now=Date.now(),dt=Math.min(10,(now-engAt)/1000);engAt=now;
  if(++engN%6===0&&engDirty){engDirty=false;save()}
@@ -42172,7 +42172,7 @@ const focusCard=()=>{const conn=SUBJECTS.filter(s=>s.src);if(!conn.length)return
  return `<div class="card sec"><h2>What to spend more time on</h2><div class="mu sm" style="line-height:1.7"><div>Least time this week: <b>${low.s.name}</b> (${hm(Math.round(low.f.min))}).${none.length?' No Exam Centre exam completed yet in: '+none.join(', ')+'.':''}</div><div>Sorted from least to most time over the last 7 days. An exam you finish in the Exam Centre counts as study time and as a completed exam for that subject. One you leave early still counts its time and the questions you answered, shown as unfinished.</div>${!PT('trackSessions')?'<div><b>Study sessions are switched off in Progress settings, so Exam Centre exams and timer blocks are not being recorded.</b></div>':''}${!PT('saveExams')?'<div>Saving exam attempts is switched off, so latest saved paper scores will not update. Completed exams are still counted.</div>':''}</div>${lines}</div>`};
 /* Plan for this week: what to do next, the weekly goal, exam countdown and the trend of saved paper scores. Everything is read from data the app already keeps. */
 const goalMin=()=>+HubSettings.get('progress.weeklyGoal')||S.goal||0;
-function paperScores(id){let a=[];try{a=X.hist.filter(h=>h.subj===id&&h.tot&&h.tot.max>0).sort((x,y)=>x.t-y.t).slice(-6).map(h=>Math.round(h.tot.got/h.tot.max*100))}catch(e){}return a}
+function paperScores(id,vr){let a=[];try{a=X.hist.filter(h=>h.subj===id&&(!vr||h.vr===vr)&&h.tot&&h.tot.max>0).sort((x,y)=>x.t-y.t).slice(-6).map(h=>Math.round(h.tot.got/h.tot.max*100))}catch(e){}return a}
 function nextExam(id){const n=Date.now();return EXAMS.filter(x=>x.subj===id&&at(x)>n).sort((a,b)=>at(a)-at(b))[0]||null}
 const daysTo=x=>Math.max(0,Math.ceil((at(x)-Date.now())/864e5));
 /* The subject that most needs time (little progress, exam close, little time this week) and the one thing to do in it. */
@@ -42190,8 +42190,8 @@ function planCard(){try{const conn=SUBJECTS.filter(s=>s.src);if(!conn.length)ret
  const nx=nextUp(),gl=goalMin(),tw=Math.round(week().reduce((a,d)=>a+d.m,0)),gp=gl?Math.min(100,Math.round(tw/gl*100)):0;
  const goal=gl?`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>Weekly goal</b><span class="mu sm">${hm(tw)} of ${hm(gl)} in the last 7 days · ${gp>=100?'goal reached':hm(gl-tw)+' to go'}</span></div>${bar(gp,'var(--br)')}</div>`:`<div class="mu sm" style="margin-top:14px"><b>Weekly goal</b> · not set. <a href="#settings/progress" data-go="settings/progress">Set one in Progress settings</a> to see a bar here.</div>`;
  const ex0=EXAMS.filter(x=>at(x)>Date.now()).sort((a,b)=>at(a)-at(b)),ex=ex0.slice(0,3),more=ex0.length-ex.length,
-  exm=ex.length?ex.map(x=>{const d=daysTo(x),sc=x.subj?paperScores(x.subj):[],f=x.subj?subjFocus(sub(x.subj)):null;
-   return `<div class="mu sm" style="margin-top:4px"><b>${esc(x.name)}</b> · ${new Date(at(x)).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})} · <b>${d===0?'today':d+' day'+(d===1?'':'s')}</b>${f?' · '+hm(Math.round(f.min))+' this week':''}${sc.length?' · latest paper '+sc[sc.length-1]+'%':''}</div>`}).join('')+(more>0?`<div class="mu sm" style="margin-top:4px">and ${more} later</div>`:''):'<div class="mu sm" style="margin-top:4px">No upcoming exam dates. Add them on the Hub to see a countdown.</div>';
+  exm=ex.length?ex.map(x=>{const d=daysTo(x),sc=x.subj?paperScores(x.subj,x.vr):[],f=x.subj?subjFocus(sub(x.subj)):null;
+   return `<${x.vr?'a href="#exam" data-xc="start" data-v="'+x.subj+'" data-vr="'+x.vr+'" title="Open this paper in the Exam Centre" style="display:block;margin-top:4px;color:inherit;text-decoration:none"':'div style="margin-top:4px"'} class="mu sm"><b${x.vr?' style="text-decoration:underline"':''}>${esc(x.name)}</b> · ${new Date(at(x)).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})} · <b>${d===0?'today':d+' day'+(d===1?'':'s')}</b>${f?' · '+hm(Math.round(f.min))+' this week':''}${sc.length?' · latest paper '+sc[sc.length-1]+'%':''}</${x.vr?'a':'div'}>`}).join('')+(more>0?`<div class="mu sm" style="margin-top:4px">and ${more} later</div>`:''):'<div class="mu sm" style="margin-top:4px">No upcoming exam dates. Add them on the Hub to see a countdown.</div>';
  const tr=conn.map(s=>{const a=paperScores(s.id);let t;
   if(!a.length)t=PT('saveExams')?'No saved paper yet':'No saved paper (saving exams is off)';
   else{const dl=a.length>1?a[a.length-1]-a[a.length-2]:null;t=a.join('% → ')+'%'+(dl==null?' · one paper so far':' · '+(dl>0?'up '+dl:dl<0?'down '+(-dl):'no change')+' since the last')}
@@ -42266,7 +42266,7 @@ function ring(){
  return `<div style="position:relative;width:190px;height:190px;flex:none"><svg viewBox="0 0 120 120" width="190" height="190" role="img" aria-label="Overall HSC progress">${arcs}</svg><div style="position:absolute;inset:0;display:grid;place-content:center;text-align:center"><div class="ctr">${avg==null?'–':avg+'%'}</div><div class="mu sm">${rep.length} of ${SUBJECTS.length} reporting</div></div></div>`}
 const bar=(p,c)=>`<div class="bar" style="--c:${c}"><i style="width:${p||0}%"></i></div>`;
 const status=s=>{if(!s.src)return 'Not connected yet';const p=sd(s.id).pct,w=subWeek(s.id);return (p==null?'No progress reported yet':p+'% complete')+(w?' · '+hm(w)+' this week':'')};
-const EXAMS=[{id:'eng1',subj:'english',name:'Standard English Paper 1',at:'2026-10-13T09:50'},{id:'eng2',subj:'english',name:'Standard English Paper 2',at:'2026-10-14T09:25'},{id:'history',subj:'history',name:'Modern History',at:'2026-10-16T09:25'},{id:'maths',subj:'maths',c:'#8b5cf6',name:'Standard Mathematics',at:'2026-10-19T09:20'},{id:'business',subj:'business',name:'Business Studies',at:'2026-10-26T09:25'},{id:'economics',subj:'economics',name:'Economics',at:'2026-10-27T13:55'}];
+const EXAMS=[{id:'eng1',subj:'english',vr:'p1',name:'Standard English Paper 1',at:'2026-10-13T09:50'},{id:'eng2',subj:'english',vr:'p2',name:'Standard English Paper 2',at:'2026-10-14T09:25'},{id:'history',subj:'history',name:'Modern History',at:'2026-10-16T09:25'},{id:'maths',subj:'maths',c:'#8b5cf6',name:'Standard Mathematics',at:'2026-10-19T09:20'},{id:'business',subj:'business',name:'Business Studies',at:'2026-10-26T09:25'},{id:'economics',subj:'economics',name:'Economics',at:'2026-10-27T13:55'}];
 const at=x=>+new Date((S.ea&&S.ea[x.id])||x.at),xc=x=>x.subj?sub(x.subj).c:x.c,
  nextAny=()=>EXAMS.map(x=>({x,t:at(x)})).filter(o=>o.t>Date.now()).sort((a,b)=>a.t-b.t)[0],
  whenS=t=>new Date(t).toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}),
@@ -43476,7 +43476,7 @@ const HubBackup=(()=>{
   for(;;){try{localStorage.setItem(SK,JSON.stringify(a));return b}catch(e){if(a.length<=1)return null;a.pop()}}}
  const valid=j=>!!j&&j.app==='hsc-hub'&&j.ls&&typeof j.ls==='object'&&!Array.isArray(j.ls)&&(j.v==null||j.v<=2);
  function download(b,name){const u=URL.createObjectURL(new Blob([JSON.stringify(b)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1e3)}
- async function restore(b){await snap('safety');
+ async function restore(b){await snap('safety');window.__hubRestoring=true;   /* stops the page saving its old in-memory state over the restored data as it reloads */
   for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k!==SK&&k.indexOf('hsc-hub')===0&&!(k in b.ls))localStorage.removeItem(k)}
   Object.entries(b.ls).forEach(([k,v])=>{if(typeof v==='string'&&k!==SK)localStorage.setItem(k,v)});
   for(const id of Object.keys(mods))if(b.mods&&id in b.mods){try{await mods[id].import(b.mods[id])}catch(e){}}
