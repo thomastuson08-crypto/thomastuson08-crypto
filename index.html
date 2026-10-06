@@ -43074,10 +43074,33 @@ function xresume(fs){const r=X.run;if(!r)return;if(fs===true)xfsReq();
  {const t=S.run;if(t&&t.paused==null&&!t.over){t.paused=Math.max(0,t.end-Date.now());save();pill();toast('Study timer paused while the exam runs, so the time is not counted twice.',true)}}xopen();xrun();xtick();clearInterval(xti);xti=setInterval(xtick,500)}
 
 /* ---------- running exam ---------- */
-function xrun(){const r=X.run;xo.innerHTML=`<div class="xc-top"><div class="xc-tl"><button class="btn xc-qb" data-xc="qlist" aria-label="Open question list">☰ Questions</button><div><b>${esc(r.paper.title)}</b><div class="mu sm" id="xcph"></div></div></div><div class="xc-clock" id="xccl" role="timer" aria-live="off">--:--</div><div class="xc-r"><span class="mu sm" id="xcsv"${st('saveStatus')===false?' style="display:none"':''}>Answers save automatically</span><span class="mu sm" id="xcpr"></span><button class="btn" data-xc="exit">Exit</button><button class="btn p" data-xc="submit">Submit exam</button></div></div><div id="xcfs"></div><div id="xcbn" aria-live="assertive"></div><div class="xc-body"><nav id="xcnv" aria-label="Question navigation"></nav><section id="xcmain" tabindex="-1"></section></div><div class="xc-foot"><button class="btn" data-xc="prev">← Previous</button><span class="xc-fm"><button class="btn" data-xc="flag" id="xcfl">⚑ Flag for review</button><span class="mu sm xc-keys">← → move · A–D answer · F flag</span></span><button class="btn" data-xc="next">Next →</button></div>`;xnav();xmain();xfsBar()}
+function xrun(){const r=X.run;xo.innerHTML=`<div class="xc-top"><div class="xc-tl"><button class="btn xc-qb" data-xc="qlist" aria-label="Open question list">☰ Questions</button><div><b>${esc(r.paper.title)}</b><div class="mu sm" id="xcph"></div></div></div><div class="xc-clock" id="xccl" role="timer" aria-live="off">--:--</div><div class="xc-r"><span class="mu sm" id="xcsv"${st('saveStatus')===false?' style="display:none"':''}>Answers save automatically</span><span class="mu sm" id="xcpr"></span><button class="btn" data-xc="brk" id="xcbb">Rest break</button><button class="btn" data-xc="exit">Exit</button><button class="btn p" data-xc="submit">Submit exam</button></div></div><div id="xcfs"></div><div id="xcbn" aria-live="assertive"></div><div class="xc-body"><nav id="xcnv" aria-label="Question navigation"></nav><section id="xcmain" tabindex="-1"></section></div><div class="xc-foot"><button class="btn" data-xc="prev">← Previous</button><span class="xc-fm"><button class="btn" data-xc="flag" id="xcfl">⚑ Flag for review</button><span class="mu sm xc-keys">← → move · A–D answer · F flag</span></span><button class="btn" data-xc="next">Next →</button></div>`;xnav();xmain();xfsBar()}
 function xbanner(t,keep){const b=$('#xcbn');if(!b)return;b.innerHTML=`<div class="xc-bn">${t}</div>`;clearTimeout(xbanner.t);if(!keep)xbanner.t=setTimeout(()=>{const c=$('#xcbn');if(c)c.innerHTML=''},9000)}
 function xfsBar(){const b=$('#xcfs');if(!b)return;b.innerHTML=(xfs&&st('fsReminder')!==false&&X.run&&!document.fullscreenElement&&document.documentElement.requestFullscreen)?`<div class="xc-bn xc-fsb">Full screen has ended. The exam clock is still running. <button class="btn" data-xc="fs">Return to full screen</button></div>`:''}
-function xtick(){const r=X.run;if(!r||!xo||xpre)return;const now=Date.now();xbeat(r,now);
+/* ===== Rest breaks inside the exam =====
+   Allowance: 5 minutes per full half-hour of writing time. A break is at least 5 minutes, only in writing time, and the exam
+   clock is paused for its whole length (wEnd moves out by the break). While on break a cover hides the paper, so there is nothing
+   to read, write or turn over. r.bs = start of the running break (0 if none), r.bt = ms of breaks already taken, r.bn = count. */
+const xbAllow=r=>Math.floor(r.paper.minutes/30)*300;
+const xbm=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function xbrkBtn(r){const o=document.getElementById('xcbrk');if(o)o.remove();const b=document.getElementById('xcbb');if(!b)return;
+ const left=Math.max(0,xbAllow(r)-(r.bt||0)/1000);b.textContent='Rest break \u00b7 '+Math.floor(left/60)+' min left';
+ b.disabled=r.phase!=='writing'||left<300;b.title=r.phase!=='writing'?'Rest breaks are taken in writing time':left<300?'Not enough break allowance left (a break is at least 5 minutes)':'Pause the clock for a rest break'}
+function xbrkStart(){const r=X.run;if(!r||r.bs||r.phase!=='writing'||Date.now()>=r.wEnd)return;
+ if(xbAllow(r)-(r.bt||0)/1000<300){xbanner('Not enough break allowance left. A break is at least 5 minutes.');return}
+ r.bs=Date.now();xsave();xtick()}
+function xbrkEnd(){const r=X.run;if(!r||!r.bs)return;const el=Date.now()-r.bs;r.bt=(r.bt||0)+el;r.bn=(r.bn||0)+1;r.wEnd+=el;r.bs=0;
+ const o=document.getElementById('xcbrk');if(o)o.remove();xsave();xtick();xbanner('Break over. The exam clock was paused for the whole break.')}
+function xbrk(r,now){const el=(now-r.bs)/1000,left=xbAllow(r)-(r.bt||0)/1000-el;let o=document.getElementById('xcbrk');
+ if(!o){o=document.createElement('div');o.id='xcbrk';o.setAttribute('role','dialog');o.setAttribute('aria-label','Rest break');
+  o.style.cssText='position:absolute;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:24px;text-align:center;overflow:auto';
+  o.innerHTML='<div style="max-width:460px"><h1 style="margin:0 0 6px">Rest break</h1><p class="mu" style="margin:0 0 18px">The exam clock is paused. Stretch, move, rest or refocus in your seat. No reading, writing, notes or turning over the paper.</p><div class="xc-clock" id="xcbk" style="display:inline-block;font-size:44px;padding:12px 22px">0:00</div><div class="mu sm" id="xcbs" style="margin:10px 0 18px"></div><button class="btn p" data-xc="brkend" id="xcbe" disabled>End break</button></div>';
+  xo.appendChild(o)}
+ document.getElementById('xcbk').textContent=xbm(el);
+ document.getElementById('xcbs').textContent=(el<300?'Minimum break: '+xbm(300-el)+' to go. ':'')+'Allowance left after this break: '+xbm(Math.max(0,left));
+ document.getElementById('xcbe').disabled=el<300;
+ if(left<=0){xbrkEnd();chime('warn')}}
+function xtick(){const r=X.run;if(!r||!xo||xpre)return;const now=Date.now();xbeat(r,now);if(r.bs){xbrk(r,now);return}xbrkBtn(r);
  if(now>=r.wEnd){chime('end');xsubmit(true);return}
  if(r.phase==='reading'&&now>=r.rEnd){r.phase='writing';xsave();xmain(true);xbanner('Reading time is over. Writing time has started.')}
  let left=0;
@@ -43111,7 +43134,7 @@ function xconfirm(){const r=X.run,need=xneeded(r),fl=Object.keys(r.fl).filter(k=
  m.innerHTML=`<div role="dialog" aria-modal="true"><h2 style="margin-top:0">Submit exam?</h2><p>${need.length?`<b>${need.length}</b> question${need.length>1?'s are':' is'} unanswered${Object.keys(by).length?' ('+Object.entries(by).map(([k,v])=>esc(k)+': '+v).join(', ')+')':''}.`:'All questions are answered.'}${fl?` <b>${fl}</b> flagged for review.`:''} Once submitted you cannot change your answers.</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn" data-xc="cancel">Keep working</button><button class="btn p" data-xc="confirm">Submit now</button></div></div>`;xo.appendChild(m);m.querySelector('button').focus()}
 /* Leaving an exam early: the answers are discarded, but the time spent and how many questions were answered are still recorded, as an unfinished exam (not a completed one). */
 /* Seconds of writing time that really passed. The exam keeps a heartbeat (r.alive); a stretch longer than 90 s with none (app closed, phone locked) is taken off, so reopening an exam hours later cannot add that time. */
-const xsecs=(r,now)=>{const e=Math.min(now,r.wEnd);if(e<=r.ws)return 0;let gone=r.gone||0;const a0=Math.max(r.alive||e,r.ws);if(e-a0>9e4)gone+=(e-a0)/1000-1;return Math.max(0,Math.round((e-r.ws)/1000-gone))};
+const xsecs=(r,now)=>{const e=Math.min(now,r.wEnd);if(e<=r.ws)return 0;let gone=r.gone||0;const a0=Math.max(r.alive||e,r.ws);if(e-a0>9e4)gone+=(e-a0)/1000-1;return Math.max(0,Math.round((e-r.ws)/1000-gone-((r.bt||0)+(r.bs?Math.max(0,now-r.bs):0))/1000))};
 function xbeat(r,now){const e=Math.min(now,r.wEnd),a0=Math.max(r.alive||e,r.ws);if(r.alive&&e-a0>9e4)r.gone=(r.gone||0)+(e-a0)/1000-1;r.alive=now;r.hb=(r.hb||0)+1;if(r.hb%30===0)xsaveD()}
 function xpartial(r){try{if(!r||!PT('trackSessions'))return;const now=Date.now(),sec=xsecs(r,now),m=Math.round(sec/60),tot=xitems(r).length,ans=tot-xneeded(r).length,nm=sub(r.subj)?sub(r.subj).name:'Exam Centre';
  if(m<1&&ans<1)return;
@@ -43387,7 +43410,7 @@ ${setRow('Interface scale',sup?'Scales everything together: text, buttons, icons
 <div class="card"><h3>Focus indicator</h3>${setRow('Outline style','The outline that shows which control the keyboard (or an external keyboard on iPad) is on',acCh('acfo','Outline style',g('accessibility.focus'),ACF))}<p class="mu sm" style="margin:8px 0 6px">Press Tab to move onto these and see the outline:</p><div class="chips"><button class="btn">Sample button</button><button class="chip">Sample chip</button><input type="text" placeholder="Sample field" aria-label="Sample field" style="width:180px"></div></div>`}
 
 /* ---------- events ---------- */
-document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!t)return;const a=t.dataset.xc,r=X.run;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!t)return;const a=t.dataset.xc,r=X.run;if(a==='brk'){xbrkStart();return}if(a==='brkend'){xbrkEnd();return}
  if(a==='start')xstart(t.dataset.v,t.dataset.vr);else if(a==='resume'){xresume(true)}
  else if(a==='abandon'){xask('Abandon this exam? Your answers will be discarded, but the time you spent is still recorded as an unfinished exam.','Abandon',()=>{xpartial(X.run);X.run=null;xsave();render()})}
  else if(a==='view')xres(t.dataset.v);else if(a==='close')xclose();
@@ -43422,7 +43445,7 @@ document.addEventListener('input',e=>{const t=e.target;if(!xo||!X.run||!t.datase
  const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD();xnav()});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset.xm)return;const a=X.hist.find(x=>x.id===t.dataset.a);if(!a||!a.paper)return;const q=xfind(a.paper,t.dataset.xm),v=t.value===''?null:Math.max(0,Math.min(q.marks,Math.round(+t.value)));
  a.mk[q.id]=v;a.tot=xsum(a);xplanSync(a);xput(a);xsave();const sc=xo.querySelector('.xc-res');const y=sc.scrollTop;xres(a.id);xo.querySelector('.xc-res').scrollTop=y});
-document.addEventListener('keydown',e=>{if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;const r=X.run,k=e.key;
+document.addEventListener('keydown',e=>{if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;if(X.run.bs)return;const r=X.run,k=e.key;
  if(k==='ArrowRight'){xstep(1);e.preventDefault()}else if(k==='ArrowLeft'){xstep(-1);e.preventDefault()}
  else if(k.length===1&&k.toLowerCase()==='f'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
  else if(/^[a-d]$/i.test(k)){const q=xfind(r.paper,r.cur),i=k.toLowerCase().charCodeAt(0)-97;if(q&&q.type==='mc'&&r.phase==='writing'&&q.options[i]!=null){r.a[q.id]=i;xsaveD();xnav();xmain(true)}}});
@@ -43432,7 +43455,7 @@ addEventListener('pagehide',xsaveNow);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)xsaveNow()});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&xo&&X.run)xfsBar();else{const b=$('#xcfs');if(b)b.innerHTML=''}});
 /* an exam left running is picked up again on load; one whose time has run out is submitted for you */
-function xboot(){const r=X.run;if(!r)return;if(Date.now()>=r.wEnd){xsubmit(true,true);render();return}xresume()}
+function xboot(){const r=X.run;if(!r)return;if(!r.bs&&Date.now()>=r.wEnd){xsubmit(true,true);render();return}xresume()}
 
 
 /* ===== Phase 9: Data & Backup =====
