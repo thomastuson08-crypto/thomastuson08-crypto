@@ -719,6 +719,23 @@ body{overscroll-behavior-y:none}
 #wpop .wgrid{grid-template-columns:repeat(4,1fr);margin:0}#wpop .wt{padding:6px 6px 8px}#wpop .wt i{height:34px}#wpop .wt b{font-size:12px}
 #pill .wsb i{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--g);margin-right:6px;vertical-align:-1px;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--bg) 55%,transparent)}
 @media(max-width:520px){#pill .wsb span{display:none}#pill .wsb i{margin:0}}
+/* Session bar on phones: two tidy rows (label + time, then the buttons) that always fit the screen.
+   On wider screens .pb is transparent to layout, so the bar looks exactly as before. */
+#pill .pb{display:contents}
+@media(max-width:520px){
+#pill{box-sizing:border-box;width:calc(100*var(--vw) - 24px);max-width:440px;flex-wrap:wrap;gap:8px 10px;padding:10px 10px 10px 16px;border-radius:22px;transform:translate(-50%,calc(100% + 80px))}
+#pill.on{transform:translate(-50%,0)}
+#pill .pl{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(13px*var(--fs));font-weight:600;opacity:.75}
+#pill .pt{flex:none;margin-left:auto}
+#pill .pb{display:flex;flex:1 0 100%;flex-wrap:wrap;gap:6px}
+#pill .pb button{flex:1 1 auto;white-space:nowrap;text-align:center;padding:8px 9px}
+#pill .pb .wsb{flex:0 0 auto}
+/* the corner clock and weather chip sat on top of the bar, so it steps aside while a session is running */
+#pill.on~#phud{display:none!important}
+/* keep the last bit of the page clear of the taller bar */
+body:has(#pill.on) main{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)/var(--uz))}
+}
+@media(max-width:380px){#pill .pb{gap:4px}#pill .pb button{padding:8px 7px;font-size:12px}}
 /* ===== Part 3: Progress Universe and Study Garden ===== */
 .un{background:radial-gradient(120% 140% at 50% 120%,#1b1a4d 0,#080a22 55%,#04050f);color:#e8e9ff;border-color:#232a66;overflow:hidden}
 .un h2{color:#fff}.un .mu{color:#9aa0d6}.un svg,.gd svg{display:block;width:100%;height:auto}
@@ -42543,7 +42560,7 @@ let WL=null;function syncWake(){const r=S.run,w=!!r&&r.paused==null&&st('keepAwa
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWake()});
 function pill(){const p=$('#pill'),r=S.run;p.classList.toggle('on',!!r);if(!r){FOC.man=FOC.off=false;wClose()}applyFocus();syncWake();if(typeof imSync==='function')imSync();if(!r)return;
  const o=r.over,fm=st('focusMode');
- p.innerHTML=`<span>${LABEL[r.kind]}${r.subj?' · '+sub(r.subj).name:''}</span><span style="font-size:calc(18px*var(--fs))">${o?'Time\'s up':fmt(left())}</span>`+(o?'<button data-a="extend">+5 min</button>':`<button data-a="pause">${r.paused!=null?'Resume':'Pause'}</button>`)+(fm!=='off'&&!o?`<button data-a="focus" aria-pressed="${FOC.on}">${FOC.on?'Exit focus':'Focus'}</button>`:'')+mxBtn()+wsBtn()+'<button data-a="end">Finish</button>'}
+ p.innerHTML=`<span class="pl">${LABEL[r.kind]}${r.subj?' · '+sub(r.subj).name:''}</span><span class="pt" style="font-size:calc(18px*var(--fs))">${o?'Time\'s up':fmt(left())}</span><div class="pb">`+(o?'<button data-a="extend">+5 min</button>':`<button data-a="pause">${r.paused!=null?'Resume':'Pause'}</button>`)+(fm!=='off'&&!o?`<button data-a="focus" aria-pressed="${FOC.on}">${FOC.on?'Exit focus':'Focus'}</button>`:'')+mxBtn()+wsBtn()+'<button data-a="end">Finish</button></div>'}
 function toast(t,long){let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';e.setAttribute('role','status');e.setAttribute('aria-live','polite');document.body.appendChild(e)}e.textContent=t;e.className='on';clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='',long?12000:6000)}
 let AC=null;const snd=()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){AC=null}return AC};
 document.addEventListener('pointerdown',()=>{if(st('sound'))snd()},{passive:true});
