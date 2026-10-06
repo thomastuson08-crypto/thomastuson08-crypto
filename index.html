@@ -239,7 +239,8 @@ body.no-blur .card,body.no-blur aside{background-color:var(--sf)}
 .cdb b{font-size:30px;line-height:1.1;letter-spacing:-.03em;color:var(--c)}
 #net:empty{display:none}
 .nhost{display:block;--econ-top:var(--hub-top,0px)}
-body.xc-on{overflow:hidden}body.xc-on #pill{display:none!important}
+body.xc-on{overflow:hidden}
+.fold>summary{list-style:none;cursor:pointer}.fold>summary::-webkit-details-marker{display:none}.fold>summary::after{content:"+";margin-left:auto;font-weight:700;color:var(--mu)}.fold[open]>summary::after{content:"\2212"}body.xc-on #pill{display:none!important}
 #xc{position:fixed;inset:0;z-index:2147483000;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:inherit;line-height:1.5}
 #xc *{box-sizing:border-box}
 .xc-top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 18px;border-bottom:1px solid var(--ln);background:var(--sf);flex-wrap:wrap}
@@ -719,23 +720,32 @@ body{overscroll-behavior-y:none}
 #wpop .wgrid{grid-template-columns:repeat(4,1fr);margin:0}#wpop .wt{padding:6px 6px 8px}#wpop .wt i{height:34px}#wpop .wt b{font-size:12px}
 #pill .wsb i{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--g);margin-right:6px;vertical-align:-1px;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--bg) 55%,transparent)}
 @media(max-width:520px){#pill .wsb span{display:none}#pill .wsb i{margin:0}}
-/* Session bar on phones: two tidy rows (label + time, then the buttons) that always fit the screen.
-   On wider screens .pb is transparent to layout, so the bar looks exactly as before. */
+/* Session bar. Wide screens: one row, as before. Phones: row 1 = name, Sound, world, time, Hide; row 2 = Pause, Exit focus, Menu, Finish.
+   Hide shrinks it to a small time chip in the corner (tap the chip to bring the controls back). When no session is running it is truly hidden. */
 #pill .pb{display:contents}
+#pill:not(.on){visibility:hidden;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.3,1.2),visibility 0s .35s}
+#pill .pmn{flex:none}
+#pill.min{left:auto;right:12px;width:auto;max-width:none;flex-wrap:nowrap;gap:0;padding:5px;border-radius:99px;transform:translate(0,calc(100% + 80px))}
+#pill.min.on{transform:none}
+#pill.min .pmn{font-size:calc(16px*var(--fs));font-weight:700;padding:8px 16px;font-variant-numeric:tabular-nums}
+#pill.min.on~#phud{display:none!important}
 @media(max-width:520px){
 #pill{box-sizing:border-box;width:calc(100*var(--vw) - 24px);max-width:440px;flex-wrap:wrap;gap:8px 10px;padding:10px 10px 10px 16px;border-radius:22px;transform:translate(-50%,calc(100% + 80px))}
 #pill.on{transform:translate(-50%,0)}
-#pill .pl{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(13px*var(--fs));font-weight:600;opacity:.75}
-#pill .pt{flex:none;margin-left:auto}
-#pill .pb{display:flex;flex:1 0 100%;flex-wrap:wrap;gap:6px}
-#pill .pb button{flex:1 1 auto;white-space:nowrap;text-align:center;padding:8px 9px}
-#pill .pb .wsb{flex:0 0 auto}
+#pill::after{content:"";order:5;flex:1 0 100%;height:0}
+#pill.min::after{display:none}
+#pill .pl{order:0;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:calc(13px*var(--fs));font-weight:600;opacity:.75}
+#pill [data-a=mxp]{order:1}
+#pill .wsb{order:2}
+#pill .pt{order:3;flex:none}
+#pill .pmn{order:4}
+#pill .pb button:not([data-a=mxp]):not(.wsb){order:6;flex:1 1 auto;white-space:nowrap;text-align:center;padding:8px 9px}
 /* the corner clock and weather chip sat on top of the bar, so it steps aside while a session is running */
 #pill.on~#phud{display:none!important}
 /* keep the last bit of the page clear of the taller bar */
 body:has(#pill.on) main{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)/var(--uz))}
 }
-@media(max-width:380px){#pill .pb{gap:4px}#pill .pb button{padding:8px 7px;font-size:12px}}
+@media(max-width:380px){#pill .pb button:not([data-a=mxp]):not(.wsb){padding:8px 7px;font-size:12px}}
 /* ===== Part 3: Progress Universe and Study Garden ===== */
 .un{background:radial-gradient(120% 140% at 50% 120%,#1b1a4d 0,#080a22 55%,#04050f);color:#e8e9ff;border-color:#232a66;overflow:hidden}
 .un h2{color:#fff}.un .mu{color:#9aa0d6}.un svg,.gd svg{display:block;width:100%;height:auto}
@@ -19472,7 +19482,8 @@ render()})();
       function report() { try {
         if (!window.__hubGet) return;
         var g = window.__hubGet(), t = tab();
-        var o = { type: 'progress', pct: Math.round(g.m.overall * 100), topic: t.label, where: t.id ? '#tab=' + t.id : '',
+        var ps = ''; if (t.id === 'tabPractice') { var sb = root.querySelector('#practiceSubtabs .subtab.active'); ps = sb ? sb.id : ''; }   /* which Questions & Essays sub-tab is open, so the Hub can tell essay writing from practice questions */
+        var o = { type: 'progress', pct: Math.round(g.m.overall * 100), topic: t.label, where: t.id ? '#tab=' + t.id : '', sub: ps,
                   weak: g.weak.slice(0, 10).map(function (w) { return { label: String(w.title || ''), note: String(w.sub || '') }; }) };
         var s = JSON.stringify(o); if (s !== last) { last = s; api.post(o); }
         var n = 0; try { n = srsDueCount(ALL_CARDS); } catch (x) {}
@@ -19482,6 +19493,7 @@ render()})();
       window.addEventListener('econ-act', function () { setTimeout(report, 300); });
       RD.addEventListener('visibilitychange', report);
       var nav = root.getElementById('mainNav'); if (nav) nav.addEventListener('click', function () { setTimeout(report, 60); });
+      try { root.addEventListener('click', function (e) { var n = e.target && e.target.closest ? e.target.closest('.subtab') : null; if (n) setTimeout(report, 60); }); } catch (x) {}
       setInterval(report, 5000); setTimeout(report, 1500);
       try {
         var tabs = Array.prototype.map.call(root.querySelectorAll('#mainNav .viewtab'), function (b) {
@@ -42009,7 +42021,7 @@ window.HubSettings=HubSettings;
  'dashboard.show':v=>O(v)?Object.fromEntries(Object.entries(v).filter(([,x])=>typeof x==='boolean')):undefined,
  'dashboard.landing':one('dashboard','last','subject','quick','exam','progress','saved'),
  'dashboard.defaultSubject':v=>v===''||(typeof v==='string'&&SUBJECTS.some(s=>s.id===v))?v:undefined,
- 'progress.weeklyGoal':num(0,10080),
+ 'progress.weeklyGoal':num(0,10080),'progress.streakMin':num(5,240),
  'progress.examDates':v=>O(v)?Object.fromEntries(Object.entries(v).filter(([,x])=>typeof x==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?$/.test(x)&&!isNaN(new Date(x)))):undefined,
  'notifications.quietFrom':hm,'notifications.quietTo':hm,'notifications.studyTime':hm,'notifications.dailyTime':hm,
  'notifications.studyDays':list([0,1,2,3,4,5,6],1),
@@ -42027,7 +42039,7 @@ const dc=k=>HubSettings.get('dashboard.'+k);
 HubSettings.register('study',{focusMode:'manual',focusNav:true,focusBg:true,focusFs:false,quickMin:10,examMin:60,warnings:true,warnAt:[5,1],warnExam:true,endBehaviour:'finish',confirmFinish:false,keepAwake:false,sound:true,soundVol:'medium',soundWarn:true,soundEnd:true,confirmSubmit:'always',fsExam:true,fsReminder:true,autoSave:'instant',saveStatus:true,resume:'dashboard',resumePos:true,resumeCard:true});
 const st=k=>HubSettings.get('study.'+k);
 HubSettings.register('device',{mode:'auto',nav:'auto',width:'auto',cards:'auto',touch:'auto',dashDensity:'auto',bottomAutoHide:false});
-HubSettings.register('progress',{weeklyGoal:0,examDates:{},trackSessions:true,trackActive:true,trackPractice:true,saveExams:true,recordActivity:true,detectWeak:true});
+HubSettings.register('progress',{weeklyGoal:0,examDates:{},trackSessions:true,trackActive:true,idleMin:3,streakMin:20,countHand:true,trackPractice:true,saveExams:true,recordActivity:true,detectWeak:true});
 HubSettings.register('notifications',{system:false,quietOn:true,quietFrom:'22:00',quietTo:'07:00',study:false,studyTime:'16:00',studyDays:[1,2,3,4,5],studySkip:true,exam:false,examLead:[7,1,0],done:true,daily:false,dailyTime:'07:30',milestones:false});
 const PT=k=>HubSettings.get('progress.'+k)!==false;   /* Phase 6: is this kind of progress being recorded? */
 HubSettings.register('accessibility',{calm:false,fx:{bg:1,glow:1,shine:1,intro:1,loop:1,hover:1,blur:1},followSystem:true,uiScale:100,contrast:'system',spacing:'normal',focus:'standard',pullRefresh:true,touchFx:false});
@@ -42047,32 +42059,154 @@ const logAct=(text,subject)=>{if(!PT('recordActivity'))return;S.act.unshift({tex
 
 /* ===== study activity =====
    A syllabus tick says what has been covered, not how much work went in. While a subject is open and the student is actually doing
-   something in it (a click, a key press, a scroll; idle after 90 seconds), the Hub adds that time to the subject and to the day.
+   something in it (a click, a key press, a scroll), the Hub adds that time to the subject and to the day. Time since your last touch is held back
+   and only credited if you touch the screen again inside the idle window, so walking away never earns a tail of free minutes.
    Flashcards, quizzes, notes and written work all count, and the subject does not have to do anything. While a Study Timer session
    is running the timer already owns the time, so nothing is counted twice. */
 const dkey=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const eng=id=>S.eng[id]||(S.eng[id]={d:{},t:0});
 const curSubj=()=>{const s=sub(location.hash.slice(1).split('/')[0]);return s&&s.src?s.id:''};
-let lastIn=Date.now(),engAt=Date.now(),engN=0;
-['pointerdown','keydown','wheel','touchstart','scroll'].forEach(k=>addEventListener(k,()=>{lastIn=Date.now()},{capture:true,passive:true}));
+/* What you were doing: worked out from the tab or view the subject reports (its topic label and place), so nothing has to be typed in. */
+const ACTS={exam:'Exam or paper',cards:'Flashcards',qs:'Practice questions',write:'Writing',read:'Reading and notes',away:'App in the background',old:'Before activity tracking (not split)',timer:'Study timer',hand:'Logged by hand',other:'Other / dashboard'};
+/* Every tab in every subject is listed here, by its place in the URL and by its name, so none is guessed. The keyword guess below is only for a tab added later. */
+const ACT_IDS={exam:'exam',exams:'exam',mock:'exam',tabmock:'exam',flashcards:'cards',tabcards:'cards',weakcards:'cards',cards:'cards',
+ practice:'qs',tabpractice:'qs',tabmc:'qs',tabshortanswer:'qs',mcqretry:'qs',mistakes:'qs',calculator:'qs',mc:'qs',
+ writing:'write',written:'write',tabessays:'write',tabplans:'write',
+ syllabus:'read',tabchecklist:'read',texts:'read',analysis:'read',decode:'read',learn:'read',topics:'read',formulas:'read',methods:'read',casestudies:'read',cheatsheet:'read',
+ tabexamskills:'read',tabdiagrams:'read',tabnotes:'read',tabref:'read',tabtimeline:'read',tabzones:'read',dashboard:'other',home:'other',progress:'other',tabdashboard:'other',
+ dash:'other',calc:'qs',models:'read',writtenresponses:'write',topicref:'read',sourcework:'read',exammode:'exam'};
+/* Sub-tabs that change the activity. The key is main tab : sub-tab (lower case). The subject has to report the sub-tab for this to apply:
+   Economics sends it as its own field, History puts it in the place (&sub=). English and Maths sub-tabs never change the activity, so they are not listed. */
+const ACT_SUBS={'tabpractice:subtabessays':'write','tabpractice:subtabplans':'write','tabpractice:subtabshortanswer':'qs','tabpractice:subtabmc':'qs',
+ 'writtenresponses:verbs':'read','writtenresponses:shortanswer':'qs','writtenresponses:bank':'write','writtenresponses:planner':'write','writtenresponses:arguments':'write','writtenresponses:criteria':'read','writtenresponses:historiography':'read','sourcework:analysis':'qs'};
+const ACT_LABELS={'exam mode':'exam','exams':'exam','flashcards':'cards','practice':'qs','multiple choice':'qs','questions & essays':'qs','mistakes':'qs','calculator':'qs',
+ 'writing':'write','written responses':'write','syllabus':'read','syllabus checklist':'read','texts':'read','analysis':'read','decode':'read','model essays':'read','cheat sheet':'read',
+ 'learn':'read','topics':'read','formulas':'read','methods':'read','case studies':'read','topic reference':'read','evidence & sources':'read','exam skills':'read','diagrams':'read',
+ 'notes & glossary':'read','quick reference':'read','2026 timeline':'read','dashboard':'other','progress':'other','my progress':'other'};
+function actGuess(txt){txt=String(txt||'').toLowerCase();
+ if(/exam|past paper|mock|trial|\bpaper\b/.test(txt))return'exam';
+ if(/flash|\bcards?\b/.test(txt))return'cards';
+ if(/model essay/.test(txt))return'read';
+ if(/multiple choice|mcq|\bmc\b|quiz|practice|question|short ?answer|mistake|retry|calculator/.test(txt))return'qs';
+ if(/essay|writ|response|plan|draft/.test(txt))return'write';
+ if(/note|learn|text|read|syllabus|reference|evidence|source|summary|cheat|glossary|formula|method|analysis|decode|timeline|diagram|zone|topic/.test(txt))return'read';
+ return'other'}
+function actOf(topic,where,sub){const w=String(where||'').toLowerCase(),toks=w.split(/[#&/=?]+/);
+ {const ms=/(?:^|[#&])(?:sec|view|tab)=([^&]*)/.exec(w),mb=/[&#]sub=([^&]*)/.exec(w),sc=ms?ms[1]:(toks[1]||''),sb=String(sub||(mb?mb[1]:'')).toLowerCase();
+  if(sc&&sb&&ACT_SUBS[sc+':'+sb])return ACT_SUBS[sc+':'+sb]}
+ for(const k of toks){if(ACT_IDS[k])return ACT_IDS[k]}
+ const lab=String(topic||'').toLowerCase().split(' \u00b7 ')[0].replace(/ section$/,'').replace(/&amp;/g,'&').trim();
+ if(ACT_LABELS[lab])return ACT_LABELS[lab];
+ return actGuess(lab+' '+toks.join(' '))}
+const actNow=()=>{const id=curSubj();if(id){const d=sd(id);return actOf(d.tn||d.topic,d.where,d.sub)}return engKey()==='_hub'?'exam':'other'};
+let lastIn=Date.now(),engAt=Date.now(),engN=0,tailK='',tailS=0,tailA={},engDirty=false;
+/* tailS holds the seconds counted since your last touch. A touch inside the idle window credits them; a longer wait, a hidden tab or a switch of subject drops them. */
+function tailCommit(){if(tailS>0&&tailK){const e=eng(tailK),k=dkey(Date.now());
+  if(!e.d[k]){e.d[k]={s:0};const ks=Object.keys(e.d).sort();while(ks.length>180)delete e.d[ks.shift()]}
+  e.d[k].s+=tailS;e.t+=tailS;const ea=e.d[k].a||(e.d[k].a={});for(const q in tailA)ea[q]=(ea[q]||0)+tailA[q];engDirty=true}tailS=0;tailK='';tailA={}}
+const tailDrop=()=>{tailS=0;tailK='';tailA={}};
+const touch=()=>{const now=Date.now();if(tailS>0){if(now-lastIn<=IDLE()*6e4&&tailK===engKey())tailCommit();else tailDrop()}lastIn=now};
+['pointerdown','keydown','wheel','touchstart','scroll'].forEach(k=>addEventListener(k,touch,{capture:true,passive:true}));
+/* How long you can go without touching the screen before counting pauses (Progress settings, default 3 min). No longer extended for drafts.
+   Besides subjects, the Exam Centre counts towards the day (kept under '_hub'); a running exam logs itself. Saved is bookmarks, so it does not count. */
+const IDLE=()=>{const v=+HubSettings.get('progress.idleMin');return [2,3,5,10].includes(v)?v:3};
+const SMIN=()=>{const v=+HubSettings.get('progress.streakMin');return v>=5&&v<=240?v:20};   /* minutes needed in a day to count towards the streak */
+const engKey=()=>{const id=curSubj();if(id)return id;const rt=location.hash.slice(1).split('/')[0];return rt==='exam'&&!document.body.classList.contains('xc-on')?'_hub':''};
+const engLive=()=>{const r=S.run;return !!engKey()&&!document.hidden&&PT('trackActive')&&!(r&&r.paused==null&&!r.over)&&Date.now()-lastIn<=IDLE()*6e4};
+function tdyDraw(){const e=document.getElementById('tdy');if(!e)return;const r=S.run,m=dayMinAll(Date.now())+(r?ranSec(r)/60:0)+(engLive()?tailS/60:0),
+ w=r&&!r.over?(r.paused!=null?'timer paused':'timer running'):!PT('trackActive')?'auto-count off':engLive()?'counting':'paused, idle',h='Today <b>'+hm(Math.round(m))+'</b> · '+w;
+ if(e.dataset.h!==h){e.dataset.h=h;e.innerHTML=h}}
 setInterval(()=>{const now=Date.now(),dt=Math.min(10,(now-engAt)/1000);engAt=now;
- const id=curSubj(),r=S.run;
- if(!id||document.hidden||now-lastIn>9e4||!PT('trackActive')||(r&&r.paused==null&&!r.over))return;
- const e=eng(id),k=dkey(now);
- if(!e.d[k]){e.d[k]={s:0};const ks=Object.keys(e.d).sort();while(ks.length>180)delete e.d[ks.shift()]}
- e.d[k].s+=dt;e.t+=dt;
- if(++engN%6===0)save()},5000);
-addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+ if(++engN%6===0&&engDirty){engDirty=false;save()}
+ if(tailS>0&&tailK!==engKey())tailDrop();
+ {const r=S.run;if(r&&r.paused==null&&!r.over){const a=document.hidden?'away':actNow();r.acts=r.acts||{};r.acts[a]=(r.acts[a]||0)+dt}}   /* a running timer also notes what you had open, or that the app was in the background */
+ if(!engLive())return;
+ tailK=engKey();tailS+=dt;{const a=actNow();tailA[a]=(tailA[a]||0)+dt}},5000);
+addEventListener('pagehide',()=>{tailDrop();save()});document.addEventListener('visibilitychange',()=>{if(document.hidden){tailDrop();save()}});
 const last7=()=>{const t0=new Date().setHours(0,0,0,0);return Array.from({length:7},(_,i)=>t0-(6-i)*864e5+432e5)};   /* noon of each of the last 7 days, so a clock change never shifts a day */
 const actSec=(id,k)=>{const e=S.eng[id];return e&&e.d[k]?e.d[k].s:0};
-const dayMinAll=t=>{const k=dkey(t);return S.sess.reduce((a,x)=>dkey(x.t)===k?a+x.min:a,0)+Object.keys(S.eng).reduce((a,id)=>a+actSec(id,k)/60,0)};
-const dayMinSub=(id,t)=>{const k=dkey(t);return S.sess.reduce((a,x)=>x.subj===id&&dkey(x.t)===k?a+x.min:a,0)+actSec(id,k)/60};
+/* Study time has three sources, kept apart: Timer (Study Timer and Exam Centre sessions), Working (time spent actively in a subject)
+   and Logged by hand (typed in, so it cannot be checked). The goal, streak, mission and planets use Timer + Working; hand-logged time
+   joins them only if 'Count time logged by hand' is switched on in Progress settings. It is always shown in the breakdown. */
+const HAND=()=>true;   /* paper and away-from-app time always counts */
+const isHand=x=>x.kind==='manual';
+const cSess=()=>HAND()?S.sess:S.sess.filter(x=>!isHand(x));
+function dayParts(t,id){const k=dkey(t);let tm=0,hd=0,wk=0;
+ S.sess.forEach(x=>{if((id&&x.subj!==id)||dkey(x.t)!==k)return;if(isHand(x))hd+=x.min;else tm+=x.min});
+ if(id)wk=actSec(id,k)/60;else Object.keys(S.eng).forEach(i=>{wk+=actSec(i,k)/60});
+ return{tm,wk,hd}}
+const dayMinAll=t=>{const p=dayParts(t);return p.tm+p.wk+(HAND()?p.hd:0)};
+const dayMinSub=(id,t)=>{const p=dayParts(t,id);return p.tm+p.wk+(HAND()?p.hd:0)};
+const parts7=()=>last7().reduce((a,t)=>{const p=dayParts(t);a.tm+=p.tm;a.wk+=p.wk;a.hd+=p.hd;return a},{tm:0,wk:0,hd:0});
+const srcLine=p=>'Timer '+hm(Math.round(p.tm))+' · Working '+hm(Math.round(p.wk))+' · Logged by hand '+hm(Math.round(p.hd))+(HAND()?'':' (not counted)');
+/* One day's record: minutes by subject and activity, from working time, timer blocks, Exam Centre sessions and (shown apart) hand-logged time. */
+function dayActs(t){const k=dkey(t),R={},add=(s,a,m)=>{if(m>0){const q=s+'|'+a;R[q]=(R[q]||0)+m}};
+ Object.keys(S.eng).forEach(id=>{const d=S.eng[id].d[k];if(!d)return;let sum=0;const a=d.a||{};Object.keys(a).forEach(q=>{add(id,q,a[q]/60);sum+=a[q]});add(id,'old',(d.s-sum)/60)});
+ S.sess.forEach(x=>{if(dkey(x.t)!==k)return;const s=x.subj||'';if(isHand(x)){add(s,'hand',x.min);return}
+  if(x.kind==='xc'){add(s,'exam',x.min);return}
+  const ac=x.acts,tot=ac?Object.keys(ac).reduce((a,q)=>a+ac[q],0):0;
+  if(tot>0)Object.keys(ac).forEach(q=>add(s,q,x.min*ac[q]/tot));else add(s,'timer',x.min)});
+ return R}
+const actNm=id=>id==='_hub'?'Exam Centre':id?(sub(id)||{name:id}).name:'Any subject';
+const actCard=()=>{const tot={},days=last7().slice().reverse(),lab=a=>a==='hand'&&!HAND()?'Logged by hand (not counted)':ACTS[a]||a,
+ rows=days.map(t=>{const R=dayActs(t),by={};Object.keys(R).forEach(q=>{const i=q.indexOf('|'),s=q.slice(0,i),a=q.slice(i+1),m=Math.round(R[q]);if(m<1)return;(by[s]=by[s]||[]).push([a,m]);tot[a]=(tot[a]||0)+R[q]});
+  const ks=Object.keys(by),nm=sinceTxt(dkey(t)),dt=new Date(t).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+  return `<div style="margin-top:10px"><b>${nm==='today'||nm==='yesterday'?nm[0].toUpperCase()+nm.slice(1)+' · ':''}${dt}</b>${ks.length?ks.map(s=>`<div class="mu sm">${esc(actNm(s))} · ${by[s].sort((x,y)=>y[1]-x[1]).map(([a,m])=>lab(a)+' '+hm(m)).join(', ')}</div>`).join(''):'<div class="mu sm">Nothing recorded</div>'}</div>`}).join(''),
+ sum=Object.keys(tot).filter(a=>tot[a]>=.5).sort((a,b)=>tot[b]-tot[a]).map(a=>lab(a)+' '+hm(Math.round(tot[a]))).join(' · ');
+ return `<div class="card sec"><h2>What you spent time on</h2><div class="mu sm" style="line-height:1.7"><div><b>Last 7 days</b> · ${sum||'Nothing recorded yet'}</div><div style="margin-top:4px">The app works this out itself from the tab you are on: exams and papers, flashcards, practice questions, writing, reading and notes. A timer block is split by what you had open during it. Days recorded before this update were not split by activity, so that time shows as \"Before activity tracking\" rather than being guessed. Study done on paper, in class or away from the app cannot be detected; use Log study time below if you want it on record.</div></div>${rows}</div>`};
+/* Where to spend more time: each connected subject over the last 7 days, with the time, what it went on, and exams completed in the Exam Centre. */
+const FOCUS_ACTS=['exam','cards','qs','write'];
+/* Only activities a subject really has are listed as missing. Maths has no flashcards or writing tab; Business Studies keeps its written answers inside Practice, which the Hub cannot see apart from the rest. */
+const SUBJ_ACTS={english:['exam','cards','qs','write'],economics:['exam','cards','qs','write'],business:['exam','cards','qs'],history:['exam','cards','qs','write'],maths:['exam','qs']};
+const SUBJ_NOTE={business:'Written answers in Business Studies sit inside Practice, so they count as practice questions.'};
+function subjFocus(s){const A={};last7().forEach(t=>{const R=dayActs(t);Object.keys(R).forEach(q=>{const i=q.indexOf('|');if(q.slice(0,i)!==s.id)return;const a=q.slice(i+1);if(a==='hand'&&!HAND())return;A[a]=(A[a]||0)+R[q]})});
+ const t0=last7()[0]-432e5,xs0=S.sess.filter(x=>x.kind==='xc'&&x.subj===s.id),xs=xs0.filter(x=>!x.partial),un=xs0.filter(x=>x.partial);let h=null;try{h=X.hist.find(a=>a.subj===s.id&&a.paper&&a.tot&&a.tot.max>0)}catch(e){}
+ return{A,min:Object.keys(A).reduce((a,k)=>a+A[k],0),unf:un.length,unAns:un.reduce((a,x)=>a+(x.ans||0),0),exams:xs.length,examsWk:xs.filter(x=>x.t>=t0).length,score:h?Math.round(h.tot.got/h.tot.max*100):null}}
+const focusCard=()=>{const conn=SUBJECTS.filter(s=>s.src);if(!conn.length)return '';
+ const rows=conn.map(s=>({s,f:subjFocus(s)})).sort((a,b)=>a.f.min-b.f.min),low=rows[0],none=rows.filter(r=>!r.f.exams).map(r=>r.s.name);
+ const lines=rows.map(({s,f})=>{const gaps=(SUBJ_ACTS[s.id]||FOCUS_ACTS).filter(a=>!(f.A[a]>=1)).map(a=>ACTS[a].toLowerCase()),acts=Object.keys(f.A).filter(a=>f.A[a]>=.5).sort((a,b)=>f.A[b]-f.A[a]).map(a=>ACTS[a]+' '+hm(Math.round(f.A[a]))).join(', ');
+  return `<div class="row" style="--c:${s.c};display:block"><div style="display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap"><b>${s.name}</b><span class="mu sm">${hm(Math.round(f.min))} this week</span></div><div class="mu sm" style="margin-top:4px">${acts||'No time recorded this week'}</div><div class="mu sm">Exam Centre exams completed: <b>${f.exams}</b>${f.examsWk?' ('+f.examsWk+' this week)':''}${f.score!=null?' · latest saved paper '+f.score+'%':''}${f.unf?' · left unfinished: '+f.unf+' ('+f.unAns+' question'+(f.unAns===1?'':'s')+' answered)':''}</div>${gaps.length&&f.min>0?`<div class="mu sm">Nothing yet this week: ${gaps.join(', ')}</div>`:''}${SUBJ_NOTE[s.id]?`<div class="mu sm">${SUBJ_NOTE[s.id]}</div>`:''}</div>`}).join('');
+ FH='Least time: '+low.s.name+' ('+hm(Math.round(low.f.min))+')'+(none.length?' · no exam completed: '+none.join(', '):'');
+ return `<div class="card sec"><h2>What to spend more time on</h2><div class="mu sm" style="line-height:1.7"><div>Least time this week: <b>${low.s.name}</b> (${hm(Math.round(low.f.min))}).${none.length?' No Exam Centre exam completed yet in: '+none.join(', ')+'.':''}</div><div>Sorted from least to most time over the last 7 days. An exam you finish in the Exam Centre counts as study time and as a completed exam for that subject. One you leave early still counts its time and the questions you answered, shown as unfinished.</div>${!PT('trackSessions')?'<div><b>Study sessions are switched off in Progress settings, so Exam Centre exams and timer blocks are not being recorded.</b></div>':''}${!PT('saveExams')?'<div>Saving exam attempts is switched off, so latest saved paper scores will not update. Completed exams are still counted.</div>':''}</div>${lines}</div>`};
+/* Plan for this week: what to do next, the weekly goal, exam countdown and the trend of saved paper scores. Everything is read from data the app already keeps. */
+const goalMin=()=>+HubSettings.get('progress.weeklyGoal')||S.goal||0;
+function paperScores(id){let a=[];try{a=X.hist.filter(h=>h.subj===id&&h.tot&&h.tot.max>0).sort((x,y)=>x.t-y.t).slice(-6).map(h=>Math.round(h.tot.got/h.tot.max*100))}catch(e){}return a}
+function nextExam(id){const n=Date.now();return EXAMS.filter(x=>x.subj===id&&at(x)>n).sort((a,b)=>at(a)-at(b))[0]||null}
+const daysTo=x=>Math.max(0,Math.ceil((at(x)-Date.now())/864e5));
+/* The subject that most needs time (little progress, exam close, little time this week) and the one thing to do in it. */
+function nextUp(){const conn=SUBJECTS.filter(s=>s.src);if(!conn.length)return null;
+ const rows=conn.map(s=>{const f=subjFocus(s),ex=nextExam(s.id),dl=ex?Math.max(1,daysTo(ex)):30,d=sd(s.id),sc=paperScores(s.id);
+  return{s,f,ex,dl,d,sc,last:sc.length?sc[sc.length-1]:null,pri:(100-(d.pct||0))/dl/(1+f.min/180)}}).sort((a,b)=>b.pri-a.pri),t=rows[0],acts=SUBJ_ACTS[t.s.id]||FOCUS_ACTS,due=(t.d.due||[]).reduce((a,i)=>a+(i.n||0),0);
+ let act,txt;
+ if(due>0&&acts.includes('cards')){act='cards';txt='clear the '+due+' flashcard'+(due===1?'':'s')+' due'}
+ else if(!t.f.exams&&acts.includes('exam')&&(!t.ex||t.dl<=21)){act='exam';txt='sit a full paper in the Exam Centre'}
+ else if(t.last!=null&&t.last<60&&acts.includes('qs')){act='qs';const w=(t.d.weak||[])[0];txt='do practice questions'+(w&&w.label?', starting with '+w.label:'')}
+ else{act=acts.slice().sort((a,b)=>(t.f.A[a]||0)-(t.f.A[b]||0))[0];txt='spend time on '+ACTS[act].toLowerCase()+' ('+hm(Math.round(t.f.A[act]||0))+' this week)'}
+ const why=[];if(t.ex)why.push(t.dl+' day'+(t.dl===1?'':'s')+' to the exam');why.push(hm(Math.round(t.f.min))+' this week');if(t.last!=null)why.push('latest paper '+t.last+'%');if(t.d.pct!=null)why.push(t.d.pct+'% covered');
+ return{s:t.s,act,txt,why}}
+function planCard(){try{const conn=SUBJECTS.filter(s=>s.src);if(!conn.length)return '';
+ const nx=nextUp(),gl=goalMin(),tw=Math.round(week().reduce((a,d)=>a+d.m,0)),gp=gl?Math.min(100,Math.round(tw/gl*100)):0;
+ const goal=gl?`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>Weekly goal</b><span class="mu sm">${hm(tw)} of ${hm(gl)} in the last 7 days · ${gp>=100?'goal reached':hm(gl-tw)+' to go'}</span></div>${bar(gp,'var(--br)')}</div>`:`<div class="mu sm" style="margin-top:14px"><b>Weekly goal</b> · not set. <a href="#settings/progress" data-go="settings/progress">Set one in Progress settings</a> to see a bar here.</div>`;
+ const ex0=EXAMS.filter(x=>at(x)>Date.now()).sort((a,b)=>at(a)-at(b)),ex=ex0.slice(0,3),more=ex0.length-ex.length,
+  exm=ex.length?ex.map(x=>{const d=daysTo(x),sc=x.subj?paperScores(x.subj):[],f=x.subj?subjFocus(sub(x.subj)):null;
+   return `<div class="mu sm" style="margin-top:4px"><b>${esc(x.name)}</b> · ${new Date(at(x)).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})} · <b>${d===0?'today':d+' day'+(d===1?'':'s')}</b>${f?' · '+hm(Math.round(f.min))+' this week':''}${sc.length?' · latest paper '+sc[sc.length-1]+'%':''}</div>`}).join('')+(more>0?`<div class="mu sm" style="margin-top:4px">and ${more} later</div>`:''):'<div class="mu sm" style="margin-top:4px">No upcoming exam dates. Add them on the Hub to see a countdown.</div>';
+ const tr=conn.map(s=>{const a=paperScores(s.id);let t;
+  if(!a.length)t=PT('saveExams')?'No saved paper yet':'No saved paper (saving exams is off)';
+  else{const dl=a.length>1?a[a.length-1]-a[a.length-2]:null;t=a.join('% → ')+'%'+(dl==null?' · one paper so far':' · '+(dl>0?'up '+dl:dl<0?'down '+(-dl):'no change')+' since the last')}
+  return `<div class="mu sm" style="margin-top:4px"><b>${s.name}</b> · ${t}</div>`}).join('');
+ return `<div class="card sec"><h2>Plan for this week</h2>${nx?`<div style="margin-top:6px"><b>Do this next:</b> ${nx.s.name}, ${esc(nx.txt)}.<div class="mu sm">${nx.why.join(' · ')}</div></div>`:''}${goal}<div style="margin-top:14px"><b>Exam countdown</b>${exm}</div><div style="margin-top:14px"><b>Saved paper scores</b> <span class="mu sm">(oldest to newest, Exam Centre papers)</span>${tr}</div></div>`}catch(e){return ''}}
+/* Turns a card ('<div class="card ..."><h2>Title</h2>...</div>') into a tap-to-open section. Which ones are open is remembered while the page is open. */
+const FOLD=new Set();let FH='';
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.fold){d.open?FOLD.add(d.dataset.fold):FOLD.delete(d.dataset.fold)}},true);
+function fold(h,hint,key){const m=/^<div class="([^"]*)"><h2>([\s\S]*?)<\/h2>/.exec(h||'');if(!m||h.slice(-6)!=='</div>')return h;
+ return `<details class="${m[1]} fold" data-fold="${key}"${FOLD.has(key)?' open':''}><summary style="display:flex;align-items:baseline;gap:4px 14px;flex-wrap:wrap"><h2 style="margin:0">${m[2]}</h2>${hint?`<span class="mu sm">${hint}</span>`:''}</summary><div style="margin-top:12px">${h.slice(m[0].length,-6)}</div></details>`}
 const subWeek=id=>Math.round(last7().reduce((a,t)=>a+dayMinSub(id,t),0));
-const subTotal=id=>Math.round((S.eng[id]?S.eng[id].t/60:0)+(sd(id).min||0));
-const lastDay=id=>{const e=S.eng[id],a=e?Object.keys(e.d).filter(k=>e.d[k].s>=60):[],s=S.sess.find(x=>x.subj===id);if(s)a.push(dkey(s.t));return a.sort().pop()||''};
+const subTotal=id=>{const hd=HAND()?0:S.sess.reduce((a,x)=>x.subj===id&&isHand(x)?a+x.min:a,0);return Math.max(0,Math.round((S.eng[id]?S.eng[id].t/60:0)+(sd(id).min||0)-hd))};
+const lastDay=id=>{const e=S.eng[id],a=e?Object.keys(e.d).filter(k=>e.d[k].s>=60):[],s=cSess().find(x=>x.subj===id);if(s)a.push(dkey(s.t));return a.sort().pop()||''};
+const logCard=()=>`<div class="card sec"><h2>Log study time</h2><p class="mu sm" style="margin:0 0 12px">Studied on paper, in class or away from the app? Add it here. It counts toward Today, your weekly goal, your streak and the subject\u2019s planet in the Progress Universe.</p><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><select id="lgS" aria-label="Subject" style="font:inherit;color:var(--ink);background:var(--sf2);border:1px solid var(--ln);border-radius:12px;padding:10px 12px"><option value="">Any subject</option>${SUBJECTS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select><input id="lgM" type="number" inputmode="numeric" min="1" max="720" placeholder="Minutes" aria-label="Minutes studied" style="font:inherit;color:var(--ink);background:var(--sf2);border:1px solid var(--ln);border-radius:12px;padding:10px 12px;width:110px"><select id="lgD" aria-label="Day" style="font:inherit;color:var(--ink);background:var(--sf2);border:1px solid var(--ln);border-radius:12px;padding:10px 12px"><option value="0">Today</option><option value="1">Yesterday</option><option value="2">2 days ago</option><option value="3">3 days ago</option><option value="4">4 days ago</option><option value="5">5 days ago</option><option value="6">6 days ago</option></select><button class="btn" data-a="logm">Add time</button></div></div>`;
 const sinceTxt=k=>{if(!k)return 'not yet';const n=Math.round((new Date(dkey(Date.now())+'T12:00')-new Date(k+'T12:00'))/864e5);return n<=0?'today':n===1?'yesterday':n+' days ago'};
 const hm=m=>m>=60?Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m':m+' min';
-const streak=()=>{let n=0,t=new Date().setHours(12,0,0,0);if(dayMinAll(t)<5)t-=864e5;while(n<400&&dayMinAll(t)>=5){n++;t-=864e5}return n};
+const streak=()=>{let n=0,t=new Date().setHours(12,0,0,0),m=SMIN();if(dayMinAll(t)<m)t-=864e5;while(n<400&&dayMinAll(t)>=m){n++;t-=864e5}return n};
 
 /* ===== Saved: bookmarks and the trail =====
    Every subject already tells the Hub where the student is (a topic and a place to reopen), so the Hub can bookmark any spot in any
@@ -42089,7 +42223,7 @@ function trailPush(id,topic,where){const a=S.trail||(S.trail=[]),t=Date.now(),i=
  if(i===0){a[0].where=where;a[0].t=t;return}if(i>0)a.splice(i,1);a.unshift({subject:id,topic,where,t});if(a.length>40)a.length=40}
 const sel={quick:{subj:'',min:10},exam:{subj:'',min:60}};
 const PRESET={quick:[5,10,15,25],exam:[30,60,90,120]};
-const LABEL={quick:'Quick session',exam:'Study block',xc:'Exam Centre'};
+const LABEL={quick:'Quick session',exam:'Study block',xc:'Exam Centre',manual:'Logged manually'};
 
 /* device & layout: HubDevice (defined in <head>) resolves detection + settings; this applies it and keeps it current */
 let lastLay='',keepNav=false;
@@ -42147,9 +42281,9 @@ function tick(){document.querySelectorAll('.cdt').forEach(e=>{const ms=e.dataset
 setInterval(tick,1000);
 const days=id=>{const o=EXAMS.filter(x=>x.subj===id&&at(x)>Date.now()).sort((a,b)=>at(a)-at(b))[0];return o?Math.round((new Date(at(o)).setHours(0,0,0,0)-new Date().setHours(0,0,0,0))/864e5):null};
 const ex=id=>{const n=days(id);return n==null||n<0?'':`<br><b style="color:var(--c)">${n===0?'Exam today':n+(n===1?' day':' days')+' to exam'}</b>`};
-const week=()=>{const t0=new Date().setHours(0,0,0,0);return Array.from({length:7},(_,i)=>{const a=t0-(6-i)*864e5;return{a,m:Math.round(dayMinAll(a+432e5))}})};
+const week=()=>{const t0=new Date().setHours(0,0,0,0);return Array.from({length:7},(_,i)=>{const a=t0-(6-i)*864e5;const p=dayParts(a+432e5);return{a,m:Math.round(p.tm+p.wk+(HAND()?p.hd:0)),tm:p.tm,wk:p.wk,hd:p.hd}})};
 function weekCard(){const w=week(),tot=w.reduce((a,d)=>a+d.m,0),mx=Math.max(...w.map(d=>d.m),1),g=S.goal||0,p=g?Math.min(100,Math.round(tot/g*100)):0;
- return `<div class="card sec hero" style="justify-content:space-between"><div style="display:flex;gap:18px;align-items:center"><div style="position:relative;width:96px;height:96px;flex:none"><svg viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Weekly goal progress"><circle class="tr" cx="60" cy="60" r="50" transform="rotate(-90 60 60)"/><circle class="arc" data-v="${p}" cx="60" cy="60" r="50" pathLength="100" stroke="var(--br)" transform="rotate(-90 60 60)"/></svg><div style="position:absolute;inset:0;display:grid;place-items:center;font-weight:800">${g?p+'%':'–'}</div></div><div><h2 style="margin:0 0 2px">Last 7 days</h2><b style="font-size:calc(24px*var(--fs))">${tot} min</b><div class="mu sm">${g?'of your '+g+' min weekly goal':'No weekly goal set'}</div><div class="mu sm">Timer sessions plus time working in subjects</div>${g?'':'<button class="btn" style="margin-top:8px" data-go="settings/progress">Set weekly goal</button>'}</div></div><div class="wk">${w.map(d=>`<div title="${d.m} min"><i class="${d.m?'':'z'}" style="height:${d.m?Math.max(8,d.m/mx*78):4}%"></i><span>${new Date(d.a).toLocaleDateString('en-AU',{weekday:'narrow'})}</span></div>`).join('')}</div></div>`}
+ return `<div class="card sec hero" style="justify-content:space-between"><div style="display:flex;gap:18px;align-items:center"><div style="position:relative;width:96px;height:96px;flex:none"><svg viewBox="0 0 120 120" width="96" height="96" role="img" aria-label="Weekly goal progress"><circle class="tr" cx="60" cy="60" r="50" transform="rotate(-90 60 60)"/><circle class="arc" data-v="${p}" cx="60" cy="60" r="50" pathLength="100" stroke="var(--br)" transform="rotate(-90 60 60)"/></svg><div style="position:absolute;inset:0;display:grid;place-items:center;font-weight:800">${g?p+'%':'–'}</div></div><div><h2 style="margin:0 0 2px">Last 7 days</h2><b style="font-size:calc(24px*var(--fs))">${tot} min</b><div class="mu sm">${g?'of your '+g+' min weekly goal':'No weekly goal set'}</div><div class="mu sm">${HAND()?'Timer, working time and time logged by hand':'Timer sessions plus time working in subjects'}</div><div class="mu sm">${srcLine(parts7())}</div>${g?'':'<button class="btn" style="margin-top:8px" data-go="settings/progress">Set weekly goal</button>'}</div></div><div class="wk">${w.map(d=>`<div title="${new Date(d.a).toLocaleDateString('en-AU',{weekday:'short'})}: ${d.m} min counted. ${srcLine(d)}"><i class="${d.m?'':'z'}" style="height:${d.m?Math.max(8,d.m/mx*78):4}%;${d.m?'overflow:hidden;display:flex;flex-direction:column':''}">${d.m?`<u style="flex:${Math.max(0,d.wk)} 0 0;background:rgba(255,255,255,.38)"></u>${HAND()&&d.hd?`<u style="flex:${d.hd} 0 0;background:rgba(0,0,0,.2)"></u>`:''}<u style="flex:${Math.max(0.0001,d.tm)} 0 0"></u>`:''}</i><span>${new Date(d.a).toLocaleDateString('en-AU',{weekday:'narrow'})}</span></div>`).join('')}</div></div>`}
 const emp=(t,b)=>`<div class="empty"><b>${t}</b>${b}</div>`;
 
 function setup(kind){
@@ -42198,20 +42332,23 @@ dash(){
   if(a.w.sz==='half'&&b&&b.w.sz==='half'){body+=`<div class="dw"><div class="g ${a.w.g||'gh'}">${a.h}${b.h}</div></div>`;i++}else body+=`<div class="dw">${a.h}</div>`}
  if(!body)body=`<div class="dw"><div class="card">${emp('Your dashboard is empty','Every widget is switched off. Turn some back on in Dashboard settings.')}</div></div>`;
  return (dc('status')!==false?hud():'')+`<div class="dh"><div><h1 id="gr">${g}${S.name?', '+esc(S.name):''}</h1><p class="mu" style="margin:0 0 22px">${new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'})}</p>${(()=>{try{if(JSON.parse(localStorage.getItem('hubx')||'{}').qt===0)return ''}catch(e){}return '<div id="hx-gr" class="hx-ph" aria-hidden="true">&nbsp;</div>'})()}</div><button class="btn dcz" data-go="settings/dashboard" aria-label="Customise dashboard">${ic(ICON.set)} Customise</button></div>`+body},
-quick(){return `<h1>Study Timer</h1><p class="mu">Pick a subject and a length, then a timer stays on screen while you study. Time is logged to Progress when you finish.</p><h2 style="margin:22px 0 8px">Quick session</h2><p class="mu sm" style="margin:0 0 10px">A short, focused burst.</p>${setup('quick')}<h2 style="margin:28px 0 8px">Timed study block</h2><p class="mu sm" style="margin:0 0 10px">A longer, distraction-light block for a full study stretch.</p>${setup('exam')}`},
+quick(){return `<h1>Study Timer</h1><p class="mu">Pick a subject and a length, then a timer stays on screen while you study. Time is logged to Progress when you finish.</p><h2 style="margin:22px 0 8px">Quick session</h2><p class="mu sm" style="margin:0 0 10px">A short, focused burst.</p>${setup('quick')}<h2 style="margin:28px 0 8px">Timed study block</h2><p class="mu sm" style="margin:0 0 10px">A longer, distraction-light block for a full study stretch.</p>${setup('exam')}${logCard()}`},
 exam(){return ''},
 progress(){
  const wk=week(),tw=wk.reduce((a,d)=>a+d.m,0),now=Date.now(),sk=streak(),
-  d30=Array.from({length:30},(_,i)=>dayMinAll(now-i*864e5)).filter(m=>m>=5).length,
+  d30=Array.from({length:30},(_,i)=>dayMinAll(now-i*864e5)).filter(m=>m>=SMIN()).length,
   tot=S.sess.reduce((a,s)=>a+s.min,0),
   stat=(n,l)=>`<div class="card" style="min-height:0"><div class="mu sm">${l}</div><b style="font-size:calc(26px*var(--fs))">${n}</b></div>`,
   spark=s=>{const days=last7(),v=days.map(t=>dayMinSub(s.id,t)),mx=Math.max(...v,10),wd=(t,o)=>new Date(t).toLocaleDateString('en-AU',{weekday:o});
    return `<div role="img" aria-label="Minutes studied on each of the last 7 days" style="display:flex;gap:6px;align-items:flex-end;margin-top:12px">${v.map((m,i)=>`<div style="flex:1;max-width:34px;text-align:center"><i title="${wd(days[i],'short')}: ${Math.round(m)} min" style="display:block;height:${Math.max(3,Math.round(m/mx*30))}px;border-radius:4px;background:${s.c};opacity:${m>=1?1:.22}"></i><span class="mu" style="font-size:10px">${wd(days[i],'narrow')}</span></div>`).join('')}</div>`};
- return `<h1>Progress</h1><p class="mu">The percentage is each subject's own measure of how much you have covered, including flashcards and practice where it has them. Study time is counted while you are actively working in a subject, plus Study Timer sessions.</p>
+ return `<h1>Progress</h1><p class="mu">Percentages are each subject's own measure of coverage. Study time is counted automatically; study on paper or away from the app cannot be detected, so add it under Log study time and it counts.</p>
  <div class="g g4">${stat(hm(Math.round(dayMinAll(now))),'Today')}${stat(hm(tw),'Last 7 days')}${stat(sk+(sk===1?' day':' days'),'Study streak')}${stat(d30+' of 30','Days studied')}</div>
- ${uniView()}${gdView()}
+ ${planCard()}
  <div class="card sec"><h2>Subjects</h2>${SUBJECTS.map(s=>{const d=sd(s.id),w=subWeek(s.id);return `<div class="row" style="--c:${s.c};display:block"><div style="display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-bottom:8px"><b>${s.name}</b><span class="mu sm">${!s.src?'Not connected yet':d.pct==null?'No progress reported yet':d.pct+'% complete'}</span></div>${bar(d.pct,s.c)}<div class="mu sm" style="margin-top:8px">This week <b>${hm(w)}</b> · All time <b>${hm(subTotal(s.id))}</b> · Last studied <b>${sinceTxt(lastDay(s.id))}</b></div>${s.src?spark(s):''}${d.topic?`<div class="mu sm" style="margin-top:8px">Last topic: ${esc(d.topic)}</div>`:''}</div>`}).join('')}</div>
- <div class="card sec"><h2>Study Timer sessions</h2>${S.sess.length?`<p style="margin:0 0 8px"><b>${hm(tot)}</b> across ${S.sess.length} session${S.sess.length>1?'s':''}</p>`+S.sess.slice(0,6).map(s=>`<div class="row"><span style="flex:1">${LABEL[s.kind]}${s.subj&&sub(s.subj)?' · '+sub(s.subj).name:''}</span><span class="mu sm">${s.min} min · ${ago(s.t)}</span></div>`).join(''):emp('No timer sessions yet','Time you spend working inside a subject is counted automatically. Use the Study Timer for focused, timed blocks.')}</div>`},
+ ${fold(focusCard(),FH,'focus')}${fold(actCard(),'day by day, last 7 days','acts')}
+ ${fold(`<div class="card sec"><h2>Where the time comes from</h2><div class="mu sm" style="line-height:1.7"><div><b>Today</b> · ${srcLine(dayParts(now))}</div><div><b>Last 7 days</b> · ${srcLine(parts7())}</div><div style="margin-top:6px">Timer is Study Timer and Exam Centre sessions. Working is time actively spent in a subject. Logged by hand is time you typed in.${HAND()?'':' Only the first two count toward your goal and streak.'} A streak day needs ${SMIN()} min.</div></div></div>`,'Timer · Working · Logged by hand','src')}
+ ${fold(uniView(),'','uni')}${fold(gdView(),'','gdn')}
+ ${fold(`<div class="card sec"><h2>Sessions and logged time</h2>${S.sess.length?`<p style="margin:0 0 8px"><b>${hm(tot)}</b> across ${S.sess.length} session${S.sess.length>1?'s':''}</p>`+S.sess.slice(0,6).map((s,i)=>`<div class="row"><span style="flex:1">${LABEL[s.kind]}${s.subj&&sub(s.subj)?' · '+sub(s.subj).name:''}</span><span class="mu sm">${s.min} min · ${ago(s.t)}</span>${s.kind==='manual'?`<button class="btn" data-a="logdel" data-v="${i}" aria-label="Remove this logged time" style="margin-left:10px;padding:4px 10px">Remove</button>`:''}</div>`).join(''):emp('No timer sessions yet','Time you spend working inside a subject is counted automatically. Use the Study Timer for focused, timed blocks.')}</div>`,S.sess.length+' session'+(S.sess.length===1?'':'s'),'sess')}${fold(logCard(),'paper or offline study','log')}`},
 saved(){
  const f=SV.f,has=S.saved.length+S.trail.length>0,
   chips=has?`<div class="chips" role="group" aria-label="Filter by subject" style="margin:0 0 16px"><button class="chip ${f?'':'on'}" aria-pressed="${!f}" data-a="svf" data-v="">All subjects</button>${SUBJECTS.map(s=>`<button class="chip ${f===s.id?'on':''}" style="--c:${s.c}" aria-pressed="${f===s.id}" data-a="svf" data-v="${s.id}">${s.name}</button>`).join('')}</div>`:'',
@@ -42230,7 +42367,7 @@ settings(){return renderSettings()}
 function subjView(s){
  const d=s.native?`<div id="nslot"></div>`:s.src?`<div class="frame"><iframe src="${esc(s.src+(/^#/.test(sd(s.id).where||'')?sd(s.id).where:''))}" title="${s.name}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads" onload="hello(this,'${s.id}')"></iframe></div>`
  :`<div class="card m-${s.id} sc" style="--c:${s.c};min-height:0;cursor:default"><span class="tile">${ic(s.d)}</span><div style="max-width:560px"><h2 style="margin:0 0 4px">${s.name} isn't connected yet</h2><p class="mu" style="margin:0">Once this platform is added, it opens right here with the hub's navigation, timers and progress around it. To connect it, set its source in the hub's subject list:</p><pre>LINK.${s.id} = 'subjects/${s.id}.native.js'</pre></div></div>`;
- return `<div class="sh" style="--c:${s.c};display:flex;align-items:center;gap:14px;margin-bottom:18px"><span class="tile">${ic(s.d)}</span><div style="flex:1;min-width:0"><h1 style="font-size:calc(28px*var(--fs));margin:0">${s.name}</h1><span class="mu sm shm">${s.m}</span></div>${s.src?bmBtn(s.id):''}</div>${d}`}
+ return `<div class="sh" style="--c:${s.c};display:flex;align-items:center;gap:14px;margin-bottom:18px"><span class="tile">${ic(s.d)}</span><div style="flex:1;min-width:0"><h1 style="font-size:calc(28px*var(--fs));margin:0">${s.name}</h1><span class="mu sm shm">${s.m}</span>${s.src?'<span class="mu sm" id="tdy" style="display:block;margin-top:2px"></span>':''}</div>${s.src?bmBtn(s.id):''}</div>${d}`}
 
 
 /* ===== settings pages ===== */
@@ -42455,7 +42592,7 @@ function render(){
  $('#main').dataset.view=s?'subject':r;document.body.classList.toggle('insub',!!s);
  $('#main').innerHTML=s?subjView(s):(V[r==='dash'?'dash':r]||V.dash)();
  if(s&&s.native)mountNative(s);
- if(keepNav&&s){keepNav=false}else{keepNav=false;document.body.classList.remove('nav')}syncHubTop();scrollTo(0,keep?y:0);quiet=keep;post();quiet=false;
+ if(keepNav&&s){keepNav=false}else{keepNav=false;document.body.classList.remove('nav')}syncHubTop();scrollTo(0,keep?y:0);quiet=keep;post();quiet=false;tdyDraw();
  if(fk){const el=[...document.querySelectorAll('#main [data-a]')].find(n=>n.dataset.a===fk[0]&&n.dataset.v===fk[1]);if(el)el.focus({preventScroll:true})}
  const sa=$('.set-nav .on');if(sa)sa.parentElement.scrollLeft=sa.offsetLeft-16;
  {const nn=$('.set-nav');if(nn&&keep)nn.scrollTop=snt}
@@ -42487,7 +42624,8 @@ addEventListener('message',e=>{
  const m=e.data,f=document.querySelector('iframe');if(!m||m.hsc!==1||!sub(m.subject)||!f||e.source!==f.contentWindow)return;applyMsg(m)});
 function applyMsg(m){
  const d=sd(m.subject);
- if(m.type==='progress'){if(typeof m.pct==='number'&&PT('trackPractice'))d.pct=Math.max(0,Math.min(100,Math.round(m.pct)));if(m.topic&&PT('trackPractice'))d.topic=String(m.topic);if(m.where!=null)d.where=String(m.where);if(m.topic&&m.where!=null&&PT('recordActivity'))trailPush(m.subject,String(m.topic),String(m.where));if(Array.isArray(m.weak)&&PT('detectWeak'))d.weak=m.weak.slice(0,10).map(w=>({label:String(w.label||''),note:String(w.note||'')}))}
+ if(m.type==='progress'){if(m.where!=null){d.sub=m.sub!=null?String(m.sub):'';if(m.topic)d.tn=String(m.topic)}   /* used only to label activity, so it is kept even when practice tracking is off */
+  if(typeof m.pct==='number'&&PT('trackPractice'))d.pct=Math.max(0,Math.min(100,Math.round(m.pct)));if(m.topic&&PT('trackPractice'))d.topic=String(m.topic);if(m.where!=null)d.where=String(m.where);if(m.topic&&m.where!=null&&PT('recordActivity'))trailPush(m.subject,String(m.topic),String(m.where));if(Array.isArray(m.weak)&&PT('detectWeak'))d.weak=m.weak.slice(0,10).map(w=>({label:String(w.label||''),note:String(w.note||'')}))}
  else if(m.type==='activity'&&m.text)logAct(String(m.text),m.subject);
  else if(m.type==='save'&&m.title&&!S.saved.some(x=>x.subject===m.subject&&x.title===m.title))S.saved.unshift({subject:m.subject,title:String(m.title),ref:m.ref||''});
  else if(m.type==='due'&&PT('trackPractice')&&Array.isArray(m.items))d.due=m.items.slice(0,20).map(i=>({label:String(i.label||''),n:Math.max(0,+i.count||0),where:String(i.where||'')}));
@@ -42535,7 +42673,7 @@ function warmIndex(){
     if(!m)return;
     if(!n.warm)return applyMsg({...m,subject:s.id});
     if(m.type==='index'||m.type==='due')return applyMsg({...m,subject:s.id});
-    if(m.type==='progress'){const {where,topic,...rest}=m;return applyMsg({...rest,subject:s.id})}
+    if(m.type==='progress'){const {where,topic,sub,...rest}=m;return applyMsg({...rest,subject:s.id})}
    }};
    try{n.ctl=window.HubNative[s.id].mount(n.host,api);n.st='ready';n.ctl.theme(nativeEnv())}
    catch(err){console.error(err);NATIVE[s.id]=null}
@@ -42547,10 +42685,10 @@ setTimeout(()=>{try{warmIndex()}catch(e){console.error(e)}},3000);
 /* study timer */
 const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 const left=()=>{const r=S.run;return r?Math.max(0,Math.round((r.paused!=null?r.paused:r.end-Date.now())/1000)):0};
-const FOC={man:false,off:false,on:false,was:false,fs:false};
+const FOC={man:false,off:false,on:false,was:false,fs:false,min:false,peek:false};
 function applyFocus(){const r=S.run,m=st('focusMode'),on=!!r&&m!=='off'&&(m==='sessions'?!FOC.off:FOC.man),b=document.body;
- b.classList.toggle('focus',on);b.classList.toggle('f-nav',on&&st('focusNav')!==false);b.classList.toggle('f-bg',on&&st('focusBg')!==false);
- if(on!==FOC.was){FOC.was=on;const d=document.documentElement;
+ b.classList.toggle('focus',on);b.classList.toggle('f-nav',on&&st('focusNav')!==false&&!(FOC.was===on&&FOC.peek));b.classList.toggle('f-bg',on&&st('focusBg')!==false);
+ if(on!==FOC.was){FOC.was=on;FOC.peek=false;const d=document.documentElement;
   if(on&&st('focusFs')&&d.requestFullscreen&&!document.fullscreenElement){FOC.fs=true;d.requestFullscreen().catch(()=>{FOC.fs=false})}
   else if(!on&&FOC.fs){FOC.fs=false;if(document.fullscreenElement&&!X.run)document.exitFullscreen().catch(()=>{})}}
  FOC.on=on}
@@ -42558,26 +42696,47 @@ let WL=null;function syncWake(){const r=S.run,w=!!r&&r.paused==null&&st('keepAwa
  if(w&&!WL&&navigator.wakeLock){WL='p';navigator.wakeLock.request('screen').then(l=>{if(WL==='p'){WL=l;l.addEventListener('release',()=>{if(WL===l)WL=null})}else l.release()}).catch(()=>{WL=null})}
  else if(!w&&WL){const l=WL;WL=null;if(l!=='p')l.release().catch(()=>{})}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWake()});
-function pill(){const p=$('#pill'),r=S.run;p.classList.toggle('on',!!r);if(!r){FOC.man=FOC.off=false;wClose()}applyFocus();syncWake();if(typeof imSync==='function')imSync();if(!r)return;
- const o=r.over,fm=st('focusMode');
- p.innerHTML=`<span class="pl">${LABEL[r.kind]}${r.subj?' · '+sub(r.subj).name:''}</span><span class="pt" style="font-size:calc(18px*var(--fs))">${o?'Time\'s up':fmt(left())}</span><div class="pb">`+(o?'<button data-a="extend">+5 min</button>':`<button data-a="pause">${r.paused!=null?'Resume':'Pause'}</button>`)+(fm!=='off'&&!o?`<button data-a="focus" aria-pressed="${FOC.on}">${FOC.on?'Exit focus':'Focus'}</button>`:'')+mxBtn()+wsBtn()+'<button data-a="end">Finish</button></div>'}
+function pill(){const p=$('#pill'),r=S.run;p.classList.toggle('on',!!r);
+ if(!r){FOC.man=FOC.off=FOC.min=FOC.peek=false;wClose();p.classList.remove('min');clearTimeout(pill.t);pill.t=setTimeout(()=>{if(!S.run){p.innerHTML='';p.dataset.h=''}},600)}
+ applyFocus();syncWake();if(typeof imSync==='function')imSync();if(!r)return;
+ const o=r.over,fm=st('focusMode'),mn=!!FOC.min&&!o,T='\u0001',tm=o?'Time\'s up':fmt(left());
+ p.classList.toggle('min',mn);
+ /* the bar is only rebuilt when something other than the clock changes, so a tap is never lost to the once-a-second refresh */
+ const h=mn?`<button class="pmn" data-a="pmin" aria-expanded="false" aria-label="Show the timer controls">${T}</button>`
+  :`<span class="pl">${LABEL[r.kind]}${r.subj?' · '+sub(r.subj).name:''}</span><span class="pt" style="font-size:calc(18px*var(--fs))">${T}</span><button class="pmn" data-a="pmin" aria-expanded="true" aria-label="Hide the timer controls">Hide</button><div class="pb">`
+  +(o?'<button data-a="extend">+5 min</button>':`<button data-a="pause">${r.paused!=null?'Resume':'Pause'}</button>`)
+  +(fm!=='off'&&!o?`<button data-a="focus" aria-pressed="${FOC.on}">${FOC.on?'Exit focus':'Focus'}</button>`:'')
+  +(FOC.on&&st('focusNav')!==false?`<button data-a="fpk" aria-pressed="${!!FOC.peek}">${FOC.peek?'Hide menu':'Menu'}</button>`:'')
+  +mxBtn()+wsBtn()+'<button data-a="end">Finish</button></div>';
+ if(p.dataset.h!==h){p.dataset.h=h;p.innerHTML=h.replace(T,tm)}else{const t=p.querySelector(mn?'.pmn':'.pt');if(t&&t.textContent!==tm)t.textContent=tm}}
 function toast(t,long){let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';e.setAttribute('role','status');e.setAttribute('aria-live','polite');document.body.appendChild(e)}e.textContent=t;e.className='on';clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='',long?12000:6000)}
 let AC=null;const snd=()=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){AC=null}return AC};
 document.addEventListener('pointerdown',()=>{if(st('sound'))snd()},{passive:true});
 function chime(k,force){if(!force&&(!st('sound')||(k==='warn'&&st('soundWarn')===false)||(k==='end'&&st('soundEnd')===false)))return;const c=snd();if(!c)return;
  const v={low:.05,medium:.12,high:.25}[st('soundVol')]||.12,ns=k==='end'?[660,784,988]:[600,600],t0=c.currentTime;
  ns.forEach((f,i)=>{const o=c.createOscillator(),n=c.createGain(),t=t0+i*.22;o.type='sine';o.frequency.value=f;n.gain.setValueAtTime(0,t);n.gain.linearRampToValueAtTime(v,t+.02);n.gain.exponentialRampToValueAtTime(.0001,t+.4);o.connect(n);n.connect(c.destination);o.start(t);o.stop(t+.45)})}
-function finish(auto){const r=S.run;if(!r)return;const min=Math.round((r.total-left())/60);
- if(min>=1){if(PT('trackSessions')){S.sess.unshift({kind:r.kind,subj:r.subj,min,t:Date.now()});if(r.subj)sd(r.subj).min+=min}logAct(`${LABEL[r.kind]} finished · ${min} min`,r.subj)}
+/* Seconds of a session that really ran. The timer keeps a heartbeat (r.alive); any stretch longer than 90 s with no heartbeat before the end
+   time (app closed, phone locked and frozen) is taken off, so a block that expires while the app is shut logs only what ran while it was open. */
+function ranSec(r){const now=Date.now();let gone=r.gone||0;
+ if(r.paused==null&&r.alive){const gap=(Math.min(now,r.end)-r.alive)/1000;if(gap>90)gone+=gap-1}
+ return Math.max(0,(r.total-left())-gone)}
+/* a block that ran across midnight is split, so each day gets its own part */
+function sessAdd(o){const mid=new Date(o.t).setHours(0,0,0,0),a=Math.round((mid-(o.t-o.min*6e4))/6e4),b=o.min-a;
+ if(a>=1&&b>=1){S.sess.unshift({...o,min:a,t:mid-1e3});S.sess.unshift({...o,min:b})}else S.sess.unshift(o)}
+function finish(auto){const r=S.run;if(!r)return;const min=Math.round(ranSec(r)/60);
+ if(min>=1){if(PT('trackSessions')){sessAdd({kind:r.kind,subj:r.subj,min,t:Math.min(Date.now(),r.end||Date.now()),acts:r.acts||null});if(r.subj)sd(r.subj).min+=min}logAct(`${LABEL[r.kind]} finished · ${min} min`,r.subj)}
  const gw=min>=1?gdGrow(r,min):0;S.run=null;save();pill();if(!subjOpen())render();if(min>=1&&PT("trackSessions"))scDone(r,min,gw);
  if(auto&&min>=1)ntDone((LABEL[r.kind]||'Session')+' complete · '+min+' min'+(PT('trackSessions')?' logged':''))}
 const TH=[10,5,1];
 function warnMark(r){const l=left();r.wn=r.wn||{};TH.forEach(m=>{if(l<=m*60)r.wn[m]=1})}
 function studyTick(){const r=S.run;if(!r)return;
+ {const now=Date.now();
+  if(r.paused==null&&!r.over&&r.alive){const gap=(Math.min(now,r.end)-r.alive)/1000;if(gap>90)r.gone=(r.gone||0)+gap-1}
+  r.alive=now;r.hb=(r.hb||0)+1;if(r.paused==null&&!r.over&&r.hb%15===0)save()}
  if(r.paused==null&&!r.over){const l=left(),hit=TH.filter(m=>l<=m*60&&!(r.wn&&r.wn[m]));
   if(hit.length){const m=Math.min(...hit);warnMark(r);save();if(l>0&&st('warnings')!==false&&(st('warnAt')||[]).includes(m)){toast(m+(m===1?' minute':' minutes')+' left in this session');chime('warn')}}
   if(l<=0){chime('end');if(st('endBehaviour')==='ask'){r.over=true;save();toast('Time\'s up. Finish the session, or add 5 more minutes.',true);ntDone('Time\'s up. Finish the session, or add 5 more minutes.',1)}else{finish(true);return}}}
- pill()}
+ pill();tdyDraw()}
 setInterval(studyTick,1000);
 const applyStudy=p=>{
  if(!S.run){if(p==='*'||p==='study.quickMin')sel.quick.min=st('quickMin');if(p==='*'||p==='study.examMin')sel.exam.min=st('examMin')}
@@ -42597,9 +42756,9 @@ document.addEventListener('click',e=>{
  const a=t.dataset.a,v=t.dataset.v;
  if(a==='nav')document.body.classList.toggle('nav');
  else if(a==='sel'){sel[t.dataset.k][t.dataset.f]=t.dataset.f==='min'?+v:v;render()}
- else if(a==='start'&&!S.run){const k=t.dataset.k,x=sel[k];S.run={kind:k,subj:x.subj,total:x.min*60,end:Date.now()+x.min*6e4,paused:null,wn:{}};warnMark(S.run);if(st('sound'))snd();save();pill();
+ else if(a==='start'&&!S.run){const k=t.dataset.k,x=sel[k];S.run={kind:k,subj:x.subj,total:x.min*60,end:Date.now()+x.min*6e4,paused:null,wn:{},alive:Date.now(),hb:0,gone:0};warnMark(S.run);if(st('sound'))snd();save();pill();
   if(x.subj){pend={kind:k,subj:x.subj};go(x.subj)}else render()}
- else if(a==='pause'&&S.run){const r=S.run;if(r.paused!=null){r.end=Date.now()+r.paused;r.paused=null}else r.paused=Math.max(0,r.end-Date.now());save();pill()}
+ else if(a==='pause'&&S.run){const r=S.run;if(r.paused!=null){r.end=Date.now()+r.paused;r.paused=null;r.alive=Date.now()}else r.paused=Math.max(0,r.end-Date.now());save();pill()}
  else if(a==='end'){if(st('confirmFinish')&&S.run&&!S.run.over)xask('Finish this session now? The time so far will be logged.','Finish',finish);else finish()}
  else if(a==='open'){const x=S.saved[+v];if(x){sd(x.subject).where=x.ref||'';deep=x.subject;save();go(x.subject)}}
  else if(a==='dueopen'){sd(t.dataset.s).where=v;deep=t.dataset.s;save();go(t.dataset.s)}
@@ -42627,12 +42786,21 @@ document.addEventListener('click',e=>{
  else if(a==='st'){HubSettings.set('study.'+t.dataset.k,v);rerender()}
  else if(a==='stt'){HubSettings.set('study.'+v,!HubSettings.get('study.'+v));rerender()}
  else if(a==='stw'){const A=(g('study.warnAt')||[]).slice(),m=+v,i=A.indexOf(m);if(i<0)A.push(m);else A.splice(i,1);HubSettings.set('study.warnAt',A.sort((x,y)=>y-x));rerender()}
+ else if(a==='pmin'){FOC.min=!FOC.min;if(FOC.min)wClose();pill()}
+ else if(a==='fpk'){FOC.peek=!FOC.peek;pill()}
+ else if(a==='logm'){const gv=i=>(document.getElementById(i)||{}).value,m=Math.round(+gv('lgM')),sj=gv('lgS')||'',dd=+gv('lgD')||0;
+  if(!PT('trackSessions'))toast('Study sessions are switched off in Progress settings, so time cannot be logged.');
+  else if(!(m>=1&&m<=720))toast('Enter the minutes you studied, from 1 to 720.');
+  else{const t=dd?new Date(dkey(Date.now()-dd*864e5)+'T12:00').getTime():Date.now();S.sess.push({kind:'manual',subj:sj,min:m,t});S.sess.sort((x,y)=>y.t-x.t);if(sj)sd(sj).min+=m;logAct('Logged '+hm(m)+' of study',sj);save();toast('Added '+hm(m)+(dd?' to '+(dd===1?'yesterday':dd+' days ago'):' to today'));rerender()}}
+ else if(a==='logdel'){const x=S.sess[+v];if(x&&x.kind==='manual'){S.sess.splice(+v,1);if(x.subj)sd(x.subj).min=Math.max(0,sd(x.subj).min-x.min);save();toast('Removed');rerender()}}
+ else if(a==='pidle'){HubSettings.set('progress.idleMin',+v);rerender()}
+ else if(a==='pstreak'){HubSettings.set('progress.streakMin',+v);rerender()}
  else if(a==='sndtest')chime('end',true)
  else if(a==='focus'){if(FOC.on){if(st('focusMode')==='sessions')FOC.off=true;else FOC.man=false}else{FOC.off=false;FOC.man=true}pill()}
- else if(a==='extend'&&S.run){const r=S.run;r.total+=300;r.end=Date.now()+300000;r.over=false;r.wn={};warnMark(r);save();pill()}
+ else if(a==='extend'&&S.run){const r=S.run;r.total+=300;r.end=Date.now()+300000;r.over=false;r.alive=Date.now();r.wn={};warnMark(r);save();pill()}
  else if(a==='dev'){HubSettings.set('device.'+t.dataset.k,v);rerender()}
  else if(a==='tog'&&v==='device.bottomAutoHide'){HubSettings.set(v,!HubSettings.get(v));document.body.classList.remove('bhide');rerender()}
- else if(a==='tog'&&/^progress\.(trackSessions|trackActive|trackPractice|saveExams|recordActivity|detectWeak)$/.test(v)){HubSettings.set(v,HubSettings.get(v)===false);rerender()}
+ else if(a==='tog'&&/^progress\.(trackSessions|trackActive|trackPractice|saveExams|recordActivity|detectWeak|countHand)$/.test(v)){HubSettings.set(v,HubSettings.get(v)===false);rerender()}
  else if(a==='pview'){pview=pview===v?null:v;rerender()}
  else if(a==='pclear'){const c=pdata().find(x=>x.id===v);if(c)xask('Clear '+c.t.toLowerCase()+'? '+c.sum+' will be deleted from this device. This cannot be undone.','Clear',()=>pclear(v))}
  else if(a==='ntt'&&/^(study|studySkip|exam|done|daily|milestones|quietOn)$/.test(v)){HubSettings.set('notifications.'+v,!g('notifications.'+v));ntNote='';rerender()}
@@ -42900,13 +43068,14 @@ function xcover(){const p=xpre.paper,s=sub(xpre.subj),tot=xtotalP(p);
 function xbegin(){if(!xpre)return;const p=xpre.paper,now=Date.now();
  X.run={id:'x'+now,subj:xpre.subj,vr:xpre.vr,paper:p,phase:p.reading?'reading':'writing',rEnd:now+(p.reading||0)*1000,wEnd:now+((p.reading||0)+p.minutes*60)*1000,ws:now+(p.reading||0)*1000,a:{},dw:{},fa:{},pick:{},fl:{},wn:{},cur:xall(p)[0].id};
  xpre=null;X.note=null;xsave();xfsReq();xresume()}
-function xresume(fs){const r=X.run;if(!r)return;if(fs===true)xfsReq();xopen();xrun();xtick();clearInterval(xti);xti=setInterval(xtick,500)}
+function xresume(fs){const r=X.run;if(!r)return;if(fs===true)xfsReq();
+ {const t=S.run;if(t&&t.paused==null&&!t.over){t.paused=Math.max(0,t.end-Date.now());save();pill();toast('Study timer paused while the exam runs, so the time is not counted twice.',true)}}xopen();xrun();xtick();clearInterval(xti);xti=setInterval(xtick,500)}
 
 /* ---------- running exam ---------- */
 function xrun(){const r=X.run;xo.innerHTML=`<div class="xc-top"><div class="xc-tl"><button class="btn xc-qb" data-xc="qlist" aria-label="Open question list">☰ Questions</button><div><b>${esc(r.paper.title)}</b><div class="mu sm" id="xcph"></div></div></div><div class="xc-clock" id="xccl" role="timer" aria-live="off">--:--</div><div class="xc-r"><span class="mu sm" id="xcsv"${st('saveStatus')===false?' style="display:none"':''}>Answers save automatically</span><span class="mu sm" id="xcpr"></span><button class="btn" data-xc="exit">Exit</button><button class="btn p" data-xc="submit">Submit exam</button></div></div><div id="xcfs"></div><div id="xcbn" aria-live="assertive"></div><div class="xc-body"><nav id="xcnv" aria-label="Question navigation"></nav><section id="xcmain" tabindex="-1"></section></div><div class="xc-foot"><button class="btn" data-xc="prev">← Previous</button><span class="xc-fm"><button class="btn" data-xc="flag" id="xcfl">⚑ Flag for review</button><span class="mu sm xc-keys">← → move · A–D answer · F flag</span></span><button class="btn" data-xc="next">Next →</button></div>`;xnav();xmain();xfsBar()}
 function xbanner(t,keep){const b=$('#xcbn');if(!b)return;b.innerHTML=`<div class="xc-bn">${t}</div>`;clearTimeout(xbanner.t);if(!keep)xbanner.t=setTimeout(()=>{const c=$('#xcbn');if(c)c.innerHTML=''},9000)}
 function xfsBar(){const b=$('#xcfs');if(!b)return;b.innerHTML=(xfs&&st('fsReminder')!==false&&X.run&&!document.fullscreenElement&&document.documentElement.requestFullscreen)?`<div class="xc-bn xc-fsb">Full screen has ended. The exam clock is still running. <button class="btn" data-xc="fs">Return to full screen</button></div>`:''}
-function xtick(){const r=X.run;if(!r||!xo||xpre)return;const now=Date.now();
+function xtick(){const r=X.run;if(!r||!xo||xpre)return;const now=Date.now();xbeat(r,now);
  if(now>=r.wEnd){chime('end');xsubmit(true);return}
  if(r.phase==='reading'&&now>=r.rEnd){r.phase='writing';xsave();xmain(true);xbanner('Reading time is over. Writing time has started.')}
  let left=0;
@@ -42938,12 +43107,20 @@ function xstep(d){const r=X.run,l=xall(r.paper),i=l.findIndex(q=>q.id===r.cur)+d
 function xconfirm(){const r=X.run,need=xneeded(r),fl=Object.keys(r.fl).filter(k=>r.fl[k]).length,by={};need.forEach(it=>{by[it.sec.title]=(by[it.sec.title]||0)+1});
  const m=document.createElement('div');m.className='xc-modal';m.id='xcmd';
  m.innerHTML=`<div role="dialog" aria-modal="true"><h2 style="margin-top:0">Submit exam?</h2><p>${need.length?`<b>${need.length}</b> question${need.length>1?'s are':' is'} unanswered${Object.keys(by).length?' ('+Object.entries(by).map(([k,v])=>esc(k)+': '+v).join(', ')+')':''}.`:'All questions are answered.'}${fl?` <b>${fl}</b> flagged for review.`:''} Once submitted you cannot change your answers.</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn" data-xc="cancel">Keep working</button><button class="btn p" data-xc="confirm">Submit now</button></div></div>`;xo.appendChild(m);m.querySelector('button').focus()}
+/* Leaving an exam early: the answers are discarded, but the time spent and how many questions were answered are still recorded, as an unfinished exam (not a completed one). */
+/* Seconds of writing time that really passed. The exam keeps a heartbeat (r.alive); a stretch longer than 90 s with none (app closed, phone locked) is taken off, so reopening an exam hours later cannot add that time. */
+const xsecs=(r,now)=>{const e=Math.min(now,r.wEnd);if(e<=r.ws)return 0;let gone=r.gone||0;const a0=Math.max(r.alive||e,r.ws);if(e-a0>9e4)gone+=(e-a0)/1000-1;return Math.max(0,Math.round((e-r.ws)/1000-gone))};
+function xbeat(r,now){const e=Math.min(now,r.wEnd),a0=Math.max(r.alive||e,r.ws);if(r.alive&&e-a0>9e4)r.gone=(r.gone||0)+(e-a0)/1000-1;r.alive=now;r.hb=(r.hb||0)+1;if(r.hb%30===0)xsaveD()}
+function xpartial(r){try{if(!r||!PT('trackSessions'))return;const now=Date.now(),sec=xsecs(r,now),m=Math.round(sec/60),tot=xitems(r).length,ans=tot-xneeded(r).length,nm=sub(r.subj)?sub(r.subj).name:'Exam Centre';
+ if(m<1&&ans<1)return;
+ S.sess.unshift({kind:'xc',subj:r.subj,min:m,t:now,partial:true,ans,of:tot,title:r.paper.title});if(m>=1&&r.subj)sd(r.subj).min+=m;
+ logAct(`HSC Exam Centre: ${nm} exam left unfinished · ${m} min, ${ans} of ${tot} answered`,r.subj);save()}catch(e){}}
 function xexit(){const m=document.createElement('div');m.className='xc-modal';m.id='xcmd';
- m.innerHTML=`<div role="dialog" aria-modal="true"><h2 style="margin-top:0">Leave the exam?</h2><p>Leaving now abandons this attempt: your answers will be discarded and nothing is recorded. To finish properly, keep working and use Submit exam.</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn p" data-xc="cancel">Keep working</button><button class="btn" data-xc="abandonrun">Abandon exam</button></div></div>`;xo.appendChild(m);m.querySelector('button').focus()}
-function xsubmit(auto,silent){const r=X.run;if(!r)return;const now=Date.now(),taken=now<=r.ws?0:Math.max(0,Math.round((Math.min(now,r.wEnd)-r.ws)/1000));
+ m.innerHTML=`<div role="dialog" aria-modal="true"><h2 style="margin-top:0">Leave the exam?</h2><p>Leaving now abandons this attempt and discards your answers, but the time you spent and how many questions you answered are still recorded as an unfinished exam. To finish properly, keep working and use Submit exam.</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn p" data-xc="cancel">Keep working</button><button class="btn" data-xc="abandonrun">Abandon exam</button></div></div>`;xo.appendChild(m);m.querySelector('button').focus()}
+function xsubmit(auto,silent){const r=X.run;if(!r)return;const now=Date.now(),taken=xsecs(r,now);
  const at={id:r.id,subj:r.subj,vr:r.vr||'',title:r.paper.title,t:now,taken,allowed:r.paper.minutes*60,auto:!!auto,paper:r.paper,a:r.a,dw:r.dw||{},fa:r.fa||{},pick:r.pick,fl:r.fl,mk:xauto(r)};
  const keep=PT('saveExams');at.tot=xsum(at);X.hist.unshift(at);if(!keep)X.tmp=at.id;xput(at);X.hist.splice(xcap()).forEach(a=>xdel(a.id));X.run=null;X.note=silent&&keep?{id:at.id,t:now}:null;if(!keep&&silent){X.tmp=null;X.hist=X.hist.filter(h=>h.id!==at.id)}clearInterval(xti);xsave();
- const m=Math.round(taken/60);if(m>=1&&PT('trackSessions')){S.sess.unshift({kind:'xc',subj:at.subj,min:m,t:now});sd(at.subj).min+=m}
+ const m=Math.round(taken/60);if(PT('trackSessions')){S.sess.unshift({kind:'xc',subj:at.subj,min:m,t:now});sd(at.subj).min+=m}   /* recorded even under a minute, so a submitted exam always counts as completed */
  logAct(`HSC Exam Centre: ${sub(at.subj).name} full paper submitted`,at.subj);if(keep)xplanSync(at);save();if(!silent)xres(at.id,auto);return at.id}
 
 /* ---------- results ---------- */
@@ -43078,7 +43255,7 @@ function xcCentre(){const r=X.run;let h='';
 {V.exam=()=>`<h1>HSC Exam Centre</h1><p class="mu">Full-length exam simulations.</p>${xcCentre()}`}
 
 /* ---------- Phase 6: progress settings. Every figure below is read from saved data; nothing is estimated ---------- */
-const PTOG=[['trackActive','Count time spent working in subjects','While a subject is open and you are actively using it (clicks, typing, scrolling) that time counts toward the subject, the weekly goal and your streak. It stops after 90 seconds without activity and never overlaps a running Study Timer'],['trackSessions','Study sessions count toward progress','Finished Study Timer sessions and Exam Centre time are logged to Progress and the weekly goal'],['trackPractice','Track practice attempts','Keeps the percentage, last topic and review items your subjects report'],['saveExams','Save exam attempts','Keeps full Exam Centre papers, answers and marks. When off, a paper is marked and shown once, then discarded'],['recordActivity','Record recent activity','Adds sessions, study plan changes and subject activity to Recent activity'],['detectWeak','Detect weak areas automatically','Uses weak areas your subjects report, and the topics that cost marks in saved exam attempts']];
+const PTOG=[['trackActive','Count time spent working in subjects','While a subject is open and you are actively using it (clicks, typing, scrolling) that time counts toward the subject, the weekly goal and your streak. Counting pauses after a few minutes without activity (you choose how long below), and time since your last touch only counts if you come back inside that window. It never overlaps a running Study Timer. Time in the Exam Centre counts toward your daily total'],['trackSessions','Study sessions count toward progress','Finished Study Timer sessions and Exam Centre time are logged to Progress and the weekly goal'],['trackPractice','Track practice attempts','Keeps the percentage, last topic and review items your subjects report'],['saveExams','Save exam attempts','Keeps full Exam Centre papers, answers and marks. When off, a paper is marked and shown once, then discarded'],['recordActivity','Record recent activity','Adds sessions, study plan changes and subject activity to Recent activity'],['detectWeak','Detect weak areas automatically','Uses weak areas your subjects report, and the topics that cost marks in saved exam attempts']];
 let pview=null;
 function xpurgeTmp(){const id=X.tmp;if(!id)return;X.tmp=null;if(X.note&&X.note.id===id)X.note=null;xdel(id);X.hist=X.hist.filter(a=>a.id!==id);xsave()}
 function pdata(){const tm=t=>new Date(t).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}),
@@ -43093,7 +43270,7 @@ function pdata(){const tm=t=>new Date(t).toLocaleString('en-AU',{day:'numeric',m
 function pclear(k){if(k==='sessions'){S.sess=[];S.eng={};Object.values(S.subj).forEach(d=>d.min=0)}else if(k==='practice')Object.values(S.subj).forEach(d=>{d.pct=null;d.topic='';d.due=[]});
  else if(k==='activity'){S.act=[];S.trail=[]}else if(k==='weak')Object.values(S.subj).forEach(d=>d.weak=[]);else if(k==='exams'){X.hist=[];xclrAll();X.note=null;X.tmp=null;xsave()}
  if(pview===k)pview=null;save();rerender()}
-const progCards=()=>`<div class="card"><h3>What the Hub tracks</h3><p class="mu sm" style="margin:0 0 8px">Switching something off stops new data being recorded. Data already saved stays until you clear it below. Progress figures come only from saved activity.</p>${PTOG.map(([k,l,d])=>setRow(l,d,swg('progress.'+k,PT(k),l))).join('')}</div>
+const progCards=()=>`<div class="card"><h3>What the Hub tracks</h3><p class="mu sm" style="margin:0 0 8px">Switching something off stops new data being recorded. Data already saved stays until you clear it below. Progress figures come only from saved activity.</p>${PTOG.map(([k,l,d])=>setRow(l,d,swg('progress.'+k,PT(k),l))).join('')}${setRow('Pause counting after','How long you can go without clicking, typing or scrolling before time stops counting. Longer suits reading and thinking, shorter is stricter',grp('Idle time before counting pauses',[2,3,5,10].map(n=>`<button class="chip ${IDLE()===n?'on':''}" aria-pressed="${IDLE()===n}" data-a="pidle" data-v="${n}">${n} min</button>`).join('')))}${setRow('Minutes for a streak day','The study needed in one day for it to count towards your streak and the Days studied figure',grp('Minutes needed for a streak day',[10,20,30,45].map(n=>`<button class="chip ${SMIN()===n?'on':''}" aria-pressed="${SMIN()===n}" data-a="pstreak" data-v="${n}">${n} min</button>`).join('')))}</div>
 <div class="card"><h3>Your progress data</h3><p class="mu sm" style="margin:0 0 8px">What is saved on this device. Clearing one kind leaves the others and your settings alone. Subjects keep their own records and may report again when opened.</p>${pdata().map(c=>`<div><div class="set-row"><div class="set-lbl"><b>${c.t}</b><span class="mu sm">${c.n?c.sum:'Nothing saved'}</span></div><div class="set-ctl chips">${c.n?`<button class="btn" aria-expanded="${pview===c.id}" data-a="pview" data-v="${c.id}">${pview===c.id?'Hide':'View'}</button><button class="btn x" data-a="pclear" data-v="${c.id}">Clear</button>`:''}</div></div>${pview===c.id&&c.n?`<div style="margin:0 0 10px">${c.rows.join('')}${c.n>c.rows.length?`<p class="mu sm" style="margin:6px 0 0">Showing ${c.rows.length} of ${c.n}.</p>`:''}</div>`:''}</div>`).join('')}</div>
 `;
 xready.then(()=>{if(location.hash.startsWith('#settings/progress'))render()});
@@ -43119,9 +43296,9 @@ function ntQuiet(d){if(g('notifications.quietOn')!==true)return false;const f=nt
  const a=f[0]*60+f[1],b=t[0]*60+t[1],m=d.getHours()*60+d.getMinutes();return a===b?false:a<b?m>=a&&m<b:m>=a||m<b}
 const ntFocus=()=>{const r=SUBJECTS.map(s=>{const o=EXAMS.filter(x=>x.subj===s.id&&at(x)>Date.now()).sort((a,b)=>at(a)-at(b))[0];if(!o)return null;const dl=Math.max(1,Math.ceil((at(o)-Date.now())/864e5)),p=sd(s.id).pct||0;return{s,o,dl,sc:(100-p)/dl/(1+subWeek(s.id)/180)}}).filter(Boolean).sort((a,b)=>b.sc-a.sc);return r[0]||null};
 /* milestones: each one is read from saved sessions or progress a subject reported */
-function ntItems(){const out=[],hr=S.sess.reduce((a,s)=>a+s.min,0)/60;
+function ntItems(){const out=[],hr=(cSess().reduce((a,s)=>a+s.min,0)+Object.keys(S.eng).reduce((a,i)=>a+S.eng[i].t/60,0))/60;
  [5,10,25,50,100,200].forEach(h=>{if(hr>=h)out.push({g:'hrs',key:'hrs|'+h,text:h+' hours of study logged'})});
- const ds=new Set(S.sess.map(s=>ntDay(s.t)));let d=ntDay(Date.now());if(!ds.has(d))d=ntPrev(d);let n=0,st=d;while(ds.has(d)){n++;st=d;d=ntPrev(d)}
+ const n=streak(),st=(()=>{let t=new Date().setHours(12,0,0,0);if(dayMinAll(t)<SMIN())t-=864e5;return ntDay(t-Math.max(0,n-1)*864e5)})();   /* same streak as the Progress tab */
  [3,7,14,30,60].forEach(k=>{if(n>=k)out.push({g:'streak',key:'streak|'+k+'|'+st,text:k+'-day study streak'})});
  SUBJECTS.forEach(s=>{const p=sd(s.id).pct;if(p==null)return;[25,50,75,100].forEach(k=>{if(p>=k)out.push({g:'pct|'+s.id,key:'pct|'+s.id+'|'+k,text:s.name+' has reported '+k+'% progress'})})});
  return out}
@@ -43142,7 +43319,7 @@ function ntCheck(){
  if(on('study')){if(!N.s.study)N.s.study=now;const tr=trig(g('notifications.studyTime')),k='study|'+dk;
   if(tr!=null&&(g('notifications.studyDays')||[]).includes(d.getDay())&&now>=tr&&now<tr+54e5&&tr>=N.s.study&&!N.f[k]){
    const t0=ntDay(now);
-   if(g('notifications.studySkip')!==false&&PT('trackSessions')&&(S.sess.some(s=>s.t>=t0)||dayMinAll(Date.now())>=5)){N.f[k]=now;save()}
+   if(g('notifications.studySkip')!==false&&PT('trackSessions')&&(cSess().some(s=>s.t>=t0)||dayMinAll(Date.now())>=SMIN())){N.f[k]=now;save()}
    else{const gl=S.goal||0,tx='Time for a study session'+(gl>0&&PT('trackSessions')?' · '+ntWeek()+' of '+gl+' min in the last 7 days':'');if(ntSend(tx,'study')){N.f[k]=now;save();return}}}}
  if(on('daily')){if(!N.s.daily)N.s.daily=now;const tr=trig(g('notifications.dailyTime')),k='daily|'+dk;
   if(tr!=null&&now>=tr&&tr>=N.s.daily&&!N.f[k]){const f=ntFocus(),tx=f?'Today\'s focus: '+f.s.name+'. Exam in '+f.dl+' day'+(f.dl>1?'s':''):'A short session is a good place to start today';
@@ -43210,7 +43387,7 @@ ${setRow('Interface scale',sup?'Scales everything together: text, buttons, icons
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!t)return;const a=t.dataset.xc,r=X.run;
  if(a==='start')xstart(t.dataset.v,t.dataset.vr);else if(a==='resume'){xresume(true)}
- else if(a==='abandon'){xask('Abandon this exam? Your answers will be discarded.','Abandon',()=>{X.run=null;xsave();render()})}
+ else if(a==='abandon'){xask('Abandon this exam? Your answers will be discarded, but the time you spent is still recorded as an unfinished exam.','Abandon',()=>{xpartial(X.run);X.run=null;xsave();render()})}
  else if(a==='view')xres(t.dataset.v);else if(a==='close')xclose();
  else if(a==='begin')xbegin();else if(a==='cancelpre'){xpre=null;xclose()}
  else if(a==='again'){const h=X.hist.find(x=>x.id===t.dataset.a);xclose(true);render();if(h)xstart(h.subj,h.vr)}
@@ -43235,7 +43412,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!
  else if(a==='flag'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
  else if(a==='skiprd'){r.rEnd=Date.now();xtick();xnav()}
  else if(a==='fs'){xfsReq()}
- else if(a==='exit')xexit();else if(a==='abandonrun'){X.run=null;xsave();xclose()}
+ else if(a==='exit')xexit();else if(a==='abandonrun'){xpartial(X.run);X.run=null;xsave();xclose()}
  else if(a==='submit'){const cm=st('confirmSubmit'),rr=X.run;if(rr&&(cm==='never'||(cm==='unanswered'&&!xneeded(rr).length&&!Object.keys(rr.fl).some(k=>rr.fl[k]))))xsubmit(false);else xconfirm()}else if(a==='cancel'){const m=$('#xcmd');if(m)m.remove()}else if(a==='confirm')xsubmit(false)});
 document.addEventListener('input',e=>{const t=e.target;if(!xo||!X.run||!t.dataset.xa||X.run.phase!=='writing')return;const r=X.run,q=xfind(r.paper,t.dataset.xa);
  if(q.type==='sa'){const a=r.a[q.id]=r.a[q.id]||q.parts.map(()=>'');a[+t.dataset.p]=t.value}else{r.a[q.id]=t.value;if(!r.pick[q.sec]){r.pick[q.sec]=q.id;const k=$('#xcpk');if(k)k.outerHTML=xpk(r,q)}}
