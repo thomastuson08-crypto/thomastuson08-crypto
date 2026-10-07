@@ -44648,7 +44648,7 @@ function enter(id,_p){const sw=swHas(id);_p(id);
  const t=document.querySelector('[data-a=imw][data-v="'+id+'"]'),w=WORLDS.find(x=>x[0]===id),n=t?t.querySelector('b').textContent:w?w[1]:id,gr=t?t.querySelector('i').style.getPropertyValue('--g'):w?w[3]:'';
 
  ov.style.setProperty('--g',gr||'#05061a');ov.innerHTML=`<div><i>${PF[id]||''}</i><b>Entering ${n}\u2026</b><s></s></div>`;ov.classList.add('on');
- clearTimeout(PT.a);clearTimeout(PT.h);PT.a=setTimeout(()=>enter(id,_p),450);PT.h=setTimeout(()=>ov.classList.remove('on'),1500)}}
+ clearTimeout(PT.a);clearTimeout(PT.h);PT.a=setTimeout(()=>{enter(id,_p);try{rerender()}catch(e){}},450);PT.h=setTimeout(()=>ov.classList.remove('on'),1500)}}
 {const _v=wView;wView=function(){return _v()+`<div class="card"><h3>Portals</h3><p class="mu sm" style="margin-top:0">Choosing any of the ${wTotal()} worlds opens a short portal into it, then adds a world clock and weather and a few slow details such as rain trails, passing lights, steam or shooting stars. All of it stays quiet and can be switched off here.</p>${setRow('Portal transition','A brief "Entering\u2026" screen while the world changes. Skipped when Reduce motion is on.',imS('portal','Portal transition'))}${setRow('World behind subjects','How much of your world shows through Maths, Economics and the other subjects. Solid keeps their own plain page colours.',imC('worldView','World behind subjects',[['clear','Clear'],['balanced','Balanced'],['solid','Solid']]))}${setRow('Corner display','A small clock and weather readout for the world you are in.',imS('portalHud','World corner display'))}</div>`}}
 HubSettings.rule('immersive.worldView',v=>['clear','balanced','solid'].includes(v)?v:undefined);
 sync();
