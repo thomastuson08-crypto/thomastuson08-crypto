@@ -846,8 +846,13 @@ body.tr-full .troom{position:fixed;inset:0;height:auto;min-height:0;border-radiu
 /* Flicker fix: hover lift no longer drops the cursor off the element's bottom edge */
 .trb,.trt{position:relative}
 .trb::after,.trt::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px}
+/* Flicker fix: hover feedback without transforms */
+.troom .trb:hover:not([aria-disabled=true]){transform:none;box-shadow:0 0 0 2px rgba(255,215,154,.6)}
+.troom .trt:hover,.troom .trt.on{transform:none}
+.troom .tq-c:hover,.troom .tq-c:focus-visible{transform:none}
+.troom .trl[style*="--d:0"]{will-change:auto;transform:none}
 /* Teach Room Phase 2: teaching session */
-.tq-desk,.tq-nb{padding:14px 16px;max-height:calc(var(--vh,100vh)*.5);overflow:auto;animation:tqIn .5s ease both}
+.tq-desk,.tq-nb{padding:14px 16px;max-height:calc(var(--vh,100vh)*.5);overflow:auto;animation:tqIn .5s ease backwards}
 .tq-desk[hidden],.tq-nb[hidden]{display:none}@keyframes tqIn{from{opacity:0;transform:translateY(10px)}}
 .tq-dh{font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;margin-bottom:8px}
 .tq-cs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
