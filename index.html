@@ -796,7 +796,7 @@ body.calm #ptr.spin i{animation:none}
 /* ===== Teach Room (Phase 1) ===== */
 .troom{--px:0;--py:0;position:relative;height:calc(var(--vh,100vh) - 96px);min-height:540px;border-radius:22px;overflow:hidden;background:#17121f;color:#f6ecd9;border:1px solid color-mix(in srgb,var(--ln) 70%,var(--br) 30%);box-shadow:var(--sh);isolation:isolate}
 .tr-stage,.tr-fx{position:absolute;inset:0;pointer-events:none}
-.trl{position:absolute;left:-3%;top:-3%;width:106%;height:106%;transform:translate(calc(var(--px)*var(--d)*-1px),calc(var(--py)*var(--d)*-.6px));transition:transform .3s ease-out}
+.trl{position:absolute;left:-3%;top:-3%;width:106%;height:106%;transform:translate3d(calc(var(--px)*var(--d)*-1px),calc(var(--py)*var(--d)*-.6px),0);will-change:transform;backface-visibility:hidden}
 .trrain{animation:trRain .9s linear infinite}@keyframes trRain{to{transform:translateY(120px)}}
 .trclock{transform-origin:1010px 138px;animation:trTick 60s steps(60) infinite}@keyframes trTick{to{transform:rotate(360deg)}}
 .trlamp{animation:trFlick 5.5s infinite}@keyframes trFlick{0%,100%{opacity:1}8%{opacity:.86}10%{opacity:1}46%{opacity:.94}48%{opacity:.8}50%{opacity:1}}
@@ -841,6 +841,11 @@ body.calm #ptr.spin i{animation:none}
 .troom .tr-exit{padding:7px 14px;border-radius:99px;font-size:12.5px;font-weight:700;color:#f6ecd9;background:rgba(255,255,255,.1);border:1px solid rgba(255,214,150,.35)}.troom .tr-exit:hover{border-color:#ffc97a}
 body.tr-full aside,body.tr-full #bnav,body.tr-full .skip{display:none!important}
 body.tr-full .troom{position:fixed;inset:0;height:auto;min-height:0;border-radius:0;border:0;z-index:900}
+/* Flicker fix: no live blur over the animated scene; opaque-ish glass instead */
+.troom .glass{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(22,17,30,.86)}
+/* Flicker fix: hover lift no longer drops the cursor off the element's bottom edge */
+.trb,.trt{position:relative}
+.trb::after,.trt::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px}
 /* Teach Room Phase 2: teaching session */
 .tq-desk,.tq-nb{padding:14px 16px;max-height:calc(var(--vh,100vh)*.5);overflow:auto;animation:tqIn .5s ease both}
 .tq-desk[hidden],.tq-nb[hidden]{display:none}@keyframes tqIn{from{opacity:0;transform:translateY(10px)}}
@@ -43006,7 +43011,7 @@ function post(){
  if(fx('intro')&&!still)document.querySelectorAll('.ctr').forEach(e=>{const m=/^(\d+)(.*)$/.exec(e.textContent);if(!m)return;const n=+m[1],t0=performance.now();
   (function f(t){const p=Math.min(1,(t-t0)/1000);e.textContent=Math.round(n*(1-Math.pow(1-p,3)))+m[2];if(p<1)requestAnimationFrame(f)})(t0)})}
 /* cursor light */
-addEventListener('pointermove',e=>{const r=document.documentElement.style;const z=HubDevice.z||1;if(e.pointerType==='touch'&&document.body.classList.contains('no-touchfx'))return;r.setProperty('--gx',e.clientX/z+'px');r.setProperty('--gy',e.clientY/z+'px');
+addEventListener('pointermove',e=>{if(document.body.classList.contains('tr-full'))return;const r=document.documentElement.style;const z=HubDevice.z||1;if(e.pointerType==='touch'&&document.body.classList.contains('no-touchfx'))return;r.setProperty('--gx',e.clientX/z+'px');r.setProperty('--gy',e.clientY/z+'px');
  const c=e.target.closest&&e.target.closest('.card');if(c){const b=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-b.left)/z+'px');c.style.setProperty('--my',(e.clientY-b.top)/z+'px')}},{passive:true});
 /* particle network */
 (function(){const cv=$('#fx'),x=cv.getContext('2d');let W,H,P=[],mx=-999,my=-999;
@@ -44849,8 +44854,8 @@ V.teach=()=>{const f=TR.fade;TR.fade=false;return `<div class="troom${f?' tr-fad
 let ty=0,tl=0,tk=0,po=null;
 window.TRTYPE=function(el,t,ms){clearInterval(window.__trTy);let i=1;el.textContent=t.slice(0,1);if(t.length<2)return;window.__trTy=setInterval(function(){if(!document.body.contains(el)){clearInterval(window.__trTy);return}el.textContent=t.slice(0,++i);if(i>=t.length)clearInterval(window.__trTy)},ms)};
 function say(t,ex){const r=document.getElementById('tr');if(!r)return;if(ex){TR.ex=ex;r.dataset.ex=ex}TR.said=t;const el=r.querySelector('#trl');r.querySelector('#trs').textContent=t;clearInterval(window.__trTy);if(calmOn()){el.textContent=t;return}TRTYPE(el,t,24*(window.TRSP?TRSP():1))}
-function stop(){clearInterval(ty);clearInterval(window.__trTy);clearTimeout(tl);if(po){removeEventListener('deviceorientation',po);po=null}}
-function init(r){r.dataset.ready='1';stop();setBoard(r);const mv=(x,y)=>{if(tk)return;tk=requestAnimationFrame(()=>{tk=0;r.style.setProperty('--px',x.toFixed(3));r.style.setProperty('--py',y.toFixed(3))})};
+function stop(){cancelAnimationFrame(tk);tk=0;clearInterval(ty);clearInterval(window.__trTy);clearTimeout(tl);if(po){removeEventListener('deviceorientation',po);po=null}}
+function init(r){r.dataset.ready='1';stop();setBoard(r);let cx=0,cy=0,gx=0,gy=0;const step=()=>{tk=0;if(!document.body.contains(r))return;cx+=(gx-cx)*.08;cy+=(gy-cy)*.08;r.style.setProperty('--px',cx.toFixed(3));r.style.setProperty('--py',cy.toFixed(3));if(Math.abs(gx-cx)>.002||Math.abs(gy-cy)>.002)tk=requestAnimationFrame(step)};const mv=(x,y)=>{gx=x;gy=y;if(!tk)tk=requestAnimationFrame(step)};
  if(!calmOn()){r.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const b=r.getBoundingClientRect();mv((e.clientX-b.left)/b.width*2-1,(e.clientY-b.top)/b.height*2-1)});po=e=>{if(e.gamma==null)return;mv(Math.max(-1,Math.min(1,e.gamma/25)),Math.max(-1,Math.min(1,(e.beta-45)/25)))};addEventListener('deviceorientation',po)}
  const lt=()=>{if(!document.body.contains(r)){stop();return}if(!calmOn()&&!trBlocked()){r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),750)}tl=setTimeout(lt,16000+Math.random()*26000)};tl=setTimeout(lt,9000);
  if(TR.said){const el=r.querySelector('#trl');el.textContent=TR.said;r.querySelector('#trs').textContent=TR.said}else say('Oh, hi! I\u2019ve got the whole room to myself and a lot of questions. Pick a book off the shelf and I\u2019ll tell you what I\u2019m still working out.','curious')}
