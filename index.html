@@ -851,6 +851,19 @@ body.tr-full .troom{position:fixed;inset:0;height:auto;min-height:0;border-radiu
 .troom .trt:hover,.troom .trt.on{transform:none}
 .troom .tq-c:hover,.troom .tq-c:focus-visible{transform:none}
 .troom .trl[style*="--d:0"]{will-change:auto;transform:none}
+/* Flicker fix 2: parallax is scoped to the scene (not the HUD/desk) and the scene is isolated from the rest of the page */
+.tr-stage{contain:layout paint style;--px:0;--py:0}
+.trl{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+/* Door fix: keep the door's real proportions on every screen, avoid the huge animated box-shadow, and use real viewport height on phones */
+.trd{--dh:min(calc(var(--vh,100vh)*.7),560px,calc(72vw*560/310));--dw:calc(var(--dh)*310/560);--k:calc(var(--dh)/560);touch-action:none;-webkit-tap-highlight-color:transparent}
+.trd-cam{will-change:transform;backface-visibility:hidden;animation-name:trdPush2}
+@keyframes trdPush2{0%,35%{transform:scale(1)}100%{transform:scale(2.6)}}
+.trd-light{width:var(--dw);height:var(--dh);box-shadow:none;background:radial-gradient(90% 70% at 50% 60%,#ffd79a,#c9803c 55%,#4a2a24)}
+.trd-light::before{content:"";position:absolute;inset:-22%;z-index:-1;background:radial-gradient(closest-side,rgba(255,170,80,.5),transparent)}
+.trd-door{width:var(--dw);height:var(--dh);margin-left:calc(var(--dw)/-2);margin-top:calc(var(--dh)/-2);will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.trd-frame{width:calc(380px*var(--k));height:calc(620px*var(--k))}
+.trd-door svg{width:100%;height:100%;display:block}
+@media(max-width:620px){.trd{animation-duration:.35s;animation-delay:.6s}}
 /* Teach Room Phase 2: teaching session */
 .tq-desk,.tq-nb{padding:14px 16px;max-height:calc(var(--vh,100vh)*.5);overflow:auto;animation:tqIn .5s ease backwards}
 .tq-desk[hidden],.tq-nb[hidden]{display:none}@keyframes tqIn{from{opacity:0;transform:translateY(10px)}}
@@ -44860,7 +44873,7 @@ let ty=0,tl=0,tk=0,po=null;
 window.TRTYPE=function(el,t,ms){clearInterval(window.__trTy);let i=1;el.textContent=t.slice(0,1);if(t.length<2)return;window.__trTy=setInterval(function(){if(!document.body.contains(el)){clearInterval(window.__trTy);return}el.textContent=t.slice(0,++i);if(i>=t.length)clearInterval(window.__trTy)},ms)};
 function say(t,ex){const r=document.getElementById('tr');if(!r)return;if(ex){TR.ex=ex;r.dataset.ex=ex}TR.said=t;const el=r.querySelector('#trl');r.querySelector('#trs').textContent=t;clearInterval(window.__trTy);if(calmOn()){el.textContent=t;return}TRTYPE(el,t,24*(window.TRSP?TRSP():1))}
 function stop(){cancelAnimationFrame(tk);tk=0;clearInterval(ty);clearInterval(window.__trTy);clearTimeout(tl);if(po){removeEventListener('deviceorientation',po);po=null}}
-function init(r){r.dataset.ready='1';stop();setBoard(r);let cx=0,cy=0,gx=0,gy=0;const step=()=>{tk=0;if(!document.body.contains(r))return;cx+=(gx-cx)*.08;cy+=(gy-cy)*.08;r.style.setProperty('--px',cx.toFixed(3));r.style.setProperty('--py',cy.toFixed(3));if(Math.abs(gx-cx)>.002||Math.abs(gy-cy)>.002)tk=requestAnimationFrame(step)};const mv=(x,y)=>{gx=x;gy=y;if(!tk)tk=requestAnimationFrame(step)};
+function init(r){r.dataset.ready='1';stop();setBoard(r);let cx=0,cy=0,gx=0,gy=0,lx='',ly='';const sg=r.querySelector('.tr-stage')||r;const step=()=>{tk=0;if(!document.body.contains(r))return;cx+=(gx-cx)*.08;cy+=(gy-cy)*.08;const nx=cx.toFixed(2),ny=cy.toFixed(2);if(nx!==lx){lx=nx;sg.style.setProperty('--px',nx)}if(ny!==ly){ly=ny;sg.style.setProperty('--py',ny)}if(Math.abs(gx-cx)>.002||Math.abs(gy-cy)>.002)tk=requestAnimationFrame(step)};const mv=(x,y)=>{gx=x;gy=y;if(!tk)tk=requestAnimationFrame(step)};
  if(!calmOn()){r.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const b=r.getBoundingClientRect();mv((e.clientX-b.left)/b.width*2-1,(e.clientY-b.top)/b.height*2-1)});po=e=>{if(e.gamma==null)return;mv(Math.max(-1,Math.min(1,e.gamma/25)),Math.max(-1,Math.min(1,(e.beta-45)/25)))};addEventListener('deviceorientation',po)}
  const lt=()=>{if(!document.body.contains(r)){stop();return}if(!calmOn()&&!trBlocked()){r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),750)}tl=setTimeout(lt,16000+Math.random()*26000)};tl=setTimeout(lt,9000);
  if(TR.said){const el=r.querySelector('#trl');el.textContent=TR.said;r.querySelector('#trs').textContent=TR.said}else say('Oh, hi! I\u2019ve got the whole room to myself and a lot of questions. Pick a book off the shelf and I\u2019ll tell you what I\u2019m still working out.','curious')}
@@ -46187,7 +46200,17 @@ const QT=[
 `It does not matter how slowly you go as long as you do not stop. — Confucius`,
 `The beautiful thing about learning is that no one can take it away from you. — B.B. King`
 ];
-const qtToday=()=>{const n=new Date(),day=Math.floor((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-Date.UTC(n.getFullYear(),0,0))/864e5);return QT[day%QT.length]};
+const qtPick=()=>{let last=-1;try{last=+localStorage.getItem('hx-qi')}catch(e){}
+let i;do{i=Math.floor(Math.random()*QT.length)}while(i===last&&QT.length>1);
+try{localStorage.setItem('hx-qi',i)}catch(e){}return i};
+let QI=qtPick();
+const qtToday=()=>QT[QI];
+/* installed app resumed from the background doesn't reload, so pick a fresh quote if it was away 30+ min */
+let qtAway=0;
+document.addEventListener('visibilitychange',()=>{
+if(document.hidden){qtAway=Date.now();return}
+if(qtAway&&Date.now()-qtAway>30*60*1000){QI=qtPick();gr()}
+qtAway=0});
 function gr(){let d=document.getElementById('hx-gr');if(!S.qt){if(d)d.remove();return}const h=document.querySelector('#main h1#gr');if(!h){if(d)d.remove();return}
  const fresh=!d;if(fresh){d=document.createElement('div');d.id='hx-gr'}
  d.removeAttribute('aria-hidden');d.classList.remove('hx-ph','hx-in');d.style.animationDelay='';d.textContent=qtToday();
