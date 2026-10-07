@@ -854,16 +854,19 @@ body.tr-full .troom{position:fixed;inset:0;height:auto;min-height:0;border-radiu
 /* Flicker fix 2: parallax is scoped to the scene (not the HUD/desk) and the scene is isolated from the rest of the page */
 .tr-stage{contain:layout paint style;--px:0;--py:0}
 .trl{backface-visibility:hidden;-webkit-backface-visibility:hidden}
-/* Door fix: keep the door's real proportions on every screen, avoid the huge animated box-shadow, and use real viewport height on phones */
-.trd{--dh:min(calc(var(--vh,100vh)*.7),560px,calc(72vw*560/310));--dw:calc(var(--dh)*310/560);--k:calc(var(--dh)/560);touch-action:none;-webkit-tap-highlight-color:transparent}
-.trd-cam{will-change:transform;backface-visibility:hidden;animation-name:trdPush2}
-@keyframes trdPush2{0%,35%{transform:scale(1)}100%{transform:scale(2.6)}}
-.trd-light{width:var(--dw);height:var(--dh);box-shadow:none;background:radial-gradient(90% 70% at 50% 60%,#ffd79a,#c9803c 55%,#4a2a24)}
-.trd-light::before{content:"";position:absolute;inset:-22%;z-index:-1;background:radial-gradient(closest-side,rgba(255,170,80,.5),transparent)}
-.trd-door{width:var(--dw);height:var(--dh);margin-left:calc(var(--dw)/-2);margin-top:calc(var(--dh)/-2);will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-.trd-frame{width:calc(380px*var(--k));height:calc(620px*var(--k))}
+/* Door v3: true proportions, doorway-centred camera push that ends in warm light, then a quick fade into the room */
+.trd{--dh:min(calc(var(--vh,100vh)*.7),560px,calc(72vw*560/310));--dw:calc(var(--dh)*310/560);--S:4;touch-action:none;-webkit-tap-highlight-color:transparent;background:radial-gradient(70% 60% at 50% 55%,#1f1730,#0b0812);animation:trdOut3 .2s ease-out .84s forwards}
+.trd-cam{transform-origin:50% calc(50% + var(--dh)*32/560);animation:trdPush3 .7s cubic-bezier(.45,0,.8,.5) .28s both}
+.trd-light{width:var(--dw);height:var(--dh);box-shadow:none;background:radial-gradient(85% 70% at 50% 60%,#fff0cf,#ffc27a 45%,#d9893f 80%,#8a4a28)}
+.trd-light::before{content:"";position:absolute;inset:-26%;z-index:-1;background:radial-gradient(closest-side,rgba(255,176,90,.55),rgba(255,176,90,0))}
+.trd-frame{width:calc(var(--dh)*380/560);height:calc(var(--dh)*620/560)}
+.trd-frame path{fill:#2b1f3d;stroke:#4a3866;stroke-width:3}
+.trd-door{width:var(--dw);height:var(--dh);margin-left:calc(var(--dw)/-2);margin-top:calc(var(--dh)/-2);backface-visibility:hidden;-webkit-backface-visibility:hidden;animation:trdSwing .58s cubic-bezier(.3,0,.2,1) .08s forwards,trdDoorFade .3s ease-in .55s forwards}
 .trd-door svg{width:100%;height:100%;display:block}
-@media(max-width:620px){.trd{animation-duration:.35s;animation-delay:.6s}}
+@keyframes trdPush3{from{transform:scale(1)}to{transform:scale(var(--S))}}
+@keyframes trdOut3{to{opacity:0;visibility:hidden}}
+.trd::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,#ffe6b8,#ffc27a 55%,#e29a52);opacity:0;animation:trdBloom .3s ease-in .6s forwards}@keyframes trdBloom{to{opacity:1}}
+@keyframes trdDoorFade{to{opacity:0}}
 /* Teach Room Phase 2: teaching session */
 .tq-desk,.tq-nb{padding:14px 16px;max-height:calc(var(--vh,100vh)*.5);overflow:auto;animation:tqIn .5s ease backwards}
 .tq-desk[hidden],.tq-nb[hidden]{display:none}@keyframes tqIn{from{opacity:0;transform:translateY(10px)}}
@@ -44856,7 +44859,7 @@ function snd(k){if(!T('sound'))return;try{const C=window.AudioContext||window.we
  if(k==='creak'){o.type='sawtooth';o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(190,t+.55);f.type='bandpass';f.frequency.value=420;f.Q.value=6;const l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=23;lg.gain.value=14;l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+.85);
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.04,t+.12);g.gain.linearRampToValueAtTime(.018,t+.5);g.gain.exponentialRampToValueAtTime(.0001,t+.8);o.start(t);o.stop(t+.85)}
  else{o.type='sine';o.frequency.value=659;f.type='lowpass';f.frequency.value=2400;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.035,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.7);o.start(t);o.stop(t+.75)}}catch(e){}}
-function door(){if(!T('door')||calmOn()||trBlocked())return false;const d=document.createElement('div');d.className='trd';d.setAttribute('aria-hidden','true');d.innerHTML=DOOR;document.body.appendChild(d);snd('creak');
+function door(){if(!T('door')||calmOn()||trBlocked())return false;const d=document.createElement('div');d.className='trd';d.setAttribute('aria-hidden','true');d.innerHTML=DOOR;document.body.appendChild(d);{const h=d.querySelector('.trd-door').offsetHeight,k=h/560||1;d.style.setProperty('--S',Math.min(9,Math.max(innerWidth/(292*k),innerHeight/(556*k))*1.25+.2).toFixed(2))}snd('creak');
  const end=()=>{clearTimeout(tm);d.remove();removeEventListener('pointerdown',end,true);removeEventListener('keydown',end,true)},tm=setTimeout(end,1060);addEventListener('pointerdown',end,true);addEventListener('keydown',end,true);return true}
 let prev=location.hash.slice(1).split('/')[0],back=prev!=='teach'?location.hash.slice(1):'dash';
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('tr')&&!trBlocked())go(back||'dash')});
@@ -44873,8 +44876,8 @@ let ty=0,tl=0,tk=0,po=null;
 window.TRTYPE=function(el,t,ms){clearInterval(window.__trTy);let i=1;el.textContent=t.slice(0,1);if(t.length<2)return;window.__trTy=setInterval(function(){if(!document.body.contains(el)){clearInterval(window.__trTy);return}el.textContent=t.slice(0,++i);if(i>=t.length)clearInterval(window.__trTy)},ms)};
 function say(t,ex){const r=document.getElementById('tr');if(!r)return;if(ex){TR.ex=ex;r.dataset.ex=ex}TR.said=t;const el=r.querySelector('#trl');r.querySelector('#trs').textContent=t;clearInterval(window.__trTy);if(calmOn()){el.textContent=t;return}TRTYPE(el,t,24*(window.TRSP?TRSP():1))}
 function stop(){cancelAnimationFrame(tk);tk=0;clearInterval(ty);clearInterval(window.__trTy);clearTimeout(tl);if(po){removeEventListener('deviceorientation',po);po=null}}
-function init(r){r.dataset.ready='1';stop();setBoard(r);let cx=0,cy=0,gx=0,gy=0,lx='',ly='';const sg=r.querySelector('.tr-stage')||r;const step=()=>{tk=0;if(!document.body.contains(r))return;cx+=(gx-cx)*.08;cy+=(gy-cy)*.08;const nx=cx.toFixed(2),ny=cy.toFixed(2);if(nx!==lx){lx=nx;sg.style.setProperty('--px',nx)}if(ny!==ly){ly=ny;sg.style.setProperty('--py',ny)}if(Math.abs(gx-cx)>.002||Math.abs(gy-cy)>.002)tk=requestAnimationFrame(step)};const mv=(x,y)=>{gx=x;gy=y;if(!tk)tk=requestAnimationFrame(step)};
- if(!calmOn()){r.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const b=r.getBoundingClientRect();mv((e.clientX-b.left)/b.width*2-1,(e.clientY-b.top)/b.height*2-1)});po=e=>{if(e.gamma==null)return;mv(Math.max(-1,Math.min(1,e.gamma/25)),Math.max(-1,Math.min(1,(e.beta-45)/25)))};addEventListener('deviceorientation',po)}
+function init(r){r.dataset.ready='1';stop();setBoard(r);let cx=0,cy=0,gx=0,gy=0,lx='',ly='',rc=null;const LY=[...r.querySelectorAll('.tr-stage .trl')].map(e=>[e,parseFloat((e.getAttribute('style')||'').match(/--d:\s*([\d.]+)/)?.[1])||0]).filter(x=>x[1]);const step=()=>{tk=0;if(!document.body.contains(r))return;cx+=(gx-cx)*.08;cy+=(gy-cy)*.08;const nx=cx.toFixed(2),ny=cy.toFixed(2);if(nx!==lx||ny!==ly){lx=nx;ly=ny;for(const [e,d] of LY)e.style.transform='translate3d('+(-cx*d).toFixed(1)+'px,'+(-cy*d*.6).toFixed(1)+'px,0)'}if(Math.abs(gx-cx)>.002||Math.abs(gy-cy)>.002)tk=requestAnimationFrame(step)};const mv=(x,y)=>{gx=x;gy=y;if(!tk)tk=requestAnimationFrame(step)};
+ if(!calmOn()){r.addEventListener('pointerenter',()=>{rc=null});addEventListener('resize',()=>{rc=null});r.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const b=rc||(rc=r.getBoundingClientRect());mv((e.clientX-b.left)/b.width*2-1,(e.clientY-b.top)/b.height*2-1)});po=e=>{if(e.gamma==null)return;mv(Math.max(-1,Math.min(1,e.gamma/25)),Math.max(-1,Math.min(1,(e.beta-45)/25)))};addEventListener('deviceorientation',po)}
  const lt=()=>{if(!document.body.contains(r)){stop();return}if(!calmOn()&&!trBlocked()){r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),750)}tl=setTimeout(lt,16000+Math.random()*26000)};tl=setTimeout(lt,9000);
  if(TR.said){const el=r.querySelector('#trl');el.textContent=TR.said;r.querySelector('#trs').textContent=TR.said}else say('Oh, hi! I\u2019ve got the whole room to myself and a lot of questions. Pick a book off the shelf and I\u2019ll tell you what I\u2019m still working out.','curious')}
 const main=document.getElementById('main');
