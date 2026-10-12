@@ -45159,6 +45159,14 @@ function hello(f,id){a11yFrame(f);f.contentWindow.postMessage({hsc:1,type:'hello
 const subjOpen=()=>{const s=sub(location.hash.slice(1));return !!(s&&s.src)};
 addEventListener('message',e=>{
  const m=e.data,f=document.querySelector('iframe');if(!m||m.hsc!==1||!sub(m.subject)||!f||e.source!==f.contentWindow)return;applyMsg(m)});
+/* Background subject modules send progress/index messages (often several in a row, e.g. while they warm up after a load).
+   Each used to rebuild the whole page straight away, which made the Exam Centre and Marker lag and flash. Now they are
+   merged into one redraw after things go quiet, and they never redraw the Exam Centre (it shows none of that data). */
+let softT=0;
+function softRender(){
+ let skip=false;try{skip=location.hash.slice(1).split('/')[0]==='exam'||!!X.run||!!xo||document.body.classList.contains('xc-on')}catch(e){}
+ if(skip)return;
+ clearTimeout(softT);softT=setTimeout(()=>{try{if(location.hash.slice(1).split('/')[0]==='exam'||X.run||xo)return}catch(e){}if(!subjOpen()&&!document.getElementById('tr'))rerender()},500)}
 function applyMsg(m){
  const d=sd(m.subject);
  if(m.type==='progress'){if(m.where!=null){d.sub=m.sub!=null?String(m.sub):'';if(m.topic)d.tn=String(m.topic)}   /* used only to label activity, so it is kept even when practice tracking is off */
@@ -45167,7 +45175,7 @@ function applyMsg(m){
  else if(m.type==='save'&&m.title&&!S.saved.some(x=>x.subject===m.subject&&x.title===m.title))S.saved.unshift({subject:m.subject,title:String(m.title),ref:m.ref||''});
  else if(m.type==='due'&&PT('trackPractice')&&Array.isArray(m.items))d.due=m.items.slice(0,20).map(i=>({label:String(i.label||''),n:Math.max(0,+i.count||0),where:String(i.where||'')}));
  else if(m.type==='index'&&Array.isArray(m.entries)){IX[m.subject]=m.entries.slice(0,3000).map(x=>({t:String(x.title||'').slice(0,120),w:String(x.where||'').slice(0,120),x:String(x.text||'').slice(0,500),g:String(x.tag||'').slice(0,40)})).filter(x=>x.t);saveIx()}
-  save();bmSync();if(!subjOpen()&&!document.getElementById('tr'))render();   /* the Teach Room keeps its own state: a background progress update must not rebuild it */
+  save();bmSync();if(!subjOpen()&&!document.getElementById('tr'))softRender();   /* the Teach Room keeps its own state: a background progress update must not rebuild it */
 }
 
 /* native subjects: run inside this page (no iframe). The subject file (subjects/<id>.native.js, made by build.py)
@@ -45200,8 +45208,10 @@ function warmIndex(){
  const st=document.getElementById('nstore');if(!st)return;
  const done=()=>{try{localStorage.setItem('hsc-hub-idxv',IXV)}catch(e){}};
  if(!todo.length){done();return}
+ const busy=()=>{try{return location.hash.slice(1).split('/')[0]==='exam'||!!X.run||!!xo}catch(e){return false}};
  const next=i=>{
   if(i>=todo.length){done();return}
+  if(busy()){setTimeout(()=>next(i),4000);return}
   const s=todo[i];
   if(!NATIVE[s.id]){
    const n=NATIVE[s.id]={host:document.createElement('div'),ctl:null,st:'loaded',warm:true};
@@ -45216,7 +45226,8 @@ function warmIndex(){
    catch(err){console.error(err);NATIVE[s.id]=null}
   }
   setTimeout(()=>next(i+1),900)};
- next(0)}
+const gate=i=>{if(busy()){setTimeout(()=>gate(i),4000);return}next(i)};
+ gate(0)}
 setTimeout(()=>{try{warmIndex()}catch(e){console.error(e)}},3000);
 
 /* study timer */
@@ -45890,13 +45901,16 @@ const XMK_SUBJECTS=[{id:'economics',name:'Economics',
     build a few papers (the builder is pure: random picks, no storage) and keep every distinct short answer and essay. The 'used' map
     steers each draw towards questions not yet seen, so the whole bank turns up within a handful of papers. */
  load:()=>xensure('economics').then(()=>{const E=window.HubExam&&HubExam.economics;if(!E||typeof E.build!=='function')throw new Error('no builder');
-  const sa=new Map(),es=new Map(),used={},t0=Date.now();let dry=0;
-  for(let n=0;n<80&&dry<10&&Date.now()-t0<800;n++){let add=0;
-   xall(E.build({variant:'full',used})).forEach(q=>{const m=q.type==='sa'?sa:q.type==='essay'?es:null;if(!m)return;used[q.id]=9;if(!m.has(q.id)){m.set(q.id,q);add++}});
-   dry=add?0:dry+1}
-  if(!sa.size&&!es.size)throw new Error('empty');
+  const sa=new Map(),es=new Map(),used={},t0=Date.now();let dry=0,n=0;
   const by=(a,b)=>xtn(a.topic).localeCompare(xtn(b.topic))||xmkTot(a)-xmkTot(b)||String(a.id).localeCompare(String(b.id));
-  return{sa:[...sa.values()].sort(by),es:[...es.values()].sort(by)}}),
+  /* built in short slices (about 25 ms each) so opening the Marker never freezes the page */
+  return new Promise((ok,no)=>{const step=()=>{try{const s0=Date.now();
+   while(n<80&&dry<10&&Date.now()-t0<2500&&Date.now()-s0<25){let add=0;
+    xall(E.build({variant:'full',used})).forEach(q=>{const m=q.type==='sa'?sa:q.type==='essay'?es:null;if(!m)return;used[q.id]=9;if(!m.has(q.id)){m.set(q.id,q);add++}});
+    dry=add?0:dry+1;n++}
+   if(n<80&&dry<10&&Date.now()-t0<2500){setTimeout(step,0);return}
+   if(!sa.size&&!es.size)throw new Error('empty');
+   ok({sa:[...sa.values()].sort(by),es:[...es.values()].sort(by)})}catch(e){no(e)}};step()})}),
  mark:(q,ans)=>xmark(xsugQ(q),ans)},
 {id:'history',name:'Modern History',
  ok:()=>!!(window.HubMarkerHistory&&typeof window.HubMarkerHistory.mark==='function'&&typeof hmark==='function'),
@@ -48641,10 +48655,12 @@ const go=nx.act==='cards'&&due?`data-a="dueopen" data-s="${s.id}" data-v="${esc(
 const stp=STP[nx.act]||STP.qs,tot=stp.reduce((a,x)=>a+x[2],0);
 return `<div class="card sec" style="--c:${s.c}"><div class="mu sm" style="font-weight:600">What should I do?${n?' · '+esc(n.x.name)+' in '+daysTo(n.x)+' day'+(daysTo(n.x)===1?'':'s'):''}</div><div class="hero"><span class="tile">${ic(s.d)}</span><div style="flex:1;min-width:200px"><h2 style="margin:0">${s.name}: ${esc(nx.txt)}</h2><div class="mu sm">Why: ${esc(why.join(' · '))}${thin?'. Not much is recorded yet, so this leans on your exam dates.':''}</div></div><button class="btn p" ${go}>Start</button></div>${stp.map(x=>`<div class="stk"><b>${x[2]?x[2]+' min':'Paper'}</b><span>${x[0]}: ${x[1]}</span></div>`).join('')}<div class="mu sm">Suggested structure${tot?', about '+tot+' min plus the paper':''}.</div><div class="chips" style="margin-top:12px"><button class="chip" data-st="q20" data-v="${s.id}">I only have 20 minutes</button><button class="chip" data-go="teach">I'm bored</button><button class="chip" data-st="p:mistakes">I'm stuck on something</button><button class="chip" data-st="p:exam">Exam soon</button><button class="chip" data-st="p:hub">How to use the Hub</button></div></div>`}catch(e){return ''}};
 DW.unshift({id:'start',t:'What should I do?',d:'A suggested next action with the reason, built from your exam dates, time, paper scores and due cards',sz:'full',r:startW});
+/* Already on Strategy: redraw in place and keep the scroll position. go() would run a full render() that jumps back to the top and replays the intro animations. */
+const stGo=()=>location.hash==='#strategy'?rerender():go('strategy');
 document.addEventListener('click',e=>{const t=e.target.closest('[data-st]');if(!t)return;e.preventDefault();const v=t.dataset.st;
 if(v==='q20'){sel.quick.subj=t.dataset.v||'';sel.quick.min=20;go('quick')}
-else if(v.indexOf('p:')===0){ST.p=v.slice(2);ST.s='';go('strategy')}
-else if(v.indexOf('s:')===0){ST.s=v.slice(2);go('strategy')}});
+else if(v.indexOf('p:')===0){ST.p=v.slice(2);ST.s='';stGo()}
+else if(v.indexOf('s:')===0){ST.s=v.slice(2);stGo()}});
 
 const dc2=document.createElement('style');dc2.textContent=`.tr-shelf.case{position:absolute;z-index:4;left:3%;top:max(86px,14%);width:clamp(190px,17vw,250px);flex-direction:column;gap:0;overflow:visible;padding:0 12px;box-sizing:border-box;border:9px solid #5b3d2a;border-radius:8px 8px 4px 4px;background:repeating-linear-gradient(to bottom,transparent 0,transparent 56px,#7a5638 56px,#4a3224 61px,#33231a 61px,#33231a 66px),#1f1612;box-shadow:inset 0 0 18px rgba(0,0,0,.65),0 12px 24px rgba(0,0,0,.5)}.tr-shelf.case .trb{flex:none;align-self:stretch;box-sizing:border-box;width:100%!important;height:56px!important;min-height:0!important;max-height:56px!important;margin:0 0 10px!important;padding:0 12px!important;font-size:13px;line-height:1.1;display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal;min-width:0}.tr-shelf.case .trb small{display:none}`;document.head.appendChild(dc2);
 (function(){let on=false;const tick=()=>{const r=document.getElementById('tr');if(!r){on=false;return}
