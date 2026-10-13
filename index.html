@@ -754,22 +754,20 @@ body{overscroll-behavior-y:none}
 body:has(#pill.on) main{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px)/var(--uz))}
 }
 @media(max-width:380px){#pill .pb button:not([data-a=mxp]):not(.wsb){padding:8px 7px;font-size:12px}}
-/* ===== Part 3: Progress Universe and Study Garden ===== */
+/* ===== Part 3: Progress Universe ===== */
 .un{background:radial-gradient(120% 140% at 50% 120%,#1b1a4d 0,#080a22 55%,#04050f);color:#e8e9ff;border-color:#232a66;overflow:hidden}
-.un h2{color:#fff}.un .mu{color:#9aa0d6}.un svg,.gd svg{display:block;width:100%;height:auto}
+.un h2{color:#fff}.un .mu{color:#9aa0d6}.un svg{display:block;width:100%;height:auto}
 .un.rise .pl-lit{animation:plr 1.4s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--k)*.18s)}
 @keyframes plr{from{opacity:.05}}
 .un-lg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 16px;margin-top:10px;font-size:12.5px;line-height:1.4}
 .un-lg b{display:flex;align-items:center;gap:6px;font-size:13px}.un-lg i{width:9px;height:9px;border-radius:50%;background:var(--c)}
-.gp{transform-box:fill-box;transform-origin:50% 100%}
-.gd.rise .gp{animation:gpg .9s cubic-bezier(.2,.9,.3,1.25) both;animation-delay:calc(var(--k)*.045s)}
-@keyframes gpg{from{transform:scale(0)}}
 /* ===== Part 4: micro-interactions ===== */
 #scd{position:fixed;inset:0;z-index:2147483002;display:grid;place-items:center;background:rgba(5,6,20,.62);backdrop-filter:blur(6px);animation:scf .3s ease both}
 #scd>div{width:min(420px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;background:var(--sf);color:var(--ink);border:1px solid var(--ln);border-radius:24px;padding:24px;box-shadow:0 30px 80px -20px #000;animation:scu .5s cubic-bezier(.2,.9,.3,1.15) both}
 .sc-big{font-size:calc(60px*var(--fs));font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;color:var(--c,var(--br))}.sc-big small{font-size:18px;letter-spacing:0;color:var(--mu);font-weight:600}
 .sc-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
 .sc-g div{padding:10px 12px;border-radius:14px;background:var(--sf2);border:1px solid var(--ln);animation:scu .5s cubic-bezier(.2,.9,.3,1.15) both;animation-delay:calc(.25s + var(--k)*.12s)}
+.sc-g div:last-child:nth-child(odd){grid-column:1/-1}
 .sc-g b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
 @keyframes scf{from{opacity:0}}@keyframes scu{from{opacity:0;transform:translateY(16px) scale(.97)}}
 .tk-b{position:fixed;z-index:2147483000;pointer-events:none;width:0;height:0}
@@ -778,7 +776,7 @@ body:has(#pill.on) main{padding-bottom:calc(150px + env(safe-area-inset-bottom,0
 @keyframes tkr{from{transform:scale(.4);opacity:.9}to{transform:scale(1.9);opacity:0}}
 @keyframes tkb{from{transform:rotate(var(--a)) translateX(6px)}to{transform:rotate(var(--a)) translateX(28px) scale(.3);opacity:0}}
 @keyframes tkp{50%{transform:scale(1.3)}}.tk-pop{animation:tkp .38s cubic-bezier(.3,1.6,.5,1)}
-body.calm :is(.tk-b,.tk-b::before,.tk-b i,.pl-lit,.gp,#scd,#scd>div,.sc-g div,#wpop,.tk-pop){animation:none!important}
+body.calm :is(.tk-b,.tk-b::before,.tk-b i,.pl-lit,#scd,#scd>div,.sc-g div,#wpop,.tk-pop){animation:none!important}
 </style>
 <style id="pwa-css">
 #offpill{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px)/var(--uz,1) + 8px);transform:translate(-50%,-160%);opacity:0;pointer-events:none;z-index:9999;padding:6px 14px;border-radius:99px;background:var(--ink);color:var(--sf);font:600 12px/1.2 system-ui,-apple-system,sans-serif;white-space:nowrap;transition:transform .25s,opacity .25s}
@@ -42589,7 +42587,7 @@ progress(){
  <div class="card sec"><h2>Subjects</h2>${SUBJECTS.map(s=>{const d=sd(s.id),w=subWeek(s.id);return `<div class="row" style="--c:${s.c};display:block"><div style="display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-bottom:8px"><b>${s.name}</b><span class="mu sm">${!s.src?'Not connected yet':d.pct==null?'No progress reported yet':d.pct+'% complete'}</span></div>${bar(d.pct,s.c)}<div class="mu sm" style="margin-top:8px">This week <b>${hm(w)}</b> · All time <b>${hm(subTotal(s.id))}</b> · Last studied <b>${sinceTxt(lastDay(s.id))}</b></div>${tqLine(d)}${s.src?spark(s):''}${d.topic?`<div class="mu sm" style="margin-top:8px">Last topic: ${esc(d.topic)}</div>`:''}</div>`}).join('')}</div>
  ${fold(focusCard(),FH,'focus')}${fold(actCard(),'day by day, last 7 days','acts')}
  ${fold(`<div class="card sec"><h2>Where the time comes from</h2><div class="mu sm" style="line-height:1.7"><div><b>Today</b> · ${srcLine(dayParts(now))}</div><div><b>Last 7 days</b> · ${srcLine(parts7())}</div><div style="margin-top:6px">Timer is Study Timer and Exam Centre sessions. Working is time actively spent in a subject. Logged by hand is time you typed in.${HAND()?'':' Only the first two count towards your goal and streak.'} A streak day needs ${SMIN()} min.</div></div></div>`,'Timer · Working · Logged by hand','src')}
- ${fold(uniView(),'','uni')}${fold(gdView(),'','gdn')}
+ ${fold(uniView(),'','uni')}
  ${fold(`<div class="card sec"><h2>Sessions and logged time</h2>${S.sess.length?`<p style="margin:0 0 8px"><b>${hm(tot)}</b> across ${S.sess.length} session${S.sess.length>1?'s':''}</p>`+S.sess.slice(0,6).map((s,i)=>`<div class="row"><span style="flex:1">${LABEL[s.kind]}${s.subj&&sub(s.subj)?' · '+sub(s.subj).name:''}${s.kind==='teach'?' · '+esc(s.topic||'')+', '+s.got+' of '+s.of+' ideas':''}</span><span class="mu sm">${s.min} min · ${ago(s.t)}</span>${s.kind==='manual'?`<button class="btn" data-a="logdel" data-v="${i}" aria-label="Remove this logged time" style="margin-left:10px;padding:4px 10px">Remove</button>`:''}</div>`).join(''):emp('No timer sessions yet','Time you spend working inside a subject is counted automatically. Use the Study Timer for focused, timed blocks.')}</div>`,S.sess.length+' session'+(S.sess.length===1?'':'s'),'sess')}${fold(logCard(),'paper or offline study','log')}`},
 saved(){
  const f=SV.f,has=S.saved.length+S.trail.length>0,
@@ -42698,7 +42696,7 @@ data:()=>bkView(),
 accessibility:()=>acView(),
 shortcuts:()=>kbView(),
 about:()=>{
- return `<div class="card"><h3>HSC Hub</h3>${setRow('Settings format','Used by the Hub and its subject modules','Version 1')}${setRow('Data location','Nothing is sent anywhere','This device only')}</div>`}};
+ return `<div class="card"><h3>HSC Hub</h3>${setRow('Settings format','Used by the Hub and its subject modules','Version 63')}${setRow('Data location','Nothing is sent anywhere','This device only')}</div>`}};
 /* ===== settings layout: groups, moved cards, searchable index ===== */
 const SETGRP=[['Appearance',['appearance','device','accessibility']],['Studying',['study','immersive']],['Home',['dashboard','progress']],['Reminders',['notifications']],['Your data and help',['data','shortcuts','about']]];
 const SETALIAS={personalisation:'appearance',style:'appearance'};
@@ -42978,7 +42976,7 @@ function sessAdd(o){const mid=new Date(o.t).setHours(0,0,0,0),a=Math.round((mid-
  if(a>=1&&b>=1){S.sess.unshift({...o,min:a,t:mid-1e3});S.sess.unshift({...o,min:b})}else S.sess.unshift(o)}
 function finish(auto){const r=S.run;if(!r)return;const min=Math.round(ranSec(r)/60);
  if(min>=1){if(PT('trackSessions')){sessAdd({kind:r.kind,subj:r.subj,min,t:Math.min(Date.now(),r.end||Date.now()),acts:r.acts||null});if(r.subj)sd(r.subj).min+=min}logAct(`${LABEL[r.kind]} finished · ${min} min`,r.subj)}
- const gw=min>=1?gdGrow(r,min):0;S.run=null;save();pill();if(!subjOpen())render();if(min>=1&&PT("trackSessions"))scDone(r,min,gw);
+ S.run=null;save();pill();if(!subjOpen())render();if(min>=1&&PT("trackSessions"))scDone(r,min);
  if(auto&&min>=1)ntDone((LABEL[r.kind]||'Session')+' complete · '+min+' min'+(PT('trackSessions')?' logged':''))}
 const TH=[10,5,1];
 function warnMark(r){const l=left();r.wn=r.wn||{};TH.forEach(m=>{if(l<=m*60)r.wn[m]=1})}
@@ -45231,24 +45229,6 @@ ${R.map(r=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#fff" str
 <circle cx="${cx}" cy="${cy}" r="${(40+sn*14).toFixed(1)}" fill="#ffb83d" opacity="${(.06+.22*sn).toFixed(2)}"/><circle cx="${cx}" cy="${cy}" r="28" fill="url(#uSun)" opacity="${(.35+.65*sn).toFixed(2)}"/><text x="${cx}" y="${cy+7}" text-anchor="middle" font-size="20" font-weight="800" fill="#4a2a00">${sk}</text><text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="11" fill="#9aa0d6">day streak</text>${rows.map(o=>o.svg).join('')}</svg>
 <div class="un-lg">${rows.map(o=>`<div style="--c:${o.s.c}"><b><i></i>${o.s.name}</b><span class="mu">${o.s.src?Math.round(o.L*100)+'% lit · '+hm(subWeek(o.s.id))+' this week'+(o.pc?' · '+o.pc+'% covered':''):'Not connected yet'}</span></div>`).join('')}</div></div>`}
 
-/* ===== Part 3: Study Garden ===== */
-const GL=[[0,'Bare plot'],[1,'First shoots'],[5,'Small patch'],[12,'Growing garden'],[25,'Flourishing'],[50,'In full bloom']],gdSt=m=>m>=50?3:m>=25?2:m>=10?1:0;
-function gdS(){let G=S.garden;if(!G){G=S.garden={p:S.sess.slice(0,40).reverse().map(x=>({s:x.subj||'',m:x.min,t:x.t})),n:S.sess.length,m:S.sess.reduce((a,x)=>a+x.min,0)};save()}return G}
-function gdGrow(r,min){if(!PT('trackSessions'))return 0;const had=!!S.garden,G=gdS();if(had){G.p.push({s:r.subj||'',m:min,t:Date.now()});if(G.p.length>40)G.p.shift();G.n++;G.m+=min}return 1}
-gdS();
-const gdBloom=(i,c,r,y)=>i===1?`<ellipse cx="0" cy="${y}" rx="${r*.6}" ry="${r*1.3}" fill="${c}"/>`:i===3?`<path d="M${-r} ${y}Q0 ${y-r*1.7} ${r} ${y}Z" fill="${c}"/>`:i===4?[0,1,2].map(j=>`<circle cx="0" cy="${y-j*r*.9}" r="${r*.55}" fill="${c}"/>`).join(''):`<circle cx="0" cy="${y}" r="${r}" fill="${c}"/>${i===2?`<circle cx="0" cy="${y}" r="${r*.4}" fill="#5b3a12"/>`:''}`;
-function gdPlant(p,x,k){const i=SUBJECTS.findIndex(s=>s.id===p.s),c=i<0?'#4f9a63':SUBJECTS[i].c,t=gdSt(p.m),h=[18,32,48,66][t],w=(k%2?-1:1)*(3+t*2);
- let o=`<path d="M0 0Q${w} ${-h/2} 0 ${-h}" stroke="#4f9a63" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
- for(let j=0;j<=t;j++){const y=(-8-j*(h-14)/(t+1)).toFixed(1),d=j%2?1:-1;o+=`<ellipse cx="${d*6}" cy="${y}" rx="6" ry="2.6" fill="#5fb072" transform="rotate(${d*-25} ${d*6} ${y})"/>`}
- o+=t>=2?gdBloom(i,c,4+t*1.6,-h):`<circle cx="0" cy="${-h}" r="2.6" fill="${t?c:'#7fcf8e'}"/>`;
- if(t===3)o+=`<g transform="translate(-9 ${-h*.62}) scale(.7)">${gdBloom(i,c,5,0)}</g><g transform="translate(9 ${-h*.5}) scale(.6)">${gdBloom(i,c,5,0)}</g>`;
- return `<g transform="translate(${x} 124)"><g class="gp" style="--k:${k}">${o}</g></g>`}
-function gdView(){const G=gdS(),P=G.p.slice(-24),n=P.length,lv=GL.filter(l=>G.n>=l[0]).pop(),nx=GL.find(l=>G.n<l[0]),sp=Math.min(48,520/Math.max(n,1)),left=nx?nx[0]-G.n:0;
- return `<div class="card sec gd${calmOn()?'':' rise'}"><h2>Study Garden</h2><p class="mu sm" style="margin:0 0 8px">Every Study Timer session plants a flower. Longer sessions grow taller plants, and each flower takes the colour of its subject.</p>
-<svg viewBox="0 0 600 150" role="img" aria-label="${G.n?'Study garden with '+G.n+(G.n===1?' plant':' plants'):'An empty garden plot'}"><rect x="0" y="124" width="600" height="26" style="fill:var(--sf2)"/><line x1="0" x2="600" y1="124.5" y2="124.5" style="stroke:var(--ln)"/>${n?P.map((p,i)=>gdPlant(p,Math.round(300+(i-(n-1)/2)*sp),i)).join(''):'<ellipse cx="300" cy="124" rx="16" ry="5" style="fill:var(--ln)"/>'}</svg>
-<div style="display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin:10px 0 8px"><b>${lv[1]}</b><span class="mu sm">${G.n} ${G.n===1?'session':'sessions'} · ${hm(G.m)}</span></div>${bar(nx?Math.round((G.n-lv[0])/(nx[0]-lv[0])*100):100,'#1f9d6b')}
-<div class="mu sm" style="margin-top:8px">${G.n?(nx?left+' more '+(left===1?'session':'sessions')+' to reach '+nx[1]+'.':'Your garden is fully grown. Keep planting.'):'Finish a Study Timer session to plant your first seed.'}</div></div>`}
-
 /* ===== Part 4: micro-interactions ===== */
 function barsIn(){if(document.body.classList.contains('calm'))return;const L=[...document.querySelectorAll('#main .bar i')].filter(i=>i.style.width);L.forEach(i=>{i.dataset.w=i.style.width;i.style.transition='none';i.style.width='0'});requestAnimationFrame(()=>requestAnimationFrame(()=>L.forEach(i=>{i.style.transition='';i.style.width=i.dataset.w})))}
 function tkBurst(el){const b=document.body;if(b.classList.contains('calm')||b.classList.contains('xc-on'))return;const r=el.getBoundingClientRect();if(!r.width)return;const d=document.createElement('div');d.className='tk-b';d.style.left=(r.left+r.width/2)+'px';d.style.top=(r.top+r.height/2)+'px';d.innerHTML=[0,1,2,3,4,5].map(i=>`<i style="--a:${i*60+15}deg"></i>`).join('');b.appendChild(d);setTimeout(()=>d.remove(),650);el.classList.add('tk-pop');setTimeout(()=>el.classList.remove('tk-pop'),420)}
@@ -45256,11 +45236,11 @@ document.addEventListener('click',e=>{const t=(e.composedPath&&e.composedPath()[
  if(t.matches('input[type=checkbox]')){if(t.checked)tkBurst(t);return}
  const c=t.closest('[role=checkbox]');if(c){const was=c.getAttribute('aria-checked');setTimeout(()=>{if(c.isConnected&&was!=='true'&&c.getAttribute('aria-checked')==='true')tkBurst(c)},0)}},true);
 function cu(el,to,f){if(!el)return;if(document.body.classList.contains('calm')){el.textContent=f(to);return}const t0=performance.now();(function s(t){const p=Math.min(1,(t-t0)/900);el.textContent=f(Math.round(to*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(s)})(t0)}
-function scDone(r,min,gw){if(document.body.classList.contains('xc-on'))return;const s=r.subj?sub(r.subj):null,now=Date.now(),sk=streak(),gl=g('progress.weeklyGoal')||0,wk=Math.round(last7().reduce((a,t)=>a+dayMinAll(t),0)),td=Math.round(dayMinAll(now)),la=s?Math.round(uLit(s.id)*100):0,
+function scDone(r,min){if(document.body.classList.contains('xc-on'))return;const s=r.subj?sub(r.subj):null,now=Date.now(),sk=streak(),gl=g('progress.weeklyGoal')||0,wk=Math.round(last7().reduce((a,t)=>a+dayMinAll(t),0)),td=Math.round(dayMinAll(now)),la=s?Math.round(uLit(s.id)*100):0,
  tile=(k,l,v,x)=>`<div style="--k:${k}"><span class="mu sm">${l}</span><b ${x||''}>${v}</b></div>`;
  const o0=$('#scd');if(o0)o0.remove();const o=document.createElement('div');o.id='scd';
  o.innerHTML=`<div role="dialog" aria-modal="true" aria-labelledby="sct" style="--c:${s?s.c:'var(--br)'}"><h2 id="sct" style="margin:0 0 2px">Session complete</h2><p class="mu sm" style="margin:0 0 14px">${LABEL[r.kind]||'Session'}${s?' · '+s.name:''}</p><div class="sc-big"><span data-cu="${min}">${min}</span> <small>min</small></div>
-<div class="sc-g">${tile(0,'Today',hm(td),'data-hm="'+td+'"')}${tile(1,'Study streak',sk+(sk===1?' day':' days'))}${s?tile(2,s.name.replace('Standard ','').replace('Mathematics','Maths')+' light',la+'%','data-pc="'+la+'"'):tile(2,'Last 7 days',hm(wk),'data-hm="'+wk+'"')}${tile(3,'Garden',gw?'+1 plant':'Not recorded')}</div>
+<div class="sc-g">${tile(0,'Today',hm(td),'data-hm="'+td+'"')}${tile(1,'Study streak',sk+(sk===1?' day':' days'))}${s?tile(2,s.name.replace('Standard ','').replace('Mathematics','Maths')+' light',la+'%','data-pc="'+la+'"'):tile(2,'Last 7 days',hm(wk),'data-hm="'+wk+'"')}</div>
 ${gl?`<div class="mu sm" style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Weekly goal</span><span>${hm(wk)} of ${hm(gl)}</span></div><div class="bar" style="--c:${s?s.c:'var(--br)'}"><i style="width:0" data-w="${Math.min(100,Math.round(wk/gl*100))}%"></i></div>`:''}
 <div class="chips" style="margin-top:20px"><button class="btn p" data-a="scx">Done</button><button class="btn" data-a="scx" data-go="progress">View progress</button></div></div>`;
  document.body.appendChild(o);cu(o.querySelector('[data-cu]'),min,String);
@@ -46905,7 +46885,21 @@ function ttWeak(m){if(!m)return;const sid=ttsub(m),lab=tttopic(sid,m.q||'');
  else{weakAdd(sid,lab,'Tutor reply');info('Added “'+lab+'” to your '+snm(sid)+' weak areas')}
  persist();paint()}
 /* quiz mode */
-let Z={len:5,weak:false,run:null};
+let Z={len:5,weak:false};const ZR={},ZSK='hsc-hub-tutor-quiz-v1';
+/* one quiz per subject tab, kept in memory AND in localStorage so switching tabs, leaving the Tutor or reloading never loses it */
+Object.defineProperty(Z,'run',{get:()=>ZR[T.subj]||null,set:v=>{if(v)ZR[T.subj]=v;else delete ZR[T.subj];zsave()},enumerable:true});
+function zsave(){try{const o={view:T.view==='quiz'?'quiz':'chat',len:Z.len,runs:{}};
+ for(const k in ZR){const r=ZR[k];if(!r)continue;o.runs[k]={focus:r.focus,i:r.i,done:r.done,added:r.added,counted:!!r.counted,qs:r.qs.map(x=>({qi:x.qi,k:String(x.q.q).slice(0,24),ord:x.ord,pick:x.pick}))}}
+ localStorage.setItem(ZSK,JSON.stringify(o))}catch(e){}}
+try{const o=JSON.parse(localStorage.getItem(ZSK)||'null');if(o&&typeof o==='object'){if([5,10,15].includes(o.len))Z.len=o.len;
+ for(const k of Object.keys(o.runs||{})){if(k!=='all'&&!SUBIDS.includes(k))continue;const r=o.runs[k],qs=[];let ok=!!r&&Array.isArray(r.qs);
+  if(ok)for(const x of r.qs){const q=QB[x.qi];if(!q||String(q.q).slice(0,24)!==x.k||!Array.isArray(x.ord)||x.ord.length!==q.o.length){ok=false;break}qs.push({q,qi:x.qi,ord:x.ord,o:x.ord.map(j=>q.o[j]),c:x.ord.indexOf(q.c),pick:Number.isInteger(x.pick)?x.pick:-1})}
+  if(ok&&qs.length&&r.i>=0&&r.i<=qs.length)ZR[k]={focus:String(r.focus||''),i:r.done?r.i:Math.min(r.i,qs.length-1),done:!!r.done,added:Array.isArray(r.added)?r.added.map(String):[],counted:!!r.counted,qs}}
+ if(o.view==='quiz'&&ZR[T.subj])T.view='quiz'}}catch(e){}
+/* a quiz left part-way still counts: answers are recorded as you go, and here the quiz itself is counted and logged once */
+function ttAbandon(r){try{if(!r||r.done||r.counted)return;const a=r.qs.filter(x=>x.pick>=0);if(!a.length)return;r.counted=true;
+ const subs=[...new Set(a.map(x=>x.q.s))];subs.forEach(sid=>{const q=tqOf(sid);if(q)q.n++});
+ logAct('Tutor quiz (ended early): '+a.filter(x=>x.pick===x.c).length+' of '+a.length+' answered'+(r.focus?' ('+r.focus+')':''),subs.length===1?subs[0]:undefined);save()}catch(e){}}
 const qtok=q=>q._k||(q._k=new Set(tok(q.t+' '+q.q+' '+q.e)));
 function wkHit(q,labels){const t=q.t.toLowerCase(),k=qtok(q);return labels.some(l=>{const ll=l.toLowerCase();if(ll===t||ll.includes(t)||t.includes(ll))return true;const lt=tok(l);return lt.length>0&&lt.every(w=>k.has(w))})}
 function ttPick(sid,n,mode,query,phrase){const pool=QB.filter(q=>sid==='all'||q.s===sid);
@@ -46926,7 +46920,7 @@ function ttRecord(sid,topic,ok){const q=tqOf(sid);if(!q||!topic)return;q.qs++;if
  const ks=Object.keys(q.topics);if(ks.length>80){ks.sort((a,b)=>q.topics[a].t-q.topics[b].t);delete q.topics[ks[0]]}
  if(ok&&p.n>=3&&p.ok/p.n>=.8){try{weakDel(sid,topic)}catch(e){}}
  try{save()}catch(e){}}
-function ttStart(qs,focus){Z.run={focus:focus||'',i:0,done:false,added:[],qs:qs.map(q=>{const idx=shuf(q.o.map((_,k)=>k));return{q,o:idx.map(k=>q.o[k]),c:idx.indexOf(q.c),pick:-1}})}}
+function ttStart(qs,focus){ttAbandon(Z.run);Z.run={focus:focus||'',i:0,done:false,counted:false,added:[],qs:qs.map(q=>{const idx=shuf(q.o.map((_,k)=>k));return{q,qi:QB.indexOf(q),ord:idx,o:idx.map(k=>q.o[k]),c:idx.indexOf(q.c),pick:-1}})}}
 function ttFocusQ(){requestAnimationFrame(()=>{const e=Q('.qz-q');if(e)try{e.focus({preventScroll:true})}catch(_){}})}
 function ttBegin(){const s=T.subj,qs=ttPick(s,Z.len,Z.weak?'weak':'mixed');if(!qs.length)return;
  const hit=Z.weak&&qs.some(q=>wkHit(q,wkLabelsFor(q.s)));
@@ -46936,7 +46930,7 @@ function ttAnswer(k){const r=Z.run;if(!r||r.done)return;const x=r.qs[r.i];if(x.p
  if(k!==x.c){try{weakAdd(x.q.s,x.q.t,'Tutor quiz');if(!r.added.includes(x.q.t))r.added.push(x.q.t)}catch(e){}}
  paint();requestAnimationFrame(()=>{const b=Q('.qz-fb .btn');if(b)try{b.focus()}catch(_){}})}
 function ttNext(){const r=Z.run;if(!r||r.done||r.qs[r.i].pick<0)return;r.i++;
- if(r.i>=r.qs.length){r.done=true;const sc=r.qs.filter(x=>x.pick===x.c).length,subs=[...new Set(r.qs.map(x=>x.q.s))];
+ if(r.i>=r.qs.length){r.done=true;r.counted=true;const sc=r.qs.filter(x=>x.pick===x.c).length,subs=[...new Set(r.qs.map(x=>x.q.s))];
   try{subs.forEach(sid=>{const q=tqOf(sid);if(q)q.n++})}catch(e){}try{logAct('Tutor quiz: '+sc+' of '+r.qs.length+(r.focus?' ('+r.focus+')':''),subs.length===1?subs[0]:undefined);save()}catch(e){}}
  paint(true);ttFocusQ()}
 function ttExplain(){const r=Z.run;if(!r)return;const wr=r.qs.filter(x=>x.pick!==x.c).slice(0,5);if(!wr.length)return;
@@ -47069,7 +47063,7 @@ html:not([data-nav=bottom]) main:has(#tt) .tt{height:auto;flex:1 1 0;min-height:
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
-function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();
+function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();
  const atEnd=b.scrollHeight-b.scrollTop-b.clientHeight<90,y=b.scrollTop;
  const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';c.innerHTML=ctlHtml();b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();
  b.scrollTop=qz?(scroll?0:y):!T.msgs.length?0:(scroll||atEnd?b.scrollHeight:y);
@@ -47099,7 +47093,7 @@ V.tutor=()=>{readNow();setTimeout(()=>{const b=Q('#ttBox');if(b)b.scrollTop=(T.m
  const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const s=SUBS.find(x=>x[0]===T.subj);return s?s[2]:''}}catch(e){}return ''})();
  return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div class="tt-comp"><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-tt]');if(!t||t.type==='checkbox')return;const v=t.dataset.tt;
- if(v.indexOf('subj:')===0){T.subj=v.slice(5);if(T.view==='quiz')Z.run=null;persist();paint(true)}
+ if(v.indexOf('subj:')===0){T.subj=v.slice(5);persist();paint(true)}
  else if(v.indexOf('paper:')===0){const k=v.slice(6);T.paper=PAPERS[k]&&T.paper!==k?k:'';T.paperDay=T.paper?dayKey(new Date()):'';persist();paint()}
  else if(v.indexOf('mode:')===0){T.mode=v.slice(5);persist();paint()}
  else if(v==='new'){if(T.busy)return;T.msgs=[];T.err='';persist();paint()}
@@ -47117,7 +47111,7 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(v.indexOf('qn:pick:')===0)ttAnswer(+v.slice(8));
  else if(v==='qn:next')ttNext();
  else if(v==='qn:again')ttBegin();
- else if(v==='qn:quit'){Z.run=null;paint(true)}
+ else if(v==='qn:quit'){ttAbandon(Z.run);Z.run=null;paint(true)}
  else if(v==='qn:explain')ttExplain();
  else if(v==='qn:chat'){T.view='chat';send('Quiz me with 3 short questions')}
  else if(v==='op:explain'){const o=opener();if(o&&o.w){T.subj=o.id;T.view='chat';persist();send('Explain '+o.w+' to me.')}}
@@ -47129,7 +47123,7 @@ document.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='ttIn'){T.dr
 document.addEventListener('keydown',e=>{const t=e.target;if(t&&t.id==='ttIn'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.stopPropagation();submit()}},true);
 document.addEventListener('keydown',e=>{const t=e.target;if(t&&t.id==='ttIn'&&e.key==='Tab'&&!e.shiftKey&&selPh(t,t.selectionEnd))e.preventDefault()},true);
 /* Exam Centre "Ask the tutor": pre-fills the message box for a subject. The student reads it, edits it if they like, and presses Send. */
-window.__ttAsk=(sid,text)=>{try{if(SUBIDS.includes(sid))T.subj=sid;T.view='chat';Z.run=null;T.draft=String(text||'').slice(0,2900);persist();
+window.__ttAsk=(sid,text)=>{try{if(SUBIDS.includes(sid))T.subj=sid;T.view='chat';T.draft=String(text||'').slice(0,2900);persist();
  setTimeout(()=>{const i=Q('#ttIn');if(i){i.value=T.draft;i.style.height='auto';i.style.height=Math.min(180,i.scrollHeight)+'px';try{i.focus({preventScroll:true})}catch(_){}}},350)}catch(e){}};
 ICON.tutor='M4 5h16v11H10l-4 4v-4H4zM8 9h8M8 12h5';
 if(typeof render==='function')render();
