@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script>try{if(/access_token=|error_description=/.test(location.hash))window.__sbHash=location.hash}catch(e){}</script>
 <meta charset="utf-8">
 <title>HSC Hub</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -47107,7 +47107,6 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
  document.addEventListener('touchmove',function(e){if(e.touches.length>1||(e.scale&&e.scale!==1))e.preventDefault()},{passive:false});
 })();
 </script>
-<script id="hub-enc">window.HUB_ENC="v1.T4hrmImWrbTjES397OtaoPw0o1y3GI/56XCun32c3+USk5sYy5wbhvDWeZ1xO/xo9b3mkc+GtZB6EeZ/k98/FLpQDjuiYtdN/iwE+0d/g8/3JW8NOPsPyyMayYpt2Yd0+kiLRHhQI5OgldvnjnCHecHtBWySmupMQqQYr7M=";</script>
 <script id="hub-lock">
 /* One-time PIN check. If HUB_ENC holds an encrypted key and this device has no matching key saved yet, ask for the PIN once,
    decrypt, and save the key to this device the same way Settings > AI Marking does. After that it never asks again here.
@@ -47131,7 +47130,7 @@ var blob=window.HUB_ENC;if(!blob)return;
 var K='ai-marking-key-v1',ID='hub-enc-id',bid=blob.slice(-24);
 function stored(){try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return{}}}
 try{if(stored().key&&localStorage.getItem(ID)===bid)return}catch(e){}
-var css=document.createElement('style');
+function show(){var css=document.createElement('style');
 css.textContent='#hkOv{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg,#f6f5fb);color:var(--ink,#1c1b22);font-family:inherit}#hkOv .hk{width:100%;max-width:360px;text-align:center}#hkOv h2{margin:0 0 6px}#hkOv p{margin:0 0 14px;opacity:.75}#hkOv input{width:100%;box-sizing:border-box;padding:13px 14px;border-radius:14px;border:1px solid var(--ln,#c9c6d6);background:var(--sf,#fff);color:inherit;font:inherit;font-size:18px;text-align:center}#hkOv button{width:100%;margin-top:10px;padding:12px;border-radius:14px;border:0;background:var(--br,#6b4cf6);color:#fff;font:inherit;font-weight:600;cursor:pointer}#hkOv button.hs{background:none;color:inherit;opacity:.7;font-weight:500}#hkOv button[disabled]{opacity:.5}#hkOv .he{min-height:22px;margin-top:10px;color:#c0334d;font-weight:600}';
 document.head.appendChild(css);
 var ov=document.createElement('div');ov.id='hkOv';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Enter PIN');
@@ -47158,7 +47157,7 @@ async function tryPin(){var pin=inp.value;if(!pin||go.disabled||locked())return;
  go.disabled=true;go.textContent='Checking…';var ok=null;
  try{ok=await HubCrypto.open(blob,pin)}catch(e){}
  if(ok){try{saveKey(ok)}catch(e){er.textContent='Could not save the key on this device (private browsing?).';go.disabled=false;go.textContent='Unlock';return}
-  try{localStorage.removeItem(FK)}catch(e){}done();return}
+  try{localStorage.removeItem(FK)}catch(e){}try{if(window.HubKeySync)HubKeySync.push()}catch(e){}done();return}
  var o=fst();o.n++;inp.value='';
  if(o.n>=MAXTRY){o.lvl++;o.n=0;o.until=Date.now()+DUR[Math.min(o.lvl-1,DUR.length-1)]*1000;fput(o);showLock();return}
  fput(o);er.textContent='Wrong PIN. '+(MAXTRY-o.n)+' attempt'+(MAXTRY-o.n===1?'':'s')+' left.';
@@ -47167,6 +47166,10 @@ showLock();
 go.onclick=tryPin;
 inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryPin()}});
 ov.querySelector('#hkSkip').onclick=done;
+}
+/* signed in already? ask the account for the unlocked key first, and only show the PIN screen if it has none for this PIN */
+var SBS=null;try{SBS=JSON.parse(localStorage.getItem('hsc-sb-session'))}catch(e){}
+if(SBS&&SBS.refresh_token){setTimeout(function(){var p=window.HubKeySync?HubKeySync.pull(bid):Promise.resolve(false);p.then(function(ok){if(!ok)show()},function(){show()})},0)}else show();
 }catch(err){console.warn('PIN lock not loaded',err)}})();
 </script>
 <script id="tt-fit">
@@ -47267,19 +47270,46 @@ async function check(mode){if(!sess||busy)return;busy=true;
   conflict(row.updated_at);setSt('Needs your choice');
  }catch(e){setSt(sess?'Offline. Will sync when you are back online.':st)}finally{busy=false}}
 
+
+/* set / change password (also used after opening a reset link) */
+function pwModal(){if(document.getElementById('sbPw'))return;
+ const o=mk('<div id="sbPw" role="dialog" aria-modal="true" aria-label="Set a new password" style="position:fixed;inset:0;z-index:2147483200;display:grid;place-items:center;padding:20px;background:rgba(5,8,20,.6)"><div class="card" style="max-width:420px;width:100%"><h3 style="margin-top:0">Set a new password</h3><input id="sbNp" type="password" autocomplete="new-password" placeholder="New password (6+ characters)" aria-label="New password" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><p id="sbPm" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn p" id="sbPs" style="justify-content:center;min-height:46px">Save password</button><button type="button" class="btn" id="sbPc" style="justify-content:center;min-height:46px">Cancel</button></div></div></div>');
+ document.body.appendChild(o);const I=o.querySelector('#sbNp'),M=o.querySelector('#sbPm');
+ const save=async()=>{const pw=I.value;if(pw.length<6){M.textContent='Use at least 6 characters.';return}
+  M.textContent='';o.querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{const t=await token();const r=await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:pw})},t);
+   if(r.ok){o.remove();modal('Password updated','Use your new password the next time you sign in.',[['OK']])}
+   else{M.textContent=(r.j&&(r.j.msg||r.j.message))||'Could not update the password.'}}
+  catch(e){M.textContent='No connection, or you were signed out. Try again.'}
+  finally{o.querySelectorAll('button').forEach(b=>b.disabled=false)}};
+ o.querySelector('#sbPs').onclick=save;o.querySelector('#sbPc').onclick=()=>o.remove();
+ o.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save()}});setTimeout(()=>I.focus(),50)}
+async function recovery(){const raw=window.__sbHash;window.__sbHash=null;if(!raw)return;
+ const q=new URLSearchParams(raw.replace(/^#/,''));
+ try{if(/access_token=|error_description=/.test(location.hash))history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+ if(q.get('error_description')){modal('That reset link did not work',esc(q.get('error_description').replace(/\+/g,' '))+' Request a new one from the sign-in screen.',[['OK']]);return}
+ const at=q.get('access_token');if(!at)return;
+ try{const u=await api('/auth/v1/user',{},at);if(!u.ok||!u.j||!u.j.id)throw 0;
+  setSess({access_token:at,refresh_token:q.get('refresh_token'),expires_in:+q.get('expires_in')||3600,user:u.j});
+  try{localStorage.removeItem(SKIP)}catch(e){}const g=document.getElementById('sbGate');if(g)g.remove();mount();pwModal();check('login');keyTick()}
+ catch(e){modal('That reset link did not work','It may have expired. Request a new one from the sign-in screen.',[['OK']])}}
+
 /* sign-in screen */
 function gate(){if(document.getElementById('sbGate'))return;
- const g=mk('<div id="sbGate" role="dialog" aria-modal="true" aria-label="Sign in" style="position:fixed;inset:0;z-index:2147483100;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow:auto"><div style="width:100%;max-width:380px"><h2 style="margin:0 0 6px">Sign in to HSC Hub</h2><p class="mu" style="margin:0 0 16px">One account keeps your progress in sync on your phone, iPad and laptop.</p><input id="sbE" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Email" aria-label="Email" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><input id="sbP" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" aria-label="Password" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:12px"><p id="sbM" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn p" id="sbIn" style="justify-content:center;min-height:46px">Sign in</button><button type="button" class="btn" id="sbUp" style="justify-content:center;min-height:46px">Create account</button></div><p style="text-align:center;margin:16px 0 0"><button type="button" class="lnk" id="sbSkip">Continue without an account</button></p></div></div>');
+ const g=mk('<div id="sbGate" role="dialog" aria-modal="true" aria-label="Sign in" style="position:fixed;inset:0;z-index:2147483100;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow:auto"><div style="width:100%;max-width:380px"><h2 style="margin:0 0 6px">Sign in to HSC Hub</h2><p class="mu" style="margin:0 0 16px">One account keeps your progress in sync on your phone, iPad and laptop.</p><input id="sbE" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Email" aria-label="Email" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><input id="sbP" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" aria-label="Password" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:12px"><p style="text-align:right;margin:-4px 0 8px"><button type="button" class="lnk" id="sbForgot">Forgot password?</button></p><p id="sbM" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn p" id="sbIn" style="justify-content:center;min-height:46px">Sign in</button><button type="button" class="btn" id="sbUp" style="justify-content:center;min-height:46px">Create account</button></div><p style="text-align:center;margin:16px 0 0"><button type="button" class="lnk" id="sbSkip">Continue without an account</button></p></div></div>');
  document.body.appendChild(g);const E=g.querySelector('#sbE'),P=g.querySelector('#sbP'),M=g.querySelector('#sbM');
- const say=t=>{M.textContent=t};
+ const say=(t,ok)=>{M.textContent=t;M.style.color=ok?'var(--ink)':'#e2483f'};
  const go=async kind=>{const email=E.value.trim(),pw=P.value;if(!email||!pw)return say('Enter your email and password.');if(kind==='up'&&pw.length<6)return say('Use at least 6 characters for the password.');
   say('');g.querySelectorAll('button').forEach(b=>b.disabled=true);
   try{const r=await api(kind==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pw})});
    if(!r.ok||!r.j||!r.j.access_token){const m=(r.j&&(r.j.msg||r.j.error_description||r.j.message))||'';
     say(kind==='up'&&r.ok?'Account created. Check your email to confirm it, then sign in.':(/invalid login/i.test(m)?'Wrong email or password.':m||'Could not sign in. Try again.'));return}
-   setSess(r.j);try{localStorage.removeItem(SKIP)}catch(e){}g.remove();mount();check('login')
+   setSess(r.j);try{localStorage.removeItem(SKIP)}catch(e){}g.remove();mount();check('login');keyTick()
   }catch(e){say('No connection. Check your internet and try again.')}
   finally{g.querySelectorAll('button').forEach(b=>b.disabled=false)}};
+ g.querySelector('#sbForgot').onclick=async()=>{const email=E.value.trim();if(!email)return say('Type your email above first, then tap Forgot password.');
+  say('');try{const r=await api('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{method:'POST',body:JSON.stringify({email})});
+   say(r.ok?'If that email has an account, a reset link is on its way. Open it on this device.':((r.j&&(r.j.msg||r.j.message))||'Could not send the email. Try again in a minute.'),r.ok)}catch(e){say('No connection. Check your internet and try again.')}};
  g.querySelector('#sbIn').onclick=()=>go('in');g.querySelector('#sbUp').onclick=()=>go('up');
  g.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go('in')}});
  g.querySelector('#sbSkip').onclick=()=>{try{localStorage.setItem(SKIP,'1')}catch(e){}g.remove()};
@@ -47288,19 +47318,37 @@ function gate(){if(document.getElementById('sbGate'))return;
 function signOut(){modal('Sign out?','Your progress stays on this device. It just stops syncing until you sign in again.',[['Sign out',()=>{sess=null;meta={};try{localStorage.removeItem(SS);localStorage.removeItem(SM)}catch(e){}setSt('');mount()},'x'],['Cancel']])}
 
 /* account card in Settings > Your data */
-const card=()=>'<div class="card" id="sbCard"><h3>Account and sync</h3>'+(sess?'<p class="mu sm" style="margin-top:0">Signed in as <b>'+esc(sess.email)+'</b>. Progress syncs to this account on every device you sign in on. Settings, theme, layout and your AI key stay on each device.</p><p class="sm" id="sbSt">'+esc(st)+'</p><div class="chips"><button type="button" class="btn p" data-sb="sync">Sync now</button><button type="button" class="btn" data-sb="out">Sign out</button></div>':'<p class="mu sm" style="margin-top:0">Sign in to keep your progress in sync between your phone, iPad and laptop.</p><div class="chips"><button type="button" class="btn p" data-sb="gate">Sign in or create account</button></div>')+'</div>';
+const card=()=>'<div class="card" id="sbCard"><h3>Account and sync</h3>'+(sess?'<p class="mu sm" style="margin-top:0">Signed in as <b>'+esc(sess.email)+'</b>. Progress syncs to this account on every device you sign in on. Settings, theme, layout and your AI key stay on each device.</p><p class="sm" id="sbSt">'+esc(st)+'</p><div class="chips"><button type="button" class="btn p" data-sb="sync">Sync now</button><button type="button" class="btn" data-sb="pw">Change password</button><button type="button" class="btn" data-sb="out">Sign out</button></div>':'<p class="mu sm" style="margin-top:0">Sign in to keep your progress in sync between your phone, iPad and laptop.</p><div class="chips"><button type="button" class="btn p" data-sb="gate">Sign in or create account</button></div>')+'</div>';
 function mount(){const h=[...document.querySelectorAll('.card>h3')].find(x=>x.textContent==='Backup and export');const cur=document.getElementById('sbCard');
  if(!h){if(cur&&!document.querySelector('[data-bk]'))cur.remove();return}
  const tgt=h.parentElement;if(cur&&cur.nextElementSibling===tgt&&!!cur.querySelector('[data-sb=out]')===!!sess)return;if(cur)cur.remove();tgt.insertAdjacentHTML('beforebegin',card())}
 new MutationObserver(()=>mount()).observe(document.body,{childList:true,subtree:true});
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-sb]');if(!t)return;const a=t.dataset.sb;
- if(a==='gate')gate();else if(a==='out')signOut();else if(a==='sync'){asked=false;check('manual')}});
+ if(a==='gate')gate();else if(a==='out')signOut();else if(a==='pw')pwModal();else if(a==='sync'){asked=false;check('manual')}});
 
 /* rhythm: check shortly after load, when you come back to the tab, and every 30s while it is open */
 addEventListener('online',()=>check('poll'));
 document.addEventListener('visibilitychange',()=>{if(sess)check('poll')});
-setInterval(()=>{if(sess&&!document.hidden)check('poll')},30000);
-setTimeout(()=>{if(sess)check('load');else if(!localStorage.getItem(SKIP))gate();mount()},2500);
+setInterval(()=>{if(sess&&!document.hidden){check('poll');keyTick()}},30000);
+const rec=!!window.__sbHash;if(rec)setTimeout(recovery,500);
+setTimeout(()=>{if(sess){check('load');keyTick()}else if(!rec&&!localStorage.getItem(SKIP))gate();mount()},2500);
+
+/* each account keeps its own AI key (private row), so a key entered once follows that account to every device it signs in on */
+const KK='ai-marking-key-v1',KH='hsc-sb-keyhash';
+const kapi=async(q,o)=>{const t=await token();return api('/rest/v1/hub_secret'+q,o,t)};
+const kcanon=o=>JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));
+const kloc=()=>{try{return JSON.parse(localStorage.getItem(KK))||{}}catch(e){return{}}};
+async function keyPush(){if(!sess)return;const cfg=kloc();if(!cfg.key)return;
+ const r=await kapi('?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:sess.uid,data:{cfg:cfg},updated_at:new Date().toISOString()})});
+ if(r.ok)try{localStorage.setItem(KH,kcanon(cfg))}catch(e){}}
+async function keyTick(){try{if(!sess)return;const cur=kloc(),here=kcanon(cur),last=localStorage.getItem(KH)||'';
+ if(cur.key&&here!==last){await keyPush();return}   /* changed on this device: save it to the account */
+ const r=await kapi('?select=data&user_id=eq.'+sess.uid);if(!r.ok||!r.j||!r.j[0])return;
+ const rem=(r.j[0].data||{}).cfg;if(!rem||!rem.key)return;
+ if(!cur.key||kcanon(rem)!==here){try{localStorage.setItem(KK,JSON.stringify(rem));localStorage.setItem(KH,kcanon(rem))}catch(e){return}
+  const ov=document.getElementById('hkOv');if(ov)ov.remove();try{if(typeof render==='function')render()}catch(e){}}}catch(e){}}
+window.HubKeySync={pull:async()=>{await keyTick();return !!kloc().key},push:keyPush};
+
 window.HubAccount={gate,check:()=>check('manual'),signedIn:()=>!!sess};
 }catch(err){console.warn('Account module not loaded',err)}})();
 </script>
