@@ -327,7 +327,10 @@ body.xc-on{overflow:hidden}
 .set{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto 1fr;gap:16px 28px;align-items:start;margin-top:0}
 .set-top{grid-column:2;grid-row:1;min-width:0}
 .set-top h1{margin:0 0 4px}.set-top p{margin:0}
-.set-nav{grid-column:1;grid-row:1/span 2;position:sticky;top:20px;max-height:calc(var(--vh) - 40px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;padding:0 4px 20px 0;display:flex;flex-direction:column;gap:2px}
+.set-nav{grid-column:1;grid-row:1/span 2;position:fixed;top:28px;width:216px;max-height:calc(var(--vh) - 48px);overflow-y:auto;overscroll-behavior:auto;scrollbar-width:none;padding:0 4px 0 0;display:flex;flex-direction:column;gap:2px}
+.set-nav::-webkit-scrollbar{display:none}
+/* the settings menu is pinned: it does not move when the page scrolls, and is tightened to fit shorter windows rather than scrolling on its own */
+:root:not([data-device=phone]) .set-nav .nv{padding-block:clamp(2px,calc(2px + (var(--vh) - 600px)*.022),9px)}:root:not([data-device=phone]) .set-nav .sg{margin-top:clamp(3px,calc(4px + (var(--vh) - 600px)*.032),14px)}:root:not([data-device=phone]) .set-nav .sg:first-child{margin-top:0}
 .set-nav>*{flex-shrink:0}
 .set-body{grid-column:2;grid-row:2}
 .set-body{min-width:0}.set-body .card+.card{margin-top:16px}
@@ -359,9 +362,9 @@ body.xc-on{overflow:hidden}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--mu);transition:transform .2s,background .2s}
 .sw[aria-checked=true]{background:var(--br);border-color:transparent}
 .sw[aria-checked=true]::after{transform:translateX(18px);background:#fff}
-:where(:root[data-w~=le-780]) .set{grid-template-columns:1fr;gap:16px}:where(:root[data-w~=le-780]) .set-nav{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}:where(:root[data-w~=le-780]) .set-nav .nv{width:auto;flex:none;white-space:nowrap;border:1px solid var(--ln);padding:8px 14px}:where(:root[data-w~=le-780]) .set-nav .nv.on{box-shadow:none;border-color:var(--br)}
+:where(:root[data-w~=le-780]) .set{grid-template-columns:1fr;gap:16px}:where(:root[data-w~=le-780]) .set-nav{position:static;width:auto;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}:where(:root[data-w~=le-780]) .set-nav .nv{width:auto;flex:none;white-space:nowrap;border:1px solid var(--ln);padding:8px 14px}:where(:root[data-w~=le-780]) .set-nav .nv.on{box-shadow:none;border-color:var(--br)}
 /* iPad portrait with the icon rail: the page is too narrow for a side list, so the sections run along the top like on a phone */
-:where(:root[data-w~=le-980]):where([data-nav=rail]) .set{grid-template-columns:1fr;gap:16px}:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav .nv{width:auto;flex:none;white-space:nowrap;border:1px solid var(--ln);padding:8px 14px}:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav .nv.on{box-shadow:none;border-color:var(--br)}
+:where(:root[data-w~=le-980]):where([data-nav=rail]) .set{grid-template-columns:1fr;gap:16px}:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav{position:static;width:auto;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav .nv{width:auto;flex:none;white-space:nowrap;border:1px solid var(--ln);padding:8px 14px}:where(:root[data-w~=le-980]):where([data-nav=rail]) .set-nav .nv.on{box-shadow:none;border-color:var(--br)}
 
 /* ===== personalisation: size, density, corners, background ===== */
 :root{--fs:1}
@@ -476,7 +479,7 @@ aside .brand{position:static;background:none}
 :root[data-ddens=comfortable] main[data-view=dash] .card{padding:20px}:root[data-ddens=comfortable] main[data-view=dash] .dw+.dw{margin-top:24px}:root[data-ddens=comfortable] main[data-view=dash] .g{gap:16px}:root[data-ddens=comfortable] main[data-view=dash] .row{padding-top:10px;padding-bottom:10px}
 :root[data-ddens=spacious] main[data-view=dash] .card{padding:28px}:root[data-ddens=spacious] main[data-view=dash] .dw+.dw{margin-top:34px}:root[data-ddens=spacious] main[data-view=dash] .g{gap:24px}:root[data-ddens=spacious] main[data-view=dash] .row{padding-top:14px;padding-bottom:14px}
 :root[data-device=phone] .set{grid-template-columns:1fr;gap:16px}
-:root[data-device=phone] .set-nav{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}
+:root[data-device=phone] .set-nav{position:static;width:auto;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}
 :root[data-device=phone] .set-nav .nv{width:auto;flex:none;white-space:nowrap;border:1px solid var(--ln);padding:8px 14px}
 :root[data-device=phone] .set-nav .nv.on{box-shadow:none;border-color:var(--br)}
 :where(:root[data-w~=le-780]) :is(.set-top,.set-nav,.set-body),:where(:root[data-w~=le-980]):where([data-nav=rail]) :is(.set-top,.set-nav,.set-body),:root[data-device=phone] :is(.set-top,.set-nav,.set-body){grid-column:auto;grid-row:auto}
@@ -992,6 +995,161 @@ body:has(#tt .tt-box.empty) main{padding-bottom:0!important}
 #tt.tt-fit #ttCtl,#tt.tt-fit #ttFoot{flex:none}
 </style></head>
 <body>
+<style id="sbgCss">
+#sbGate{position:fixed;inset:0;z-index:2147483100;overflow:auto;overscroll-behavior:contain;background:var(--bg);color:var(--ink);display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));isolation:isolate;font:inherit;transition:opacity .5s ease,transform .5s ease}
+#sbGate *{box-sizing:border-box}
+#sbGate .sbg-bg{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+#sbGate .sbg-bg::before,#sbGate .sbg-bg::after{content:"";position:absolute;z-index:0;width:70vmax;height:70vmax;border-radius:50%;pointer-events:none;will-change:transform}
+#sbGate .sbg-bg::before{top:-28vmax;left:-22vmax;background:radial-gradient(closest-side,color-mix(in srgb,var(--br) 34%,transparent),transparent)}
+#sbGate .sbg-bg::after{bottom:-30vmax;right:-24vmax;background:radial-gradient(closest-side,color-mix(in srgb,#2f8fe0 28%,transparent),transparent)}
+/* Dashboard depth backdrop: a softly blurred, tilted dashboard behind the card. Static blur, so it costs almost nothing to draw. */
+#sbGate .sbg-depth{position:fixed;inset:0;z-index:1;display:grid;place-content:center;pointer-events:none;filter:blur(5px) saturate(1);opacity:.95;
+ transform:perspective(1500px) rotateX(8deg) rotateY(-8deg) rotateZ(-2deg) scale(1.12)}
+@media (min-width:861px){#sbGate .sbg-depth{-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,.16) 0,rgba(0,0,0,.3) 38%,#000 62%);mask-image:linear-gradient(90deg,rgba(0,0,0,.16) 0,rgba(0,0,0,.3) 38%,#000 62%)}}
+#sbGate .sbd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,262px));gap:20px}
+#sbGate .sbd-c{position:relative;overflow:hidden;min-height:168px;padding:20px;border-radius:22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;background:color-mix(in srgb,var(--sf) 72%,transparent);border:1px solid color-mix(in srgb,var(--ln) 78%,var(--br) 22%);box-shadow:var(--sh)}
+#sbGate .sbd-c b{font-size:17px;letter-spacing:-.01em;color:var(--ink)}
+#sbGate .sbd-m{font-size:13px;color:var(--mu)}
+#sbGate .sbd-n{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--c)}
+#sbGate .sbd-s{background:linear-gradient(160deg,color-mix(in srgb,var(--c) 11%,transparent),transparent 70%),color-mix(in srgb,var(--sf) 72%,transparent)}
+#sbGate .sbd-s::before{display:none}
+#sbGate .sbd-c::before{content:"";position:absolute;right:0;top:0;width:60%;height:65%;-webkit-mask-image:linear-gradient(to bottom left,#000,transparent 80%);mask-image:linear-gradient(to bottom left,#000,transparent 80%)}
+#sbGate .sbd-1::before{background:repeating-linear-gradient(0deg,transparent 0 9px,color-mix(in srgb,var(--c) 26%,transparent) 9px 10px)}
+#sbGate .sbd-2::before{background:radial-gradient(color-mix(in srgb,var(--c) 45%,transparent) 1.6px,transparent 2.2px) 0 0/13px 13px}
+#sbGate .sbd-3::before{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 22%,transparent) 0 5px,transparent 5px 13px)}
+#sbGate .sbd-4::before{background:repeating-radial-gradient(circle at 100% 0,color-mix(in srgb,var(--c) 28%,transparent) 0 1.5px,transparent 1.5px 13px)}
+#sbGate .sbd-5::before{background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--c) 22%,transparent) 0 1px,transparent 1px 12px),repeating-linear-gradient(90deg,color-mix(in srgb,var(--c) 22%,transparent) 0 1px,transparent 1px 12px)}
+#sbGate .sbd-t{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c);position:relative}
+#sbGate .sbd-t svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#sbGate .sbd-bar{height:8px;border-radius:9px;background:var(--sf2,var(--sf));overflow:hidden;border:1px solid var(--ln);position:relative}
+#sbGate .sbd-bar i{display:block;height:100%;border-radius:9px;background:var(--c);box-shadow:0 0 12px -1px var(--c)}
+#sbGate .sbd-ring{align-items:center;justify-content:center;text-align:center}
+#sbGate .sbd-rw{position:relative;width:96px;height:96px}#sbGate .sbd-rw svg{display:block;width:100%;height:100%}
+#sbGate .sbd-tr,#sbGate .sbd-arc{fill:none;stroke-width:9;stroke-linecap:round}
+#sbGate .sbd-tr{stroke:color-mix(in srgb,var(--ink) 9%,transparent)}
+#sbGate .sbd-mid{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:20px;letter-spacing:-.03em;color:var(--ink)}
+/* entrance: cards rise into place, then (on desktop only) the room softens behind the card. Transform/opacity only, plays once. */
+#sbGate .sbd-c{animation:sbdIn .75s cubic-bezier(.2,.9,.3,1.15) calc(.04s + var(--k)*.05s) both}
+@keyframes sbdIn{from{opacity:0;transform:translateY(60px) scale(.94)}}
+@keyframes sbdDefocus{from{filter:blur(0) saturate(1);transform:perspective(1500px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1)}}
+@media (min-width:861px) and (hover:hover){#sbGate .sbg-depth{animation:sbdDefocus .9s cubic-bezier(.2,.8,.2,1) .75s both}}
+#sbGate.sbg-out .sbg-depth{animation:none;filter:blur(0) saturate(1);transform:perspective(1500px) scale(1.03);transition:filter .5s ease,transform .5s ease}
+@media (max-width:860px){#sbGate .sbg-depth{-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.3) 28%,#000 46%);mask-image:linear-gradient(180deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.3) 28%,#000 46%);transform:perspective(1200px) rotateX(7deg) rotateY(-6deg) rotateZ(-2deg) scale(1.08)}#sbGate .sbd-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:min(104vw,680px);gap:14px}#sbGate .sbd-c{min-height:clamp(118px,19vh,200px);padding:16px}#sbGate .sbd-c:nth-child(n+9){display:none}#sbGate .sbd-n{font-size:28px}}
+.sbg-wrap{position:relative;z-index:2;width:100%;max-width:1060px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,410px);gap:72px;align-items:center}
+.sbg-brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:20px;letter-spacing:-.01em;animation:sbgRise .7s cubic-bezier(.2,.8,.2,1) .8s both}
+.sbg-brand .logo{width:38px;height:38px;border-radius:12px;flex:none}
+#sbGate .sbg-story h1{margin:34px 0 14px;font-size:clamp(34px,4.6vw,56px);line-height:1.04;letter-spacing:-.035em;font-weight:700;max-width:12ch;text-wrap:balance;color:var(--ink);background:none;-webkit-text-fill-color:currentColor;text-shadow:none;animation:sbgRise .8s cubic-bezier(.2,.8,.2,1) .9s both}
+#sbGate .sbg-story>p{margin:0;max-width:44ch;font-size:17px;line-height:1.55;color:var(--mu);animation:sbgRise .8s cubic-bezier(.2,.8,.2,1) 1s both}
+.sbg-subj{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px;max-width:520px}
+.sbg-subj span{display:inline-flex;align-items:center;gap:9px;padding:9px 15px;border-radius:999px;font-weight:600;font-size:14px;color:var(--ink);background:color-mix(in srgb,var(--sf) 72%,transparent);border:1px solid var(--ln);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:sbgRise .8s cubic-bezier(.2,.8,.2,1) both,sbgFloat 7s ease-in-out infinite}
+.sbg-subj span::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--d);box-shadow:0 0 0 4px color-mix(in srgb,var(--d) 20%,transparent)}
+.sbg-subj span:nth-child(1){animation-delay:.34s,1.2s}.sbg-subj span:nth-child(2){animation-delay:.4s,2.6s}.sbg-subj span:nth-child(3){animation-delay:.46s,.4s}.sbg-subj span:nth-child(4){animation-delay:.52s,3.4s}.sbg-subj span:nth-child(5){animation-delay:.58s,1.9s}
+.sbg-card{position:relative;padding:34px 32px 28px;border-radius:26px;background:color-mix(in srgb,var(--sf) 84%,transparent);border:1px solid var(--ln);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);box-shadow:0 30px 70px -28px rgba(10,14,40,.45),0 1px 0 color-mix(in srgb,#fff 40%,transparent) inset;animation:sbgCard 1.1s cubic-bezier(.2,.8,.2,1) .9s both}
+.sbg-card::before{content:"";position:absolute;inset:-1px;border-radius:27px;padding:1px;background:conic-gradient(from var(--sbgA,0deg),transparent 0 60%,color-mix(in srgb,var(--br) 80%,transparent) 80%,transparent 100%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);pointer-events:none;opacity:.9;animation:sbgSpinA 9s linear infinite}
+@property --sbgA{syntax:"<angle>";inherits:false;initial-value:0deg}
+#sbGate .sbg-card h2{margin:0 0 6px;font-size:27px;line-height:1.15;letter-spacing:-.025em;font-weight:700;color:var(--ink);background:none;-webkit-text-fill-color:currentColor}
+#sbGate .sbg-card .sbg-sub{margin:0 0 24px;color:var(--mu);font-size:15px}
+.sbg-f{position:relative;margin-bottom:14px}
+.sbg-f input{width:100%;height:56px;padding:22px 48px 6px 16px;border-radius:15px;border:1px solid var(--ln);background:color-mix(in srgb,var(--sf2,var(--sf)) 80%,transparent);color:inherit;font:inherit;font-size:16px;outline:none;transition:border-color .2s,box-shadow .25s,background .2s}
+.sbg-f input:hover{border-color:color-mix(in srgb,var(--br) 40%,var(--ln))}
+.sbg-f input:focus{border-color:var(--br);box-shadow:0 0 0 4px color-mix(in srgb,var(--br) 20%,transparent);background:var(--sf)}
+.sbg-f label{position:absolute;left:16px;top:18px;color:var(--mu);font-size:16px;pointer-events:none;transform-origin:left top;transition:transform .2s cubic-bezier(.2,.8,.2,1),color .2s}
+.sbg-f input:focus~label,.sbg-f input:not(:placeholder-shown)~label,.sbg-f input:-webkit-autofill~label{transform:translateY(-10px) scale(.76)}
+.sbg-f input:focus~label{color:var(--br)}
+.sbg-eye{position:absolute;right:6px;top:8px;width:40px;height:40px;border-radius:12px;border:0;background:transparent;color:var(--mu);display:grid;place-items:center;cursor:pointer;transition:background .2s,color .2s}
+.sbg-eye:hover{background:color-mix(in srgb,var(--br) 12%,transparent);color:var(--ink)}
+.sbg-eye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sbg-eye .sl{opacity:0;transition:opacity .2s}.sbg-eye.on .sl{opacity:1}
+.sbg-row{display:flex;justify-content:flex-end;margin:-2px 0 6px}
+#sbGate .lnk{color:var(--br);font-weight:600;text-decoration:none;background:none;border:0;padding:4px 2px;font:inherit;font-weight:600;cursor:pointer;background-image:linear-gradient(currentColor,currentColor);background-size:0 1.5px;background-position:0 100%;background-repeat:no-repeat;transition:background-size .3s}
+#sbGate .lnk:hover,#sbGate .lnk:focus-visible{background-size:100% 1.5px}
+#sbGate [hidden]{display:none!important}
+#sbGate[data-mode=new] #sbUp{order:-1}
+.sbg-msg{min-height:1.5em;margin:0 0 12px;font-size:14px;color:#e2483f}
+.sbg-btns{display:flex;flex-direction:column;gap:10px}
+.sbg-btn{position:relative;overflow:hidden;height:50px;border-radius:15px;border:1px solid var(--ln);background:transparent;color:var(--ink);font:inherit;font-weight:700;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .25s,border-color .2s,background .2s}
+.sbg-btn:hover{border-color:color-mix(in srgb,var(--br) 55%,var(--ln));background:color-mix(in srgb,var(--br) 8%,transparent)}
+.sbg-btn:active{transform:scale(.985)}
+.sbg-btn.p{border-color:transparent;color:#fff;background:linear-gradient(120deg,var(--br),color-mix(in srgb,var(--br) 45%,#2f8fe0));box-shadow:0 14px 30px -14px var(--br)}
+.sbg-btn.p:hover{transform:translateY(-1px);box-shadow:0 18px 34px -14px var(--br);background:linear-gradient(120deg,var(--br),color-mix(in srgb,var(--br) 45%,#2f8fe0))}
+.sbg-btn.p::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .7s ease}
+.sbg-btn.p:hover::after{left:130%}
+.sbg-btn:focus-visible,.sbg-eye:focus-visible{outline:2px solid var(--br);outline-offset:2px}
+.sbg-btn:disabled{cursor:progress;opacity:.75}
+.sbg-btn.sbg-busy{color:transparent}
+.sbg-btn.sbg-busy::before{content:"";position:absolute;width:20px;height:20px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:sbgSpin .7s linear infinite}
+.sbg-btn:not(.p).sbg-busy::before{border-color:color-mix(in srgb,var(--ink) 25%,transparent);border-top-color:var(--ink)}
+.sbg-skip{text-align:center;margin:18px 0 0}
+.sbg-shake{animation:sbgShake .45s cubic-bezier(.36,.07,.19,.97)}
+#sbGate.sbg-out{opacity:0;transform:scale(1.02);pointer-events:none}
+#sbGate.sbg-out .sbg-card{transform:translateY(-8px) scale(.985);transition:transform .5s ease}
+@keyframes sbgRise{from{opacity:0;transform:translateY(16px)}}
+@keyframes sbgCard{from{opacity:0;transform:translateY(24px) scale(.97);filter:blur(10px)}}
+@keyframes sbgFade{from{opacity:0}}
+@keyframes sbgFloat{50%{transform:translateY(-5px)}}
+@keyframes sbgDriftA{to{transform:translate(14vmax,10vmax) scale(1.12)}}
+@keyframes sbgDriftB{to{transform:translate(-12vmax,-8vmax) scale(1.1)}}
+@keyframes sbgSpin{to{transform:rotate(360deg)}}
+@keyframes sbgSpinA{to{--sbgA:360deg}}
+@keyframes sbgShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+@media (max-width:860px){
+ .sbg-wrap{grid-template-columns:minmax(0,430px);gap:26px;justify-content:center}
+ #sbGate .sbg-story h1{margin:22px 0 0;font-size:clamp(28px,8vw,36px);max-width:none}
+ #sbGate .sbg-story>p,.sbg-subj{display:none}
+ .sbg-card{padding:28px 22px 22px}
+}
+@media (max-height:640px) and (min-width:861px){.sbg-subj{display:none}}
+@media (prefers-reduced-motion:reduce){#sbGate,#sbGate *,#sbGate .sbg-bg::before,#sbGate .sbg-bg::after{animation:none!important;transition:none!important}}
+</style>
+<script>
+/* sign-in screen: built here, at the very top of the page, so it appears before the rest of the site loads */
+(function(){
+var EYE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="sl" d="M4 4l16 16"/></svg>';
+var SUBJ=[['#e2487a','Standard English',62,'M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM8 7h7M8 11h5'],['#1f9d6b','Economics',48,'M3 20h18M6 16l4-5 3 3 5-7'],['#e8a020','Business Studies',71,'M3 8h18v11H3zM9 8V5h6v3M3 13h18'],['#2f8fe0','Modern History',35,'M6 3h12M6 21h12M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9'],['#8b5cf6','Standard Mathematics',54,'M18 4H6l6 8-6 8h12']];
+var STAT=[['#e8a020','12 days','Study streak','M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z'],['#8b5cf6','74%','Average mark','M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'],['#1f9d6b','27 days','Until your next exam','M4 6h16v14H4zM4 10h16M8 3v4M16 3v4'],['#e2487a','184','Cards mastered','M5 12l5 5 9-10'],['#2f8fe0','6.5 h','Studied this week','M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'],['#e8a020','9','Mistakes to revisit','M5 21V4h11l-2 4 2 4H5']];
+function depth(){var o=[0,1,'s0',2,3,'r','s1',4,'s2','s3','s4','s5'],h='<div class="sbd-grid">',r='',i,k,d,t;
+ for(i=0;i<5;i++){d=SUBJ[i];var rot=-88+i*72;
+  r+='<circle class="sbd-tr" cx="60" cy="60" r="50" pathLength="100" stroke-dasharray="16 84" transform="rotate('+rot+' 60 60)"/><circle class="sbd-arc" cx="60" cy="60" r="50" pathLength="100" stroke="'+d[0]+'" stroke-dasharray="'+(d[2]/7).toFixed(1)+' 100" transform="rotate('+rot+' 60 60)"/>'}
+ for(k=0;k<o.length;k++){t=o[k];
+  if(t==='r')h+='<div class="sbd-c sbd-ring" style="--k:'+k+'"><div class="sbd-rw"><svg viewBox="0 0 120 120" aria-hidden="true">'+r+'</svg><div class="sbd-mid">54%</div></div><div><b>Overall HSC progress</b><div class="sbd-m">5 of 5 subjects</div></div></div>';
+  else if(typeof t==='number'){d=SUBJ[t];h+='<div class="sbd-c sbd-'+(t+1)+'" style="--c:'+d[0]+';--k:'+k+'"><div class="sbd-t"><svg viewBox="0 0 24 24"><path d="'+d[3]+'"/></svg></div><div><b>'+d[1]+'</b><div class="sbd-m">'+d[2]+'% complete</div></div><div class="sbd-bar"><i style="width:'+d[2]+'%"></i></div></div>'}
+  else{d=STAT[+t.slice(1)];h+='<div class="sbd-c sbd-s" style="--c:'+d[0]+';--k:'+k+'"><div class="sbd-t"><svg viewBox="0 0 24 24"><path d="'+d[3]+'"/></svg></div><div><div class="sbd-n">'+d[1]+'</div><div class="sbd-m">'+d[2]+'</div></div></div>'}}
+ return h+'</div>'}
+var COPY={
+ back:{h1:'Pick up where you left off.',p:'Your progress, marks and study streak follow you from phone to iPad to laptop.',h2:'Welcome back',sub:'Sign in to sync your progress.'},
+ new:{h1:'Your HSC study, all in one place.',p:'Create a free account and your progress, marks and study streak follow you from phone to iPad to laptop.',h2:'Create your account',sub:'Free, and it only takes a few seconds.'}};
+function known(){try{return !!localStorage.getItem('hsc-sb-known')}catch(e){return false}}
+function setMode(g,m){var c=COPY[m],q=function(x){return g.querySelector(x)};g.dataset.mode=m;
+ q('.sbg-story h1').textContent=c.h1;q('.sbg-story>p').textContent=c.p;q('.sbg-card h2').textContent=c.h2;q('.sbg-sub').textContent=c.sub;
+ q('#sbUp').classList.toggle('p',m==='new');q('#sbIn').classList.toggle('p',m!=='new');
+ q('#sbForgot').hidden=m==='new';q('#sbMode').hidden=m!=='new';
+ q('#sbP').setAttribute('autocomplete',m==='new'?'new-password':'current-password');q('#sbM').textContent=''}
+window.__sbGateMake=function(){
+ var g=document.createElement('div');g.id='sbGate';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','Sign in');
+ g.innerHTML='<div class="sbg-bg" aria-hidden="true"></div><div class="sbg-depth" aria-hidden="true">'+depth()+'</div><div class="sbg-wrap">'
+ +'<div class="sbg-story"><div class="sbg-brand"><span class="logo"></span>HSC Hub</div>'
+ +'<h1>Pick up where you left off.</h1>'
+ +'<p>Your progress, marks and study streak follow you from phone to iPad to laptop.</p>'
+ +'</div>'
+ +'<div class="sbg-card"><h2>Welcome back</h2><p class="sbg-sub">Sign in to sync your progress.</p>'
+ +'<div class="sbg-f"><input id="sbE" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder=" " aria-label="Email"><label for="sbE">Email</label></div>'
+ +'<div class="sbg-f"><input id="sbP" type="password" autocomplete="current-password" placeholder=" " aria-label="Password"><label for="sbP">Password (6+ characters)</label><button type="button" class="sbg-eye" id="sbEye" aria-label="Show password" aria-pressed="false">'+EYE+'</button></div>'
+ +'<div class="sbg-row"><button type="button" class="lnk" id="sbForgot">Forgot password?</button><button type="button" class="lnk" id="sbMode" hidden>Already have an account? Sign in</button></div>'
+ +'<p id="sbM" role="alert" class="sbg-msg"></p>'
+ +'<div class="sbg-btns"><button type="button" class="sbg-btn p" id="sbIn">Sign in</button><button type="button" class="sbg-btn" id="sbUp">Create account</button></div>'
+ +'<p class="sbg-skip"><button type="button" class="lnk" id="sbSkip">Continue without an account</button></p></div></div>';
+ setMode(g,known()?'back':'new');
+ g.querySelector('#sbMode').addEventListener('click',function(){try{localStorage.setItem('hsc-sb-known','1')}catch(e){}setMode(g,'back');var e=g.querySelector('#sbE');if(e&&!e.value)e.focus({preventScroll:true})});
+ return g};
+window.__sbGateClose=function(g){if(!g||!g.isConnected)return;
+ try{if(localStorage.getItem('hsc-sb-session'))localStorage.setItem('hsc-sb-known','1')}catch(e){}
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){g.remove();return}
+ g.classList.add('sbg-out');setTimeout(function(){g.remove()},520)};
+try{var L=localStorage;L.removeItem('hsc-sb-skip');if(L.getItem('hsc-sb-session')||sessionStorage.getItem('hsc-sb-skip')||window.__sbHash)return;
+ var g=window.__sbGateMake();document.body.appendChild(g);
+ if(matchMedia('(pointer:fine)').matches)setTimeout(function(){var e=g.querySelector('#sbE');if(e&&!g.contains(document.activeElement))e.focus({preventScroll:true})},60)}catch(e){}
+})();
+</script>
 <a class="skip" href="#main">Skip to main content</a>
 <canvas id="fx" aria-hidden="true"></canvas>
 <div id="cp" role="dialog" aria-label="Search"><div><input type="text" id="cpi" placeholder="Search topics, subjects, tools and settings…" autocomplete="off"><div id="cpl" style="margin-top:8px;max-height:52vh;overflow:auto"></div><div id="cpf" class="mu sm" style="padding:8px 12px 2px"></div></div></div>
@@ -43778,8 +43936,9 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
   xaiAuto(at,true);return}
  const c=HubAI.cfg(),tst=()=>document.querySelector('.xai-tst');
  if(a==='savekey'){const key=(XAI.key||'').trim();if(!key){xaiSay('Paste your API key first.');return}
-  c.key=key;const ok=HubAI.save(c);XAI.key='';XAI.msg=ok?'Key saved on this device.':'Could not save: this browser is blocking storage.';rerender()}
- else if(a==='forgetkey'){c.key='';HubAI.save(c);XAI.key='';XAI.msg='Key removed.';rerender()}
+  c.key=key;const ok=HubAI.save(c);XAI.key='';const si=!!(window.HubAccount&&HubAccount.signedIn());XAI.msg=ok?(si?'Key saved on this device and in your account.':'Key saved on this device. Sign in to keep it with your account.'):'Could not save: this browser is blocking storage.';rerender();if(ok&&si&&window.HubKeySync)HubKeySync.push().catch(()=>{})}
+ else if(a==='forgetkey'){const si=!!(window.HubAccount&&HubAccount.signedIn());(async()=>{try{if(si&&window.HubKeySync)await HubKeySync.remove()}catch(e){XAI.msg='Could not remove it from your account. Check your connection and try again.';rerender();return}
+  c.key='';HubAI.save(c);XAI.key='';XAI.msg=si?'Key removed from this device and your account.':'Key removed from this device.';rerender()})()}
  else if(a==='test'){const t=tst();if(!t)return;
   if((XAI.key||'').trim()){t.textContent='Press Save key first, then test.';return}
   if(!HubAI.ready()){t.textContent='Add and save your API key first.';return}
@@ -43797,15 +43956,18 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 /* ===== Settings > AI Marking ===== */
 SETSEC.push({id:'ai',t:'AI Marking',d:'Provider, API key, which models to use, marking style and limits.',i:'M12 3l2.1 5.9L20 11l-5.9 2.1L12 19l-2.1-5.9L4 11l5.9-2.1zM19 3v4M17 5h4'});SETGRP[1][1].push('ai');SETADV.ai=['Advanced'];
 SSYN.ai='ai gemini google gemma claude anthropic openai gpt api key model flash lite quota rate limit daily requests mark marking strict generous careful temperature tokens timeout instructions backup fallback';
+SETSEC.push({id:'account',t:'Account',d:'Sign in, change your email or password, sign out everywhere or delete your account.',i:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0'});SETGRP[4][1].unshift('account');
+SSYN.account='account sign in login log out logout email password change reset delete sync cloud devices phone ipad laptop';
+SETV.account=()=>window.HubAccount&&HubAccount.view?HubAccount.view():'<div class="card"><h3>Account</h3><p class="mu sm" style="margin:0">Loading…</p></div>';
 SETV.ai=()=>{const c=HubAI.cfg(),on=!!c.key,gm=c.provider==='gemini',GMs=HubAI.GM,U=HubAI.usage().n,pri=c.model||GMs[0].id,pm=GMs.find(m=>m.id===pri),
  sel=(f,l,opts,cur)=>`<select class="xmk-sel" style="width:auto;min-width:210px;max-width:100%;margin:0" data-xai-f="${f}" aria-label="${esc(l)}">${opts.map(([v,n])=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(n)}</option>`).join('')}</select>`,
  sw=(a,v,o,l)=>`<button type="button" class="sw" role="switch" aria-checked="${!!o}" aria-label="${esc(l)}" data-xai="${a}"${v?` data-v="${esc(v)}"`:''}></button>`,
  tx=(f,l,ph,val)=>`<input class="xmk-sel" style="width:auto;min-width:240px;max-width:100%;margin:0" type="text" data-xai-f="${f}" value="${esc(val||'')}" placeholder="${esc(ph||'')}" autocomplete="off" spellcheck="false" aria-label="${esc(l)}">`,
  warn=gm&&c.rep==='3'&&pm&&pm.rpd<=50?` Careful uses 3 requests per answer, and ${pm.n} only allows ${pm.rpd} a day, so it runs out quickly.`:'';
  return`<div class="card xai-box"><h3>Connection</h3>
- <p class="mu sm" style="margin:0 0 8px">Optional. Mark with AI sends the question, its marking points and your answer to the provider below, using your own API key. The key is stored only in this browser, in plain text, and is not included in Hub backups. Remove it on a shared device.</p>
+ <p class="mu sm" style="margin:0 0 8px">Optional. Mark with AI sends the question, its marking points and your answer to the provider below, using your own API key. The key is stored in plain text in this browser. When you are signed in it is also saved to your account, so it follows you to your other devices. It is not part of Hub backups. Remove it on a shared device.</p>
  ${setRow('Provider','Who marks your answers.',sel('provider','Provider',[['gemini','Google (Gemini)'],['anthropic','Anthropic (Claude)'],['openai','OpenAI-compatible']],c.provider))}
- ${setRow('API key',on?'A key is saved on this device.':'Not set up yet.',`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="xmk-sel" style="flex:1 1 220px;width:auto;margin:0" type="password" data-xai-f="key" value="${esc(XAI.key||'')}" placeholder="${on?'Saved. Type a new key to replace it':'Paste your API key'}" autocomplete="off" spellcheck="false" aria-label="API key"><button type="button" class="btn p" data-xai="savekey">Save key</button></div>`)}
+ ${setRow('API key',on?((window.HubAccount&&HubAccount.signedIn())?'A key is saved on this device and in your account.':'A key is saved on this device only. Sign in to keep it with your account.'):'Not set up yet.',`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="xmk-sel" style="flex:1 1 220px;width:auto;margin:0" type="password" data-xai-f="key" value="${esc(XAI.key||'')}" placeholder="${on?'Saved. Type a new key to replace it':'Paste your API key'}" autocomplete="off" spellcheck="false" aria-label="API key"><button type="button" class="btn p" data-xai="savekey">Save key</button></div>`)}
  <p class="mu sm xai-msg" role="status" style="margin:6px 0 0">${esc(XAI.msg)}</p>
  <p style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 0"><button type="button" class="btn" data-xai="test">Test connection</button>${gm?'<button type="button" class="btn" data-xai="check">Check my models</button>':''}${on?'<button type="button" class="btn" data-xai="forgetkey">Remove saved key</button>':''}</p><p class="mu sm xai-tst" role="status" style="margin:8px 0 0"></p>
  ${gm?'<p class="mu sm" style="margin:10px 0 0">A free key from Google AI Studio works. The free tier allows only a few requests a minute and a limited number a day. On the free tier Google may use what you send to improve its products, so keep personal details out of answers (check Google&rsquo;s terms).</p>':''}</div>
@@ -47107,71 +47269,6 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
  document.addEventListener('touchmove',function(e){if(e.touches.length>1||(e.scale&&e.scale!==1))e.preventDefault()},{passive:false});
 })();
 </script>
-<script id="hub-lock">
-/* One-time PIN check. If HUB_ENC holds an encrypted key and this device has no matching key saved yet, ask for the PIN once,
-   decrypt, and save the key to this device the same way Settings > AI Marking does. After that it never asks again here.
-   A new HUB_ENC (new key or PIN) is asked for once per device. */
-(function(){try{
-/* shared crypto: PBKDF2-SHA256 (600k rounds) -> AES-256-GCM. Blob = "v1." + base64(salt16 | iv12 | ciphertext) */
-var HubCrypto=(function(){
- var IT=600000,enc=new TextEncoder(),dec=new TextDecoder();
- function b64(u){var s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s)}
- function unb64(t){var s=atob(t),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
- async function keyFrom(pin,salt){var m=await crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:IT,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
- async function seal(obj,pin){var salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await keyFrom(pin,salt);
-  var ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},k,enc.encode(JSON.stringify(obj))));
-  var out=new Uint8Array(28+ct.length);out.set(salt,0);out.set(iv,16);out.set(ct,28);return 'v1.'+b64(out)}
- async function open(blob,pin){if(!/^v1\./.test(blob))throw new Error('bad blob');var u=unb64(blob.slice(3)),k=await keyFrom(pin,u.slice(0,16));
-  var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(16,28)},k,u.slice(28));return JSON.parse(dec.decode(pt))}
- return{seal:seal,open:open}})();
-
-var blob=window.HUB_ENC;if(!blob)return;
-var K='ai-marking-key-v1',ID='hub-enc-id',bid=blob.slice(-24);
-function stored(){try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return{}}}
-try{if(stored().key&&localStorage.getItem(ID)===bid)return}catch(e){}
-function show(){var css=document.createElement('style');
-css.textContent='#hkOv{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg,#f6f5fb);color:var(--ink,#1c1b22);font-family:inherit}#hkOv .hk{width:100%;max-width:360px;text-align:center}#hkOv h2{margin:0 0 6px}#hkOv p{margin:0 0 14px;opacity:.75}#hkOv input{width:100%;box-sizing:border-box;padding:13px 14px;border-radius:14px;border:1px solid var(--ln,#c9c6d6);background:var(--sf,#fff);color:inherit;font:inherit;font-size:18px;text-align:center}#hkOv button{width:100%;margin-top:10px;padding:12px;border-radius:14px;border:0;background:var(--br,#6b4cf6);color:#fff;font:inherit;font-weight:600;cursor:pointer}#hkOv button.hs{background:none;color:inherit;opacity:.7;font-weight:500}#hkOv button[disabled]{opacity:.5}#hkOv .he{min-height:22px;margin-top:10px;color:#c0334d;font-weight:600}';
-document.head.appendChild(css);
-var ov=document.createElement('div');ov.id='hkOv';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Enter PIN');
-ov.innerHTML='<div class="hk"><h2>Enter your PIN</h2><p>One-time setup for this device. It unlocks the AI tutor and AI marking.</p><input id="hkIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="PIN"><button id="hkGo" type="button">Unlock</button><button id="hkSkip" class="hs" type="button">Skip for now</button><div class="he" id="hkErr" role="alert"></div></div>';
-document.body.appendChild(ov);
-var inp=ov.querySelector('#hkIn'),go=ov.querySelector('#hkGo'),er=ov.querySelector('#hkErr');
-setTimeout(function(){try{inp.focus()}catch(e){}},50);
-function done(){ov.remove();try{if(typeof render==='function')render()}catch(e){}}
-function saveKey(o){var c=stored();c.provider=o.p||c.provider||'gemini';c.key=o.k;if(o.m)c.model=o.m;
- localStorage.setItem(K,JSON.stringify(c));localStorage.setItem(ID,bid)}
-/* lockout: 5 wrong PINs locks this device for 15 min, then 1 h, 6 h, then 24 h each time. Saved on the device, so a reload does not reset it. */
-var FK='hub-enc-fails',MAXTRY=5,DUR=[15*60,60*60,6*3600,24*3600],tick=null;
-function fst(){try{var o=JSON.parse(localStorage.getItem(FK));if(o&&typeof o==='object')return{n:+o.n||0,lvl:+o.lvl||0,until:+o.until||0}}catch(e){}return{n:0,lvl:0,until:0}}
-function fput(o){try{localStorage.setItem(FK,JSON.stringify(o))}catch(e){}}
-function fmt(t){var h=Math.floor(t/3600),m=Math.floor(t%3600/60),x=t%60;return h?h+'h '+m+'m':m?m+'m '+(x<10?'0':'')+x+'s':x+'s'}
-function locked(){var o=fst(),t=Math.ceil((o.until-Date.now())/1000);return t>0?t:0}
-function showLock(){clearInterval(tick);var t=locked();
- if(!t){go.disabled=false;go.textContent='Unlock';er.textContent='';inp.disabled=false;return}
- inp.disabled=true;go.disabled=true;
- var step=function(){var r=locked();if(!r){showLock();return}go.textContent='Locked';er.textContent='Too many wrong PINs. Try again in '+fmt(r)+'.'};
- step();tick=setInterval(step,1000)}
-async function tryPin(){var pin=inp.value;if(!pin||go.disabled||locked())return;er.textContent='';
- if(!(window.crypto&&crypto.subtle)){er.textContent='This browser blocks unlocking here. Open the https link.';return}
- go.disabled=true;go.textContent='Checking…';var ok=null;
- try{ok=await HubCrypto.open(blob,pin)}catch(e){}
- if(ok){try{saveKey(ok)}catch(e){er.textContent='Could not save the key on this device (private browsing?).';go.disabled=false;go.textContent='Unlock';return}
-  try{localStorage.removeItem(FK)}catch(e){}try{if(window.HubKeySync)HubKeySync.push()}catch(e){}done();return}
- var o=fst();o.n++;inp.value='';
- if(o.n>=MAXTRY){o.lvl++;o.n=0;o.until=Date.now()+DUR[Math.min(o.lvl-1,DUR.length-1)]*1000;fput(o);showLock();return}
- fput(o);er.textContent='Wrong PIN. '+(MAXTRY-o.n)+' attempt'+(MAXTRY-o.n===1?'':'s')+' left.';
- go.disabled=false;go.textContent='Unlock';try{inp.focus()}catch(e){}}
-showLock();
-go.onclick=tryPin;
-inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryPin()}});
-ov.querySelector('#hkSkip').onclick=done;
-}
-/* signed in already? ask the account for the unlocked key first, and only show the PIN screen if it has none for this PIN */
-var SBS=null;try{SBS=JSON.parse(localStorage.getItem('hsc-sb-session'))}catch(e){}
-if(SBS&&SBS.refresh_token){setTimeout(function(){var p=window.HubKeySync?HubKeySync.pull(bid):Promise.resolve(false);p.then(function(ok){if(!ok)show()},function(){show()})},0)}else show();
-}catch(err){console.warn('PIN lock not loaded',err)}})();
-</script>
 <script id="tt-fit">
 /* sizes the empty tutor to exactly the space between its top and the bottom nav */
 (()=>{const fit=()=>{const t=document.getElementById('tt');if(!t)return;
@@ -47192,12 +47289,12 @@ if(SBS&&SBS.refresh_token){setTimeout(function(){var p=window.HubKeySync?HubKeyS
 const URL_='https://kjwmbxdgkwugliourdoi.supabase.co',KEYP='sb_publishable_h4JqllGDec-SqVMFXF7HJw_mr3EkEx5';
 const SS='hsc-sb-session',SM='hsc-sb-meta',SKIP='hsc-sb-skip';
 /* things that stay per device and are never synced */
-const EXC=new Set(['hsc-hub-backups-v1','ai-marking-key-v1','ai-marking-usage-v1','hsc-hub-settings-v1','hubx','hsc-hub-setui','hsc-hub-touchfx-off','hsc-hub-idx','hsc-hub-idxv','hub-enc-id']);
+const EXC=new Set(['hsc-hub-backups-v1','ai-marking-key-v1','ai-marking-usage-v1','hsc-hub-settings-v1','hubx','hsc-hub-setui','hsc-hub-touchfx-off','hsc-hub-idx','hsc-hub-idxv']);
 const keep=k=>!(EXC.has(k)||k.indexOf('hsc-sb-')===0);
 const jget=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let sess=jget(SS),meta=jget(SM)||{},busy=false,st='',asked=false;
+let sess=jget(SS),meta=jget(SM)||{},busy=false,st='',asked=false,snoozeTo=0;
 const saveMeta=()=>jset(SM,meta);
 
 const api=async(path,o,tok)=>{o=o||{};const h=Object.assign({apikey:KEYP,'Content-Type':'application/json'},o.headers||{});if(tok)h.Authorization='Bearer '+tok;
@@ -47224,10 +47321,11 @@ const push=async snap=>{const data={v:1,ls:snap.ls,xh:snap.xh,mods:snap.mods},no
  if(!r.ok)throw new Error('push '+r.status);
  meta={uid:sess.uid,at:(r.j&&r.j[0]&&r.j[0].updated_at)||now,hash:snap.hash};saveMeta();return'ok'};
 
+const remoteSame=async snap=>{try{const r=await rest('?select=data&user_id=eq.'+sess.uid);const d=r.ok&&r.j&&r.j[0]&&r.j[0].data;if(!d)return false;const ls={};Object.keys(d.ls||{}).forEach(k=>{if(keep(k))ls[k]=d.ls[k]});return hash(canon(ls,Array.isArray(d.xh)?d.xh:[]))===snap.hash}catch(e){return false}};
 const pull=async()=>{const r=await rest('?select=data,updated_at&user_id=eq.'+sess.uid);if(!r.ok||!r.j||!r.j[0])throw new Error('pull');
  const row=r.j[0],d=row.data||{},ls={};
  Object.keys(d.ls||{}).forEach(k=>{if(keep(k))ls[k]=d.ls[k]});
- for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!keep(k)&&!(k in ls))ls[k]=localStorage.getItem(k)}   /* per-device keys stay as they are here */
+ for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!keep(k)&&k.indexOf('hsc-sb-')!==0&&!(k in ls))ls[k]=localStorage.getItem(k)}   /* per-device keys stay as they are here */
  meta={uid:sess.uid,at:row.updated_at,hash:null,rebase:true};saveMeta();
  await HubBackup.restore({app:'hsc-hub',v:2,at:Date.now(),kind:'sync',ls,xh:Array.isArray(d.xh)?d.xh:[],mods:d.mods||{}})};
 
@@ -47235,18 +47333,26 @@ const pull=async()=>{const r=await rest('?select=data,updated_at&user_id=eq.'+se
 const mk=h=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstElementChild};
 const modal=(title,body,btns)=>{const old=document.getElementById('sbMo');if(old)old.remove();
  const o=mk('<div id="sbMo" role="dialog" aria-modal="true" aria-label="'+esc(title)+'" style="position:fixed;inset:0;z-index:2147483200;display:grid;place-items:center;padding:20px;background:rgba(5,8,20,.6)"><div class="card" style="max-width:420px;width:100%"><h3 style="margin-top:0">'+esc(title)+'</h3><p class="mu" style="margin:0 0 14px">'+body+'</p><div class="chips" style="flex-direction:column"></div></div></div>');
- const c=o.querySelector('.chips');btns.forEach(b=>{const x=document.createElement('button');x.type='button';x.className='btn '+(b[2]||'');x.style.justifyContent='center';x.textContent=b[0];x.onclick=()=>{o.remove();if(b[1])b[1]()};c.appendChild(x)});document.body.appendChild(o)};
+ const c=o.querySelector('.chips');const xs=[];
+ /* highlight follows the selected option (hover / focus / touch / arrow keys), same as chips: selected = brand colour, others neutral */
+ const pick=i=>{xs.forEach((y,j)=>{y.classList.toggle('p',j===i);y.setAttribute('aria-current',j===i?'true':'false')})};
+ btns.forEach((b,i)=>{const x=document.createElement('button');x.type='button';x.className='btn';x.style.justifyContent='center';x.textContent=b[0];x.onclick=()=>{o.remove();if(b[1])b[1]()};
+  x.addEventListener('pointerenter',()=>pick(i));x.addEventListener('pointerdown',()=>pick(i));x.addEventListener('focus',()=>pick(i));
+  xs.push(x);c.appendChild(x)});
+ const start=Math.max(0,btns.findIndex(b=>(b[2]||'').indexOf('p')>-1));pick(start);
+ o.addEventListener('keydown',e=>{if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;e.preventDefault();const cur=Math.max(0,xs.findIndex(y=>y===document.activeElement));const n=(cur+(e.key==='ArrowDown'?1:xs.length-1))%xs.length;xs[n].focus()});
+ document.body.appendChild(o);if(xs[start])xs[start].focus({preventScroll:true})};
 const when=t=>t?new Date(t).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'';
 function setSt(m){st=m;const e=document.getElementById('sbSt');if(e)e.textContent=m}
 const banner=(txt,label,fn)=>{const old=document.getElementById('sbBn');if(old)old.remove();
  const b=mk('<div id="sbBn" role="status" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:2147483100;max-width:calc(100% - 24px);display:flex;gap:10px;align-items:center;padding:10px 12px 10px 16px;border-radius:14px;background:var(--ink);color:var(--bg);font-weight:600;box-shadow:0 10px 30px -10px rgba(0,0,0,.45)"><span>'+esc(txt)+'</span><button type="button" class="btn p" style="padding:6px 12px">'+esc(label)+'</button></div>');
  b.querySelector('button').onclick=()=>{b.remove();fn()};document.body.appendChild(b);setTimeout(()=>{if(b.isConnected)b.remove()},20000)};
 
-function conflict(remoteAt){if(asked)return;asked=true;
+function conflict(remoteAt){if(asked||Date.now()<snoozeTo)return;asked=true;
  modal('Which data do you want to keep?','This device and your account both have progress that the other does not. Account data was last saved '+esc(when(remoteAt))+'. A safety backup of this device is saved first, so you can undo it from Backups.',
   [['Use my account data',()=>{asked=false;pull().catch(()=>setSt('Could not load account data.'))},'p'],
    ['Keep this device and overwrite the account',async()=>{asked=false;try{meta={uid:sess.uid};const s=await snapshot();const r=await rest('?select=updated_at&user_id=eq.'+sess.uid);meta.at=r.j&&r.j[0]?r.j[0].updated_at:null;const p=await push(s);setSt(p==='ok'?'Synced '+when(Date.now()):'Try again');}catch(e){setSt('Offline. Will retry.')}}],
-   ['Decide later',()=>{asked=false}]])}
+   ['Decide later',()=>{asked=false;snoozeTo=Date.now()+15*60000;setSt('Waiting for your choice. Tap Sync now when ready.')}]])}
 
 async function check(mode){if(!sess||busy)return;busy=true;
  try{setSt('Syncing…');
@@ -47267,6 +47373,7 @@ async function check(mode){if(!sess||busy)return;busy=true;
   if(snap.hash===meta.hash||meta.rebase){
    if(mode==='load'||mode==='login'||mode==='manual'){await pull();return}
    banner('Newer progress from another device','Update',()=>pull());setSt('Newer data available');return}
+  if(await remoteSame(snap)){meta={uid:sess.uid,at:row.updated_at,hash:snap.hash};saveMeta();setSt('Up to date '+when(Date.now()));return}
   conflict(row.updated_at);setSt('Needs your choice');
  }catch(e){setSt(sess?'Offline. Will sync when you are back online.':st)}finally{busy=false}}
 
@@ -47295,43 +47402,103 @@ async function recovery(){const raw=window.__sbHash;window.__sbHash=null;if(!raw
  catch(e){modal('That reset link did not work','It may have expired. Request a new one from the sign-in screen.',[['OK']])}}
 
 /* sign-in screen */
-function gate(){if(document.getElementById('sbGate'))return;
- const g=mk('<div id="sbGate" role="dialog" aria-modal="true" aria-label="Sign in" style="position:fixed;inset:0;z-index:2147483100;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow:auto"><div style="width:100%;max-width:380px"><h2 style="margin:0 0 6px">Sign in to HSC Hub</h2><p class="mu" style="margin:0 0 16px">One account keeps your progress in sync on your phone, iPad and laptop.</p><input id="sbE" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Email" aria-label="Email" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><input id="sbP" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" aria-label="Password" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:12px"><p style="text-align:right;margin:-4px 0 8px"><button type="button" class="lnk" id="sbForgot">Forgot password?</button></p><p id="sbM" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn p" id="sbIn" style="justify-content:center;min-height:46px">Sign in</button><button type="button" class="btn" id="sbUp" style="justify-content:center;min-height:46px">Create account</button></div><p style="text-align:center;margin:16px 0 0"><button type="button" class="lnk" id="sbSkip">Continue without an account</button></p></div></div>');
- document.body.appendChild(g);const E=g.querySelector('#sbE'),P=g.querySelector('#sbP'),M=g.querySelector('#sbM');
- const say=(t,ok)=>{M.textContent=t;M.style.color=ok?'var(--ink)':'#e2483f'};
+function gate(){let g=document.getElementById('sbGate');if(g&&g.dataset.b)return;
+ if(!g){g=window.__sbGateMake&&window.__sbGateMake();if(!g)return;document.body.appendChild(g)}
+ g.dataset.b='1';
+ const shut=()=>{if(window.__sbGateClose)window.__sbGateClose(g);else g.remove()};
+ const E=g.querySelector('#sbE'),P=g.querySelector('#sbP'),M=g.querySelector('#sbM'),C=g.querySelector('.sbg-card'),eye=g.querySelector('#sbEye');
+ const say=(t,ok)=>{M.textContent=t;M.style.color=ok?'var(--ink)':'';if(t&&!ok){C.classList.remove('sbg-shake');void C.offsetWidth;C.classList.add('sbg-shake')}};
  const go=async kind=>{const email=E.value.trim(),pw=P.value;if(!email||!pw)return say('Enter your email and password.');if(kind==='up'&&pw.length<6)return say('Use at least 6 characters for the password.');
-  say('');g.querySelectorAll('button').forEach(b=>b.disabled=true);
+  say('');const btn=g.querySelector(kind==='up'?'#sbUp':'#sbIn');btn.classList.add('sbg-busy');g.querySelectorAll('button').forEach(b=>b.disabled=true);
   try{const r=await api(kind==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pw})});
    if(!r.ok||!r.j||!r.j.access_token){const m=(r.j&&(r.j.msg||r.j.error_description||r.j.message))||'';
-    say(kind==='up'&&r.ok?'Account created. Check your email to confirm it, then sign in.':(/invalid login/i.test(m)?'Wrong email or password.':m||'Could not sign in. Try again.'));return}
-   setSess(r.j);try{localStorage.removeItem(SKIP)}catch(e){}g.remove();mount();check('login');keyTick()
+    say(kind==='up'&&r.ok?'Account created. Check your email to confirm it, then sign in.':(/invalid login/i.test(m)?'Wrong email or password.':m||'Could not sign in. Try again.'),kind==='up'&&r.ok);return}
+   setSess(r.j);try{localStorage.removeItem(SKIP)}catch(e){}shut();mount();refresh();check('login');keyTick();devTick()
   }catch(e){say('No connection. Check your internet and try again.')}
-  finally{g.querySelectorAll('button').forEach(b=>b.disabled=false)}};
+  finally{btn.classList.remove('sbg-busy');g.querySelectorAll('button').forEach(b=>b.disabled=false)}};
  g.querySelector('#sbForgot').onclick=async()=>{const email=E.value.trim();if(!email)return say('Type your email above first, then tap Forgot password.');
   say('');try{const r=await api('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{method:'POST',body:JSON.stringify({email})});
    say(r.ok?'If that email has an account, a reset link is on its way. Open it on this device.':((r.j&&(r.j.msg||r.j.message))||'Could not send the email. Try again in a minute.'),r.ok)}catch(e){say('No connection. Check your internet and try again.')}};
+ eye.onclick=()=>{const s=P.type==='password';P.type=s?'text':'password';eye.classList.toggle('on',s);eye.setAttribute('aria-pressed',s?'true':'false');eye.setAttribute('aria-label',s?'Hide password':'Show password')};
  g.querySelector('#sbIn').onclick=()=>go('in');g.querySelector('#sbUp').onclick=()=>go('up');
- g.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go('in')}});
- g.querySelector('#sbSkip').onclick=()=>{try{localStorage.setItem(SKIP,'1')}catch(e){}g.remove()};
- setTimeout(()=>E.focus(),50)}
+ g.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'){e.preventDefault();go(g.dataset.mode==='new'?'up':'in')}});
+ g.querySelector('#sbSkip').onclick=()=>{try{sessionStorage.setItem(SKIP,'1')}catch(e){}shut()};
+ if(!g.contains(document.activeElement)&&matchMedia('(pointer:fine)').matches)setTimeout(()=>E.focus({preventScroll:true}),50)}
 
-function signOut(){modal('Sign out?','Your progress stays on this device. It just stops syncing until you sign in again.',[['Sign out',()=>{sess=null;meta={};try{localStorage.removeItem(SS);localStorage.removeItem(SM)}catch(e){}setSt('');mount()},'x'],['Cancel']])}
+const refresh=()=>{try{if(/^#settings\/(account|data)/.test(location.hash)&&typeof render==='function')render()}catch(e){}};
+function localOut(){delDev();sess=null;devCache=null;meta={};asked=false;try{localStorage.removeItem(SS);localStorage.removeItem(SM);localStorage.removeItem('hsc-sb-keyhash')}catch(e){}setSt('');mount();refresh()}
+function signOut(){modal('Sign out?','Your progress stays on this device. It just stops syncing until you sign in again.',[['Sign out',localOut,'x'],['Cancel']])}
+function signOutAll(){modal('Sign out everywhere?','This signs out every phone, tablet and computer, including this one. Your progress stays saved in your account.',
+ [['Sign out everywhere',async()=>{try{try{await dapi('?user_id=eq.'+sess.uid,{method:'DELETE'})}catch(e){}const t=await token();const r=await api('/auth/v1/logout?scope=global',{method:'POST'},t);if(!r.ok&&r.status!==204&&r.status!==401)throw 0;localOut()}catch(e){modal('Could not sign out everywhere','Check your connection and try again.',[['OK']])}},'x'],['Cancel']])}
+/* a small form dialog: one input, a Save button, errors shown inline */
+function inputModal(o){const old=document.getElementById('sbIm');if(old)old.remove();
+ const d=mk('<div id="sbIm" role="dialog" aria-modal="true" aria-label="'+esc(o.title)+'" style="position:fixed;inset:0;z-index:2147483200;display:grid;place-items:center;padding:20px;background:rgba(5,8,20,.6)"><div class="card" style="max-width:420px;width:100%"><h3 style="margin-top:0">'+esc(o.title)+'</h3><p class="mu" style="margin:0 0 12px">'+o.body+'</p><input id="sbIi" type="'+(o.type||'text')+'" autocomplete="'+(o.auto||'off')+'" autocapitalize="off" spellcheck="false" placeholder="'+esc(o.ph||'')+'" aria-label="'+esc(o.ph||o.title)+'" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><p id="sbIe" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn '+(o.cls||'p')+'" id="sbIs" style="justify-content:center;min-height:46px">'+esc(o.go)+'</button><button type="button" class="btn" id="sbIc" style="justify-content:center;min-height:46px">Cancel</button></div></div></div>');
+ document.body.appendChild(d);const I=d.querySelector('#sbIi'),E=d.querySelector('#sbIe');
+ const go=async()=>{const v=I.value.trim();const bad=o.check&&o.check(v);if(bad){E.textContent=bad;return}E.textContent='';d.querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{const r=await o.run(v);if(r&&r.err){E.textContent=r.err}else{d.remove();if(o.done)o.done(r)}}catch(e){E.textContent='No connection, or you were signed out. Try again.'}
+  finally{d.querySelectorAll('button').forEach(b=>b.disabled=false)}};
+ d.querySelector('#sbIs').onclick=go;d.querySelector('#sbIc').onclick=()=>d.remove();d.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}});setTimeout(()=>I.focus(),50)}
+function emailModal(){inputModal({title:'Change email',body:'Enter the new email address for this account. You will use it to sign in.',type:'email',auto:'email',ph:'New email',go:'Change email',
+ check:v=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)?'':'Enter a valid email address.',
+ run:async v=>{const t=await token();const r=await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({email:v})},t);
+  if(!r.ok)return{err:(r.j&&(r.j.msg||r.j.message))||'Could not change the email.'};return r.j||{}},
+ done:u=>{if(u&&u.new_email){modal('Check your inbox','We sent a confirmation link to '+esc(u.new_email)+'. Your email changes once you open it. You may also get one at your old address.',[['OK']])}
+  else{if(u&&u.email&&sess){sess.email=u.email;jset(SS,sess)}modal('Email changed','You now sign in with '+esc((u&&u.email)||'your new email')+'.',[['OK']])}refresh();mount()}})}
+function deleteModal(){inputModal({title:'Delete your account?',body:'This permanently deletes your account, your synced progress and your saved AI key from the cloud. It cannot be undone. Data already on this device stays here. Type <b>DELETE</b> to confirm.',ph:'Type DELETE',go:'Delete my account',cls:'x',
+ check:v=>v==='DELETE'?'':'Type DELETE in capitals to confirm.',
+ run:async()=>{const t=await token();const r=await api('/rest/v1/rpc/delete_my_account',{method:'POST',body:'{}'},t);
+  if(!r.ok)return{err:r.status===404?'The delete function is not set up in Supabase yet.':((r.j&&(r.j.message||r.j.msg))||'Could not delete the account.')};return{}},
+ done:()=>{localOut();modal('Account deleted','Your account and cloud data are gone. This device still has its own copy of your progress.',[['OK']])}})}
 
+/* devices linked to this account: each device registers itself and checks in; removing one tells it to sign out */
+const DK='hsc-sb-device';let lastBeat=0,devCache=null;
+const devId=()=>{let d=null;try{d=localStorage.getItem(DK)}catch(e){}if(!d){d=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Math.random()).slice(2)+Date.now();try{localStorage.setItem(DK,d)}catch(e){}}return d};
+const devName=()=>{const u=navigator.userAgent||'';
+ const os=/iPhone/.test(u)?'iPhone':(/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))?'iPad':/Android/.test(u)?'Android':/Windows/.test(u)?'Windows PC':/CrOS/.test(u)?'Chromebook':/Mac/.test(u)?'Mac':/Linux/.test(u)?'Linux':'Device';
+ const br=/Edg\//.test(u)?'Edge':/OPR\//.test(u)?'Opera':/Firefox|FxiOS/.test(u)?'Firefox':/CriOS|Chrome/.test(u)?'Chrome':/Safari/.test(u)?'Safari':'browser';return os+' · '+br};
+const dapi=async(q,o)=>{const t=await token();return api('/rest/v1/hub_devices'+q,o,t)};
+const dq=()=>'?user_id=eq.'+sess.uid+'&device_id=eq.'+encodeURIComponent(devId());
+const delDev=()=>{if(!sess)return;const q=dq();token().then(t=>api('/rest/v1/hub_devices'+q,{method:'DELETE'},t)).catch(()=>{})};
+async function devTick(){try{if(!sess)return;
+ const r=await dapi(dq()+'&select=revoked,last_seen');if(!r.ok)return;const row=r.j&&r.j[0];
+ if(row&&row.revoked){delDev();localOut();modal('Signed out','This device was removed from your account on another device. Sign in again to link it back.',[['OK']]);return}
+ if(!row||Date.now()-lastBeat>300000||Date.now()-new Date(row.last_seen)>300000){lastBeat=Date.now();
+  await dapi('?on_conflict=user_id,device_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:sess.uid,device_id:devId(),name:devName(),platform:navigator.platform||'',last_seen:new Date().toISOString()})})}}catch(e){}}
+async function devList(){const r=await dapi('?select=device_id,name,last_seen,revoked&user_id=eq.'+sess.uid+'&order=last_seen.desc');if(!r.ok)throw new Error('devices');return r.j||[]}
+const ago=t=>{const m=(Date.now()-new Date(t))/60000;return m<3?'Active now':m<60?Math.round(m)+' min ago':m<1440?Math.round(m/60)+' h ago':when(t)};
+function devHtml(L){const me=devId();if(!L.length)return'<p class="mu sm" style="margin:0">No devices yet.</p>';
+ return L.map(d=>row(esc(d.name)+(d.device_id===me?' <span class="mu sm">(this device)</span>':''),d.revoked?'Removed. Signs out next time it opens.':ago(d.last_seen),(d.device_id===me||d.revoked)?'':'<button type="button" class="btn" data-sb="devrm" data-id="'+esc(d.device_id)+'">Remove</button>')).join('')}
+function devFill(){const el=document.getElementById('sbDev');if(!el||!sess)return;
+ if(devCache&&!el.dataset.c){el.dataset.c='1';el.innerHTML=devHtml(devCache)}
+ if(el.dataset.busy)return;el.dataset.busy='1';
+ devList().then(L=>{devCache=L;el.innerHTML=devHtml(L)}).catch(()=>{if(!devCache)el.innerHTML='<p class="mu sm" style="margin:0">Could not load devices. Check your connection, and that the devices table has been created in Supabase.</p>'})}
+function devRemove(id){modal('Remove this device?','It is signed out the next time it opens the app, which is within about a minute if it is open now. If a device is lost or stolen, use Sign out everywhere instead.',
+ [['Remove',async()=>{try{await dapi('?user_id=eq.'+sess.uid+'&device_id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({revoked:true})});if(devCache)devCache.forEach(d=>{if(d.device_id===id)d.revoked=true});refresh()}catch(e){modal('Could not remove it','Check your connection and try again.',[['OK']])}},'x'],['Cancel']])}
+/* the Account tab in Settings */
+const row=(l,sub,ctl)=>'<div class="set-row"><div class="set-lbl"><b>'+l+'</b>'+(sub?'<span class="mu sm">'+sub+'</span>':'')+'</div><div class="set-ctl chips">'+ctl+'</div></div>';
+const sbb=(a,t,c)=>'<button type="button" class="btn '+(c||'')+'" data-sb="'+a+'">'+t+'</button>';
+function view(){
+ if(!sess)return '<div class="card"><h3>Account</h3><p class="mu sm" style="margin-top:0">You are not signed in. Sign in to keep your progress and AI key in sync between your phone, iPad and laptop.</p><div class="chips">'+sbb('gate','Sign in or create account','p')+'</div></div>';
+ return '<div class="card"><h3>Account</h3>'+row('Signed in as',esc(sess.email),'')+row('Sync','<span id="sbSt">'+esc(st)+'</span>',sbb('sync','Sync now','p'))+'<p class="mu sm" style="margin:10px 0 0">Progress, activity, favourites, exam attempts and your AI key sync. Theme, layout and other device settings stay on each device.</p></div>'
+ +'<div class="card"><h3>Email and password</h3>'+row('Email',esc(sess.email),sbb('email','Change email'))+row('Password','',sbb('pw','Change password'))+'</div>'
+ +'<div class="card"><h3>Devices</h3><p class="mu sm" style="margin-top:0">Phones, tablets and computers signed in to this account. A removed device signs itself out the next time it opens the app.</p><div id="sbDev"><p class="mu sm" style="margin:0">Loading…</p></div></div>'
+ +'<div class="card"><h3>Sign out</h3>'+row('This device','Stops syncing here. Your data stays on this device.',sbb('out','Sign out'))+row('Every device','Signs out your phone, iPad and laptop. Useful if you lose one.',sbb('outall','Sign out everywhere'))+'</div>'
+ +'<div class="card"><h3>Delete account</h3><p class="mu sm" style="margin-top:0">Permanently deletes your account, synced progress and saved AI key from the cloud. Data already on this device is kept.</p>'+sbb('del','Delete my account and data','x')+'</div>'}
 /* account card in Settings > Your data */
 const card=()=>'<div class="card" id="sbCard"><h3>Account and sync</h3>'+(sess?'<p class="mu sm" style="margin-top:0">Signed in as <b>'+esc(sess.email)+'</b>. Progress syncs to this account on every device you sign in on. Settings, theme, layout and your AI key stay on each device.</p><p class="sm" id="sbSt">'+esc(st)+'</p><div class="chips"><button type="button" class="btn p" data-sb="sync">Sync now</button><button type="button" class="btn" data-sb="pw">Change password</button><button type="button" class="btn" data-sb="out">Sign out</button></div>':'<p class="mu sm" style="margin-top:0">Sign in to keep your progress in sync between your phone, iPad and laptop.</p><div class="chips"><button type="button" class="btn p" data-sb="gate">Sign in or create account</button></div>')+'</div>';
-function mount(){const h=[...document.querySelectorAll('.card>h3')].find(x=>x.textContent==='Backup and export');const cur=document.getElementById('sbCard');
+function mount(){devFill();const h=[...document.querySelectorAll('.card>h3')].find(x=>x.textContent==='Backup and export');const cur=document.getElementById('sbCard');
  if(!h){if(cur&&!document.querySelector('[data-bk]'))cur.remove();return}
  const tgt=h.parentElement;if(cur&&cur.nextElementSibling===tgt&&!!cur.querySelector('[data-sb=out]')===!!sess)return;if(cur)cur.remove();tgt.insertAdjacentHTML('beforebegin',card())}
 new MutationObserver(()=>mount()).observe(document.body,{childList:true,subtree:true});
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-sb]');if(!t)return;const a=t.dataset.sb;
- if(a==='gate')gate();else if(a==='out')signOut();else if(a==='pw')pwModal();else if(a==='sync'){asked=false;check('manual')}});
+ if(a==='gate')gate();else if(a==='out')signOut();else if(a==='pw')pwModal();else if(a==='email')emailModal();else if(a==='devrm')devRemove(t.dataset.id);else if(a==='outall')signOutAll();else if(a==='del')deleteModal();else if(a==='sync'){asked=false;snoozeTo=0;check('manual')}});
 
 /* rhythm: check shortly after load, when you come back to the tab, and every 30s while it is open */
 addEventListener('online',()=>check('poll'));
 document.addEventListener('visibilitychange',()=>{if(sess)check('poll')});
-setInterval(()=>{if(sess&&!document.hidden){check('poll');keyTick()}},30000);
-const rec=!!window.__sbHash;if(rec)setTimeout(recovery,500);
-setTimeout(()=>{if(sess){check('load');keyTick()}else if(!rec&&!localStorage.getItem(SKIP))gate();mount()},2500);
+setInterval(()=>{if(sess&&!document.hidden){check('poll');keyTick();devTick()}},30000);
+setTimeout(refresh,0);const rec=!!window.__sbHash;if(rec)setTimeout(recovery,500);if(!sess&&!rec&&!sessionStorage.getItem(SKIP))gate();
+setTimeout(()=>{if(sess){check('load');keyTick();devTick()}else if(!rec&&!sessionStorage.getItem(SKIP))gate();mount()},2500);
 
 /* each account keeps its own AI key (private row), so a key entered once follows that account to every device it signs in on */
 const KK='ai-marking-key-v1',KH='hsc-sb-keyhash';
@@ -47346,10 +47513,11 @@ async function keyTick(){try{if(!sess)return;const cur=kloc(),here=kcanon(cur),l
  const r=await kapi('?select=data&user_id=eq.'+sess.uid);if(!r.ok||!r.j||!r.j[0])return;
  const rem=(r.j[0].data||{}).cfg;if(!rem||!rem.key)return;
  if(!cur.key||kcanon(rem)!==here){try{localStorage.setItem(KK,JSON.stringify(rem));localStorage.setItem(KH,kcanon(rem))}catch(e){return}
-  const ov=document.getElementById('hkOv');if(ov)ov.remove();try{if(typeof render==='function')render()}catch(e){}}}catch(e){}}
-window.HubKeySync={pull:async()=>{await keyTick();return !!kloc().key},push:keyPush};
+  try{if(typeof render==='function')render()}catch(e){}}}catch(e){}}
+async function keyRemove(){if(!sess)return;const r=await kapi('?user_id=eq.'+sess.uid,{method:'DELETE'});if(!r.ok&&r.status!==404)throw new Error('remove '+r.status);try{localStorage.removeItem(KH)}catch(e){}}
+window.HubKeySync={pull:async()=>{await keyTick();return !!kloc().key},push:keyPush,remove:keyRemove};
 
-window.HubAccount={gate,check:()=>check('manual'),signedIn:()=>!!sess};
+window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
 }catch(err){console.warn('Account module not loaded',err)}})();
 </script>
 </body>
