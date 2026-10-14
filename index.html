@@ -687,6 +687,10 @@ body.xc-on #imc,body.xc-on #imp,body.xc-on #imo,body.xc-on #amb,body.xc-on #atm{
 @keyframes imup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 html[data-imui=on] body.imnav main>*:not(.rv){animation:imup .3s cubic-bezier(.2,.7,.2,1) both}
 html[data-imui=on] body.imnav main>*:not(.rv):nth-child(2){animation-delay:.04s}html[data-imui=on] body.imnav main>*:not(.rv):nth-child(3){animation-delay:.08s}html[data-imui=on] body.imnav main>*:not(.rv):nth-child(4){animation-delay:.12s}html[data-imui=on] body.imnav main>*:not(.rv):nth-child(n+5){animation-delay:.16s}
+/* Settings: the pinned menu is position:fixed inside .set, and an animated transform on .set made it jump. Animate the title and content instead. */
+html[data-imui=on] body.imnav main>.set{animation:none}
+html[data-imui=on] body.imnav main>.set>:is(.set-top,.set-body){animation:imup .3s cubic-bezier(.2,.7,.2,1) both}
+html[data-imui=on] body.imnav main>.set>.set-body{animation-delay:.04s}
 html[data-imui=on] .btn:active,html[data-imui=on] .chip:active{transform:scale(.97)}
 html[data-imui=on] .bar i{transition:width .9s cubic-bezier(.2,.7,.2,1)}
 @media(hover:hover){html[data-imui=on] .card{transition:box-shadow .3s,border-color .3s}html[data-imui=on] .card:hover{border-color:color-mix(in srgb,var(--br) 40%,var(--ln));box-shadow:0 10px 30px -14px color-mix(in srgb,var(--br) 55%,transparent)}}
