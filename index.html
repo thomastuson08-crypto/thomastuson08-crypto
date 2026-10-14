@@ -355,6 +355,8 @@ body.xc-on{overflow:hidden}
 .set-row:first-of-type{border-top:0}
 .set-lbl{display:flex;flex-direction:column;flex:1 1 220px;min-width:0}
 .set-ctl{display:flex;max-width:100%}
+.set-ctl:not(.chips){align-items:center;gap:12px}
+.set-ctl>.mu[role=status]{white-space:nowrap}
 .set-foot{margin-top:20px}
 .set-row kbd{font-weight:600;font-size:12px;padding:5px 9px;border:1px solid var(--ln);border-radius:8px;background:var(--sf2);margin-left:4px}
 .set-row kbd:first-child{margin-left:0}
@@ -46715,18 +46717,34 @@ const SESS=/\b(today|tomorrow|tonight|this morning|this afternoon|this week|next
 const SESSW=/\b(paper|module|exam|test|assessment|sitting|revising|studying|study)\b/i;
 /* called on every message the student sends: remembers "Paper 2 is today" style statements and pins the paper */
 function learn(txt){const t=String(txt).replace(/\s+/g,' ').trim();if(t.length>220||!SESS.test(t)||!SESSW.test(t))return;
- const k=paperFrom(t);if(k){T.paper=k;T.paperDay=dayKey(new Date())}
+ const k=paperFrom(t);if(k&&!paperSat(k)){T.paper=k;T.paperDay=dayKey(new Date())}
  NOTES.push({t:t,d:Date.now()});NOTES=NOTES.slice(-6)}
+/* exam status is worked out from the clock every time the prompt is built (never stored), so it stays right on any day, and if the student moves an exam date in the Hub */
+const EXDUR=180; /* minutes an exam is assumed to last, reading time included, unless the exam entry has its own .min */
+function examState(x,now){const st=+new Date(at(x)),en=st+((x.min||EXDUR)*6e4),dd=Math.round((new Date(st).setHours(0,0,0,0)-new Date(now).setHours(0,0,0,0))/864e5);return{x,st,en,dd,s:now>=en?'done':now>=st?'live':'soon'}}
+const hhmm=t=>{const d=new Date(t);return pad2(d.getHours())+':'+pad2(d.getMinutes())};
+const dlab=t=>new Date(t).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+function examLine(o){const w=dlab(o.st)+', '+hhmm(o.st);
+ if(o.s==='done')return '- '+o.x.name+': FINISHED ('+(o.dd===0?'sat earlier today':o.dd===-1?'sat yesterday':'sat '+(-o.dd)+' days ago')+', '+w+')';
+ if(o.s==='live')return '- '+o.x.name+': IN PROGRESS RIGHT NOW (started '+hhmm(o.st)+')';
+ const m=Math.round((o.st-Date.now())/6e4);
+ return '- '+o.x.name+': '+(o.dd===0?'LATER TODAY at '+hhmm(o.st)+' (in '+(m>=60?Math.floor(m/60)+' h '+(m%60)+' min':m+' min')+')':o.dd===1?'TOMORROW':'in '+o.dd+' days')+' ('+w+')'}
 function examLines(){try{if(typeof EXAMS==='undefined'||typeof at!=='function')return'';
- const now=new Date(),sod=new Date(now).setHours(0,0,0,0),sj=T.subj;
- return EXAMS.filter(x=>sj==='all'||x.subj===sj).map(x=>{const t=new Date(at(x));return{x,t,dd:Math.round((new Date(t).setHours(0,0,0,0)-sod)/864e5)}}).filter(o=>o.dd>=0).sort((a,b)=>a.t-b.t).slice(0,sj==='all'?5:3)
-  .map(o=>'- '+o.x.name+': '+(o.dd===0?'TODAY':o.dd===1?'TOMORROW':'in '+o.dd+' days')+' ('+o.t.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})+', '+pad2(o.t.getHours())+':'+pad2(o.t.getMinutes())+')').join('\n')}catch(e){return''}}
+ const now=Date.now(),sj=T.subj,all=EXAMS.map(x=>examState(x,now)).sort((a,b)=>a.st-b.st),mine=sj==='all'?all:all.filter(o=>o.x.subj===sj),
+  done=mine.filter(o=>o.s==='done').slice(-3),next=mine.filter(o=>o.s!=='done').slice(0,sj==='all'?5:3);let o='';
+ if(done.length)o+='Already sat (these are OVER; never treat them as upcoming or offer to prepare for them):\n'+done.map(examLine).join('\n')+'\n';
+ if(next.length)o+='Still to come:\n'+next.map(examLine).join('\n');
+ else{o+='Still to come: nothing for '+(sj==='all'?'any subject':snm(sj))+'.';if(sj!=='all'){const n=all.filter(x=>x.s!=='done')[0];if(n)o+=' The next exam in any subject is:\n'+examLine(n)}}
+ return o}catch(e){return''}}
+/* has the exam for the pinned English paper (p1, p2, p2a/b/c) already been sat? */
+const paperSat=k=>{try{const v=String(k||'').slice(0,2),x=EXAMS.find(e=>e.subj==='english'&&e.vr===v);return !!x&&examState(x,Date.now()).s==='done'}catch(e){return false}};
 function sessionBlock(){const n=new Date();let o='\nTODAY: '+n.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+', '+pad2(n.getHours())+':'+pad2(n.getMinutes())+' student time.';
- const ex=examLines();if(ex)o+='\nEXAM DATES (from the Hub):\n'+ex;
+ const ex=examLines();if(ex)o+='\nEXAM SCHEDULE (from the Hub, checked against the current date and time above, so it is always up to date; it beats anything older in this chat or in the notes below about what is "today" or "coming up"):\n'+ex+'\nUse it like a teacher who knows the timetable: never prepare the student for an exam marked FINISHED, never say it is upcoming; if one has just been sat you may ask once, briefly, how it went, then turn to the next exam under Still to come. If one is IN PROGRESS, do not teach or quiz; wish them luck. Plan study around what is still ahead and how soon.';
+ if(T.paper&&PAPERS[T.paper]&&paperSat(T.paper)){T.paper='';T.paperDay=''}
  if(T.paper&&PAPERS[T.paper])o+='\nSTUDYING NOW (the student chose this; it overrides everything else): '+PAPERS[T.paper][1]+'. Teach, quiz and plan only for this, unless they explicitly ask about something else. Never switch them to another paper or module on your own.';
- const ns=liveNotes();if(ns.length)o+='\nTHINGS THE STUDENT HAS TOLD YOU (from any chat; treat as true and current, never ask for them again): '+ns.map(x=>'"'+x.t+'" ('+agoTxt(x.d)+')').join('; ')+'.';
+ const ns=liveNotes();if(ns.length)o+='\nTHINGS THE STUDENT HAS TOLD YOU (from any chat; treat as true and current, never ask for them again, except exam timing, where the EXAM SCHEDULE wins): '+ns.map(x=>'"'+x.t+'" ('+agoTxt(x.d)+')').join('; ')+'.';
  if(T.subj==='english'||T.subj==='all')o+='\n'+TEXTS;
- return o+'\nIf what the student tells you conflicts with the exam dates, trust the student and mention the difference once.'}
+ return o+'\nIf the student says an exam date or time differs from the EXAM SCHEDULE, trust the student for the plan and mention the difference once.'}
 /* flags composer or author names in a reply that are not in the Hub notes (catches made-up or misspelt names) */
 function nameCheck(txt,C){try{if(!CORPLOW)CORPLOW=C.chunks.map(c=>c.text).join(' ').toLowerCase();
  const bad=new Set(),re=/\b(?:by|poet|author|writer|composer|director|directed by|written by|playwright|screenwriter|novelist)\s+(?:the\s+(?:poet|author|writer)\s+)?([A-Z][\w'\u2019-]+(?:[ \/][A-Z][\w'\u2019-]+){0,3})/g;let m;
@@ -46762,13 +46780,24 @@ try{const o=JSON.parse(localStorage.getItem(SK));if(o&&typeof o==='object'){if([
 const persist=()=>{try{localStorage.setItem(SK,JSON.stringify({subj:T.subj,mode:T.mode,strict:T.strict,tone:T.tone,paper:T.paper,paperDay:T.paperDay,notes:NOTES,chats:Object.fromEntries(Object.keys(CH).filter(k=>CH[k].length).map(k=>[k,CH[k].slice(-MAXMSG)]))}))}catch(e){}};
 
 /* ---- corpus + retrieval (the Hub's own text, kept in memory only) ---- */
-const STOP=new Set('a an and are as at be but by can do does for from had has have how i if in into is it its me my of on or our so than that the their them then there these they this to was we were what when where which who why will with would you your about also any been being both each more most other some such too very just not no yes become became becomes important importance explain tell please give show need want know like use used using should could don doesn didn isn wasn aren couldn wouldn shouldn won understand understood confused confusing confuse stuck help sense simple simply simpler easy easier break down bit little still really actually thing things example examples quiz topic again differently hint hints examined examine'.split(' '));
-const stem=w=>w.length>4?w.replace(/(ing|ed|es|s)$/,''):w;
-const tok=t=>String(t).toLowerCase().replace(/[^a-z0-9]+/g,' ').split(' ').filter(w=>w.length>1&&!STOP.has(w)).map(stem);
+const STOP=new Set('a an and are as at be but by can do does for from had has have how i if in into is it its me my of on or our so than that the their them then there these they this to was we were what when where which who why will with would you your about also any been being both each more most other some such too very just not no yes become became becomes important importance explain tell please give show need want know like use used using should could don doesn didn isn wasn aren couldn wouldn shouldn won understand understood confused confusing confuse stuck help sense simple simply simpler easy easier break down bit little still really actually thing things example examples quiz topic again differently hint hints examined examine between versus vs whats hows pls plz thx thanks thank ok okay hey hello hi hmm ur kinda sorta gonna wanna lol mate bro dont cant im ive thats lets get gets got getting idk dunno wondering wonder quick quickly someone anyone anybody guys tho though rn abt bout sure maybe basically literally exactly walk through teach teaching cheers yo sir miss actually'.split(' '));
+/* light stemmer: plurals, up to two suffix passes (never below 4 chars), then trailing y/e, then a doubled final letter */
+const SUFX=/(ization|isation|ational|ation|ition|ment|ness|ing|ed|ly|ive|ivity|ity|al|ical|ic|ous|ary|ery|er|or|ant|ent|ance|ence|ian|ion)$/;
+const stem=w=>{if(w.length<4||/\d/.test(w))return w;
+ if(/ies$/.test(w)&&w.length>4)w=w.slice(0,-3)+'y';else if(/sses$/.test(w))w=w.slice(0,-2);else if(/s$/.test(w)&&!/ss$/.test(w))w=w.slice(0,-1);
+ for(let i=0;i<2;i++){const m=SUFX.exec(w);if(m&&w.length-m[1].length>=4)w=w.slice(0,-m[1].length);else break}
+ if(w.length>3&&/[ye]$/.test(w))w=w.slice(0,-1);
+ if(w.length>3&&/([a-z])\1$/.test(w))w=w.slice(0,-1);
+ return w};
+const norm=t=>String(t).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const tok=t=>norm(t).split(' ').filter(w=>w.length>1&&!STOP.has(w)).map(stem);
 const unesc=s=>s.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/g,(m,c)=>{if(c.length===5&&c[0]==='u'||c.length===3&&c[0]==='x')return String.fromCharCode(parseInt(c.slice(1),16));return c==='n'||c==='r'||c==='t'?' ':c});
 const SRE=/"((?:[^"\\\n]|\\.){25,})"|'((?:[^'\\\n]|\\.){25,})'|`((?:[^`\\]|\\[\s\S]){25,})`/g;
 const BAD=/=>|\bfunction\s*[\w$]*\(|\b(?:const|let|var)\s+[\w$]+\s*=|document\.|window\.|\.querySelector|addEventListener|classList|\.style\b|localStorage|getElementById|innerHTML|@media|rgba?\(|var\(--|\d\s?px\b|[{};]\s*[a-z-]+\s*:\s*\S|https?:\/\/|\bdata-[a-z]+=|\bon(?:click|input|change)\s*=|\$\{|\bthis\.|\.length\b|\.push\(|'\)|\.join\(|\|\||&&|===|!==|\bstyle=|`|(?:^|[ ,])[a-z]\w*:\s*["'\[{]|\)\s*\{|;\s*\}|\}\s*else|\bif\s*\(\s*[!\w$.]+\s*\)|\blet\s+\w+\s*;|\bfor\s*\(|\bhtml\s*\+=|\bObject\.|\bnull\b|\bundefined\b|\.\w+\(\)/i;
-const keep=t=>{if(t.length<30||t.split(' ').length<5||BAD.test(t))return false;
+/* strings that are really regex literals from the app's own source (many |, (?:, [/, )?, /b( ...) */
+const RXLIT=/\(\?[:=!]|\[\/|\)\?|\)b\/|\/b\(|^\s*[\]\[,]\s*[\[\/]|\\[bdsw][+*?(]/;
+const isRx=t=>RXLIT.test(t)||(t.match(/\|/g)||[]).length>=3;
+const keep=t=>{if(t.length<30||t.split(' ').length<5||BAD.test(t)||isRx(t))return false;
  const L=(t.match(/[A-Za-z]/g)||[]).length;if(L/t.length<.6)return false;
  if(/^[\w|;,:.\- ]+$/.test(t)&&!/[a-z]{2,} [a-z]{2,} [a-z]{2,}/.test(t))return false;return true};
 const subjOf=(head,id)=>{const m=/subject module:\s*(\w+)/.exec(head);if(m&&NAMES[m[1]])return m[1];if(/hist/.test(id||''))return'history';return'hub'};
@@ -46776,23 +46805,100 @@ const UIW=/^(dashboard|syllabus|analysis|decode|flashcards?|practice|exam mode|w
 const NOISY=/\d|=|\u2014|\u2013|%|\$|Claude|\bTest\b|Question|Nightly|Finder|Trading Economics|World Bank|attempted|\bFull\b|\bPaper\b/;
 function titles(subj,src,maps){const o=maps[subj]||(maps[subj]=new Set());let m;const R=/\b(?:title|name|label|heading|topic)\s*:\s*(?:"([^"\n]{6,70})"|'([^'\n]{6,70})')/g;
  while((m=R.exec(src))){const t=unesc(m[1]||m[2]).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();if(t.length<6||BAD.test(t)||/[|{}\\]/.test(t)||t.split(' ').length>9||!/^[A-Z0-9]/.test(t)||UIW.test(t)||NOISY.test(t))continue;o.add(t)}}
+/* short heading literals (name:'Dramatic irony', category:"Unemployment") with their source position */
+const HKEY=/["']?\b(?:title|name|term|h|heading|category|cat|topic|n|g|syllabus|x)["']?\s*:\s*(?:"([^"\n]{4,70})"|'([^'\n]{4,70})')/g;
+function headings(src){const o=[];let m;HKEY.lastIndex=0;
+ while((m=HKEY.exec(src))){const t=unesc(m[1]!==undefined?m[1]:m[2]).replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').replace(/&#?\w+;/g,' ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  if(t.length<4||t.length>70||t.split(' ').length>9||!/^[A-Za-z]/.test(t)||BAD.test(t)||isRx(t)||UIW.test(t)||/[{}\\]/.test(t))continue;
+  if(!/ /.test(t)&&!/[A-Z]/.test(t))continue;   /* lone lowercase words are category codes (lit, lang), not headings */
+  const hd=tok(t);if(!hd.length)continue;o.push({p:m.index,t,hd})}
+ return o}
 function buildCorpus(list){const seen=new Set(),chunks=[],maps={};
- for(const sc of list){const X=sc.text;if(sc.id==='hub-tutor'||/^\s*window\.HUB_SKIN/.test(X))continue;if(X.length<20000&&!/hubmarker/.test(sc.id||''))continue;
-  const subj=subjOf(X.slice(0,200),sc.id),src=X.replace(/\/\*[\s\S]*?\*\//g,m=>' '.repeat(m.length));
-  titles(subj,src,maps);let cur=null,lastEnd=-9999,m;SRE.lastIndex=0;
+ list.forEach((sc,si)=>{const X=sc.text;if(sc.id==='hub-tutor'||/^\s*window\.HUB_SKIN/.test(X))return;if(X.length<20000&&!/hubmarker/.test(sc.id||''))return;
+  const subj=subjOf(X.slice(0,200),sc.id),src=X.replace(/\/\*[\s\S]*?\*\//g,m=>' '.repeat(m.length)),sid=sc.id||('s'+si);
+  titles(subj,src,maps);const hs=headings(src);let cur=null,lastEnd=-9999,m,first=chunks.length;SRE.lastIndex=0;
   while((m=SRE.exec(src))){let raw=m[1]!==undefined?m[1]:m[2]!==undefined?m[2]:m[3];
    raw=unesc(raw).replace(/\{\{[^}]*\}\}/g,'[current figure]').replace(/\$\{[^}]*\}/g,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim();
    if(!keep(raw))continue;const k=raw.toLowerCase();if(seen.has(k))continue;seen.add(k);
-   if(!cur||m.index-lastEnd>700||cur.text.length>650){cur={subj,text:''};chunks.push(cur)}
-   cur.text+=(cur.text?' ':'')+raw;lastEnd=m.index+m[0].length}}
+   if(!cur||m.index-lastEnd>700||cur.text.length>650){cur={subj,sid,text:'',a:m.index,b:0};chunks.push(cur)}
+   cur.text+=(cur.text?' ':'')+raw;lastEnd=m.index+m[0].length;cur.b=lastEnd}
+  /* attach up to 3 nearby headings to each chunk of this script (inside it first, then nearest before it) */
+  let j=0;for(let i=first;i<chunks.length;i++){const c=chunks[i];c.hl=[];c.hd=[];
+   while(j<hs.length&&hs[j].p<c.a-700)j++;
+   const cand=[];for(let k=j;k<hs.length&&hs[k].p<=c.b;k++){const h=hs[k];cand.push({h,d:h.p<c.a?c.a-h.p:0,p:h.p})}
+   cand.sort((x,y)=>x.d-y.d||x.p-y.p);const used=new Set();
+   for(const x of cand){const l=x.h.t.toLowerCase();if(used.has(l))continue;used.add(l);c.hl.push(x.h.t);c.hd.push(x.h.hd);if(c.hl.length>=3)break}}});
  const out=chunks.filter(c=>c.text.length>=60),df=new Map();let tl=0;
- out.forEach((c,i)=>{c.id=i;c.tk=tok(c.text);tl+=c.tk.length;c.tf=new Map();c.tk.forEach(w=>c.tf.set(w,(c.tf.get(w)||0)+1));c.tf.forEach((_,w)=>df.set(w,(df.get(w)||0)+1))});
+ out.forEach((c,i)=>{c.id=i;c.tk=tok(c.text);c.ts=new Set(c.tk);tl+=c.tk.length;c.tf=new Map();c.tk.forEach(w=>c.tf.set(w,(c.tf.get(w)||0)+1));
+  c.hd.forEach(h=>new Set(h).forEach(w=>c.tf.set(w,(c.tf.get(w)||0)+2)));c.tf.forEach((_,w)=>df.set(w,(df.get(w)||0)+1))});
  return{chunks:out,df,avg:tl/Math.max(1,out.length),maps}}
-function search(C,query,subj,n){const q=tok(query);if(!q.length)return[];const N=C.chunks.length,k1=1.4,b=.75,qs=[...new Set(q)],low=String(query).toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(),res=[],qw=low.split(' ').filter(w=>w.length>1&&!STOP.has(w)),bg=qw.slice(1).map((w,i)=>qw[i]+' '+w);
- for(const c of C.chunks){if(subj&&subj!=='all'&&c.subj!==subj&&c.subj!=='hub')continue;let s=0,hit=0;
-  for(const w of qs){const f=c.tf.get(w);if(!f)continue;hit++;const d=C.df.get(w)||1,idf=Math.log(1+(N-d+.5)/(d+.5));s+=idf*(f*(k1+1))/(f+k1*(1-b+b*c.tk.length/C.avg))}
-  if(!hit)continue;s*=1+.35*(hit/qs.length);if(qs.length>1&&c.text.toLowerCase().indexOf(low)>=0)s*=1.5;for(const p of bg)if((c.low||(c.low=c.text.toLowerCase())).indexOf(p)>=0)s*=1.35;res.push({c,s,cov:hit/qs.length})}
- res.sort((a,b)=>b.s-a.s);return res.slice(0,n)}
+/* ---- synonym groups (student wording -> the notes' wording), compiled on first use ---- */
+const SYNG=['rba|reserve bank','cash rate|interest rate','cad|current account deficit','tot|terms of trade','bop|balance of payments','unemployment|dole|jobless|out of work|jobseeker','inflation|rising prices|prices go up|cost of living','fdi|foreign direct investment','tnc|multinational','hdi|human development index','ppc|production possibility curve',
+ 'hr|human resources','marketing mix|4ps|product price place promotion','swot','gearing|leverage|debt to equity','outsourcing|offshoring','csr|corporate social responsibility',
+ 'nazi|nsdap','sa|brownshirts|stormtroopers','night of the long knives|long knives|rohm purge','treaty of versailles|versailles|diktat','kristallnacht|night of broken glass','collectivisation|collective farms','mlk|martin luther king','viet minh|vietminh','domino theory|domino effect','historiography|historians|contestability',
+ 'z score|zscore|standard score','normal distribution|bell curve|empirical rule','critical path|cpa|activity network','shortest path|dijkstra','line of best fit|regression|trend line','sd|standard deviation','iqr|interquartile range',
+ 'thesis|contention|line of argument','technique|device|language feature','metaphor|figurative language','tone|mood|atmosphere','diegetic|non diegetic|soundtrack','band 6|top marks|full marks','reflection statement|reflective statement'];
+let SYNC=null;
+const synGroups=()=>SYNC||(SYNC=SYNG.map(g=>g.split('|').map(m=>{const w=norm(m).split(' ');return{w:w.map(stem),tk:tok(m)}}).filter(m=>m.tk.length)).filter(g=>g.length>1));
+/* ---- fuzzy: rare query terms -> close vocabulary stems (typos, near-prefixes) ---- */
+function ed(a,b,mx){const la=a.length,lb=b.length;if(Math.abs(la-lb)>mx)return mx+1;let p2=null,p=[];for(let j=0;j<=lb;j++)p[j]=j;
+ for(let i=1;i<=la;i++){const r=[i];let mn=i;for(let j=1;j<=lb;j++){let v=Math.min(p[j]+1,r[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])v=Math.min(v,p2[j-2]+1);r[j]=v;if(v<mn)mn=v}
+  if(mn>mx)return mx+1;p2=p;p=r}return p[lb]}
+function fuzzy(C,t,raw){const key=t+'|'+raw,F=C.fz||(C.fz=new Map());if(F.has(key))return F.get(key);let out=[];
+ if(Math.max(t.length,(raw||'').length)>=5&&!/\d/.test(t)){
+  if(!C.vb){C.vb=new Map();C.df.forEach((_,w)=>{const k=w[0];(C.vb.get(k)||C.vb.set(k,[]).get(k)).push(w)});
+   /* raw word forms seen in the notes (lazy, once), so typos are compared with real spellings and not only with stems */
+   C.rb=new Map();const seenR=C.rs=new Set();for(const c of C.chunks){const m=c.text.toLowerCase().match(/[a-z]{5,}/g)||[];for(const w of m){if(seenR.has(w))continue;seenR.add(w);const k=w[0];(C.rb.get(k)||C.rb.set(k,[]).get(k)).push(w)}}}
+  if(!((C.df.get(t)||0)<3||(raw&&raw.length>=6&&!C.rs.has(raw)))){F.set(key,out);return out}
+  const mx=t.length<=8?1:2,c=new Map(),add=(v,d)=>{const o=c.get(v);if(!o||d<o.d)c.set(v,{v,d,f:C.df.get(v)||0})};
+  if(t.length>=5)for(const v of C.vb.get(t[0])||[]){if(v===t||/\d/.test(v))continue;let d=ed(t,v,mx);
+   if(d>mx&&Math.min(v.length,t.length)>=5&&Math.min(v.length,t.length)/Math.max(v.length,t.length)>=.7&&(v.indexOf(t)===0||t.indexOf(v)===0))d=1.5;if(d<=mx||d===1.5)add(v,d)}
+  if(raw&&raw.length>=5&&raw[0]===t[0]){const mr=raw.length<=8?1:2;
+   for(const r of C.rb.get(raw[0])||[]){if(r===raw)continue;const d=ed(raw,r,mr);if(d>mr)continue;const v=stem(r);if(v!==t&&C.df.get(v))add(v,d)}}
+  out=[...c.values()].sort((x,y)=>x.d-y.d||y.f-x.f).slice(0,5).map(x=>({v:x.v,w:x.d<=1.5?.6:.5}))}
+ F.set(key,out);return out}
+const idfOf=(C,w)=>{const d=C.df.get(w)||0;return Math.log(1+(C.chunks.length-d+.5)/(d+.5))};
+/* query -> units. A unit is a list of alternatives {t:[stems],w}; its score is the best alternative */
+function units(C,query){const ws=norm(query).split(' ').filter(Boolean),st=ws.map(stem),cov=new Array(ws.length).fill(false),U=[],seen=new Set(),ex=new Set();U.ex=ex;
+ for(const g of synGroups()){const hit=[];
+  g.forEach((m,mi)=>{const L=m.w.length;for(let i=0;i+L<=st.length;i++){let ok=true;for(let k=0;k<L;k++)if(st[i+k]!==m.w[k]){ok=false;break}if(ok){if(hit.indexOf(mi)<0)hit.push(mi);for(let k=0;k<L;k++)cov[i+k]=true;ex.add(ws.slice(i,i+L).join(' '))}}});
+  if(!hit.length)continue;const alts=g.map((m,mi)=>({t:m.tk,w:hit.indexOf(mi)>=0?1:.65})),key='G'+alts.map(a=>a.t.join('+')).join('|');if(seen.has(key))continue;seen.add(key);
+  let idf=0;hit.forEach(mi=>{const t=g[mi].tk.filter(w=>C.df.get(w));if(t.length)idf=Math.max(idf,t.reduce((s,w)=>s+idfOf(C,w),0)/g[mi].tk.length)});
+  U.push({alts,idf,syn:1,dig:false,known:idf>0})}
+ let SL=null;const nearStop=w=>{if(w.length<5||C.df.get(stem(w)))return false;if(!SL)SL=[...STOP].filter(x=>x.length>=5);for(const x of SL)if(Math.abs(x.length-w.length)<=1&&ed(w,x,1)<=1)return true;return false};
+ ws.forEach((w,i)=>{if(cov[i]||w.length<2||STOP.has(w)||nearStop(w))return;const t=stem(w);if(seen.has(t))return;seen.add(t);if(w.length>=3&&!/^\d+$/.test(w))ex.add(w);
+  const alts=[{t:[t],w:1}],d=C.df.get(t)||0,fz=fuzzy(C,t,w);fz.forEach(f=>alts.push({t:[f.v],w:f.w}));
+  const dig=/^\d+$/.test(w);let idf=0,known=true;
+  if(d)idf=idfOf(C,t);else if(fz.length)idf=idfOf(C,fz[0].v);else if(w.length>=5&&!dig)idf=Math.log(1+(C.chunks.length+.5)/1.5);else if(w.length===4&&!dig)idf=.5*Math.log(1+(C.chunks.length+.5)/1.5);else known=false;
+  U.push({alts,idf,syn:0,dig,known,w:t})});
+ return U}
+const HF=.3,CW=.8;const WEAK_LO=0.35,WEAK_HI=0.7;
+function search(C,query,subj,n){const U=units(C,query),res=[];res.conf=1;if(!U.length)return res;
+ const N=C.chunks.length,k1=1.4,b=.75,low=norm(query),qw=low.split(' ').filter(w=>w.length>1&&!STOP.has(w)),bg=qw.slice(1).map((w,i)=>qw[i]+' '+w),
+  I=new Map(),idf=w=>{let v=I.get(w);if(v===undefined){v=idfOf(C,w);I.set(w,v)}return v};
+ const qa=new Set(),qo=new Set();U.forEach(u=>u.alts.forEach(a=>a.t.forEach(w=>qa.add(w))));tok(query).forEach(w=>qo.add(w));
+ const TOT=U.reduce((a,u)=>a+(u.idf>0?u.idf:0),0),score=c=>{let s=0,hit=0,cv=0;
+  for(const u of U){let best=0;for(const a of u.alts){let sum=0,pr=0;for(const w of a.t){const f=c.tf.get(w);if(!f)continue;pr++;sum+=idf(w)*(f*(k1+1))/(f+k1*(1-b+b*c.tk.length/C.avg))}
+    if(pr){const v=sum*a.w*Math.pow(pr/a.t.length,1.5);if(v>best)best=v}}
+   if(best>0){s+=best;hit++;cv+=u.idf>0?u.idf:0}}
+  if(!hit)return null;
+  if(TOT>0&&CW)s*=1-CW+CW*(cv/TOT);
+  s*=1+.35*(hit/U.length);const lw=c.low||(c.low=c.text.toLowerCase());if(qw.length>1&&lw.indexOf(low)>=0)s*=1.5;if(EXQ.length){let e=0;for(const w of EXQ)if(w.length>=4?lw.indexOf(w)>=0:(c.nl||(c.nl=' '+norm(c.text)+' ')).indexOf(' '+w+' ')>=0)e++;s*=1+EXB*e/EXQ.length}for(const p of bg)if(lw.indexOf(p)>=0)s*=1.35;
+  let bh=0;for(const h of c.hd){let pa=0,ov=0,tx=0;for(const w of h){if(qa.has(w))pa++;if(qo.has(w))ov++;if(c.ts.has(w))tx++}const v=pa/h.length*(.6+.4*Math.min(1,ov/2))*(tx?1:HF);if(v>bh)bh=v}
+  s*=1+.9*bh;return{s,cov:hit/U.length}};
+ const EXQ=[...U.ex],EXB=.15;const ok=c=>!(subj&&subj!=='all'&&c.subj!==subj&&c.subj!=='hub');
+ for(const c of C.chunks){if(!ok(c))continue;const r=score(c);if(r)res.push({c,s:r.s,cov:r.cov})}
+ res.sort((a,b)=>b.s-a.s);
+ /* confidence: idf-weighted share of the query that the best of the top 3 chunks covers */
+ let tot=0;U.forEach(u=>{if(u.known&&!u.dig)tot+=u.idf});
+ if(tot>0){let bc=0;for(const h of res.slice(0,3)){let g=0;for(const u of U){if(!u.known||u.dig)continue;let f=0;for(const a of u.alts){let pr=0;for(const w of a.t)if(h.c.tf.get(w))pr++;f=Math.max(f,pr/a.t.length)}g+=u.idf*f}
+   let cf=g/tot;let hf=0;for(const hd of h.c.hd){let pa=0,ov=0,ih=0;for(const w of hd){if(qa.has(w))pa++;if(qo.has(w))ov++;ih+=idf(w)}if(pa===hd.length&&ov>=1&&ih>=.5*tot)hf=1}
+   if(hf)cf=Math.max(cf,.8);if(cf>bc)bc=cf}res.conf=bc}
+ const nn=Math.min(3,Math.floor(n/3)),nd=n-nn,direct=res.slice(0,nd),out=[];
+ direct.forEach((h,i)=>{out.push(h);if(i>=3)return;const c=h.c,seenId=new Set(direct.map(x=>x.c.id));let pick=null;
+  for(const d of [1,-1]){const o=C.chunks[c.id+d];if(!o||o.sid!==c.sid||o.subj!==c.subj||seenId.has(o.id)||!ok(o))continue;const r=score(o),sc=r?r.s:0;if(!pick||sc>pick.sc)pick={o,sc}}
+  if(pick&&out.length+(direct.length-1-i)<n)out.push({c:pick.o,s:.4*h.s,cov:h.cov,nb:true})});
+ const fin=out.slice(0,n);fin.conf=res.conf;return fin}
 function sample(C,subj,n){const pool=C.chunks.filter(c=>c.subj!=='hub'&&(subj==='all'||c.subj===subj)&&c.text.length>150),o=[];
  for(let i=0;i<n&&pool.length;i++){const j=Math.floor(Math.random()*pool.length);o.push({c:pool.splice(j,1)[0],s:0})}return o}
 const corpus=()=>{if(CORP)return Promise.resolve(CORP);if(!CORPP)CORPP=new Promise(ok=>setTimeout(()=>{CORP=buildCorpus([...document.scripts].filter(s=>!s.src).map(s=>({text:s.textContent,id:s.id})));ok(CORP)},30));return CORPP};
@@ -47069,6 +47175,9 @@ html:not([data-nav=bottom]) main:has(#tt) .tt{height:auto;flex:1 1 0;min-height:
 [data-nav=bottom] main:has(#tt){box-sizing:border-box;height:100dvh;display:flex;flex-direction:column;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px)/var(--uz,1))}
 [data-nav=bottom] main:has(#tt) .tt{display:flex;flex-direction:column;flex:1 1 0;min-height:0;height:auto;padding-bottom:0}
 [data-nav=bottom] main:has(#tt) .tt-box,[data-nav=bottom] main:has(#tt) .tt-box.empty{flex:1 1 0;min-height:140px;max-height:none}
+/* keep chat bubbles clear of the scrollbar */
+.tt-box{scrollbar-gutter:stable;padding-right:14px!important;box-sizing:border-box}
+.tt-box.empty{padding-right:2px!important}
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
