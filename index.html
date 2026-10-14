@@ -46799,121 +46799,10 @@ const corpus=()=>{if(CORP)return Promise.resolve(CORP);if(!CORPP)CORPP=new Promi
 const snm=id=>(typeof SUBJECTS!=='undefined'&&SUBJECTS.find(x=>x.id===id)||{}).name||NAMES[id]||id;
 const plain=t=>String(t).replace(/\\\(|\\\)|\\\[|\\\]/g,'').replace(/\\times/g,'×').replace(/\\div/g,'÷').replace(/\\,/g,' ').replace(/\\[a-z]+/g,'');
 
-/* ---- semantic search (embeddings) ----
-   Matches notes by meaning, next to the keyword search. Each note chunk gets a "meaning fingerprint" (a vector) from the
-   AI provider, saved in this browser (IndexedDB) so it is only ever paid for once. If anything fails (no key, Anthropic
-   provider, offline, quota) the tutor quietly keeps using keyword search only. Works with Gemini and OpenAI keys.
-   SHIPPED FILE: the fingerprints for the Hub's own notes are the same for everyone, so they can be made once and published as
-   hub-embeddings.bin next to index.html (see exportFile). A device then downloads that instead of calling the API, and only
-   notes that changed since the file was made are fingerprinted on the device. */
-const HubEmb=(()=>{
- const DB='hsc-hub-emb',ST='v',DIM=768,BATCH=50,MINSIM=.5,nap=ms=>new Promise(r=>setTimeout(r,ms));
- let vecs=null,C0=null,building=null,model='',failedAt=0,warmed=false,told=false,phase='',qfail=0;const qc=new Map();
- const h53=s=>{let a=0xdeadbeef,b=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}
-  a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return(4294967296*(2097151&b)+(a>>>0)).toString(36)};
- const key=c=>h53(c.subj+'|'+c.text)+'.'+c.text.length;
- const norm=a=>{const v=new Float32Array(a.length);let s=0;for(let i=0;i<a.length;i++){v[i]=a[i];s+=a[i]*a[i]}s=Math.sqrt(s)||1;for(let i=0;i<v.length;i++)v[i]/=s;return v};
- const cfg=()=>{try{return HubAI.cfg()}catch(e){return{}}};
- const usable=c=>!!(c&&c.key&&(c.provider==='gemini'||(c.provider==='openai'&&/^https:\/\/api\.openai\.com\//i.test((c.base||'')+'/'))));
- /* ---- storage ---- */
- let dbP=null;
- const open=()=>dbP||(dbP=new Promise(ok=>{try{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(ST);r.onsuccess=()=>ok(r.result);r.onerror=r.onblocked=()=>ok(null)}catch(e){ok(null)}}));
- const loadAll=()=>open().then(d=>!d?null:new Promise(ok=>{const m=new Map();try{const r=d.transaction(ST).objectStore(ST).openCursor();r.onsuccess=()=>{const c=r.result;if(c){m.set(c.key,c.value);c.continue()}else ok(m)};r.onerror=()=>ok(null)}catch(e){ok(null)}}));
- const tx=fn=>open().then(d=>!d?false:new Promise(ok=>{try{const t=d.transaction(ST,'readwrite');fn(t.objectStore(ST));t.oncomplete=()=>ok(true);t.onerror=t.onabort=()=>ok(false)}catch(e){ok(false)}}));
- const putMany=pairs=>tx(s=>pairs.forEach(p=>s.put(p[1],p[0])));
- const delMany=keys=>keys.length?tx(s=>keys.forEach(k=>s.delete(k))):Promise.resolve(true);
- const clearAll=()=>tx(s=>s.clear());
- /* ---- provider calls ---- */
- async function pickModel(c){
-  if(c.provider==='openai')return'text-embedding-3-small';
-  try{const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',{headers:{'x-goog-api-key':c.key}});const j=await r.json();
-   const L=(j.models||[]).filter(m=>/embed/i.test(m.name)&&(m.supportedGenerationMethods||[]).some(x=>/embed/i.test(x)));
-   const p=L.find(m=>/gemini-embedding-001$/.test(m.name))||L.find(m=>/gemini-embedding/.test(m.name))||L[0];if(p)return p.name.replace(/^models\//,'')}catch(e){}
-  return'gemini-embedding-001'}
- async function embed(c,m,texts,kind){
-  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),60000);let r;
-  try{
-   if(c.provider==='gemini')r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(m)+':batchEmbedContents',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json','x-goog-api-key':c.key},
-    body:JSON.stringify({requests:texts.map(t=>({model:'models/'+m,content:{parts:[{text:t}]},taskType:kind==='q'?'RETRIEVAL_QUERY':'RETRIEVAL_DOCUMENT',outputDimensionality:DIM}))})});
-   else r=await fetch('https://api.openai.com/v1/embeddings',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json',authorization:'Bearer '+c.key},body:JSON.stringify({model:m,input:texts,dimensions:DIM})});
-  }catch(e){clearTimeout(to);throw new Error('network')}
-  clearTimeout(to);let j=null;try{j=await r.json()}catch(e){}
-  if(!r.ok){const e=new Error('http '+r.status);e.rl=r.status===429;throw e}
-  const L=c.provider==='gemini'?((j&&j.embeddings)||[]).map(x=>x&&x.values):((j&&j.data)||[]).map(x=>x&&x.embedding);
-  if(L.length!==texts.length||L.some(v=>!Array.isArray(v)||!v.length))throw new Error('bad reply');return L}
- /* ---- shipped file: 'HEMB1', 4-byte header length, JSON header (tag, provider, model, dim, keys), then one signed byte per number ---- */
- function parseShip(b,provider){try{const u=new Uint8Array(b);if(u.length<20||String.fromCharCode(u[0],u[1],u[2],u[3],u[4])!=='HEMB1')return null;
-  const hl=new DataView(b).getUint32(5,true),h=JSON.parse(new TextDecoder().decode(u.subarray(9,9+hl)));
-  if(!h||h.provider!==provider||!h.model||!h.dim||!Array.isArray(h.keys)||u.length!==9+hl+h.keys.length*h.dim)return null;
-  const map=new Map();h.keys.forEach((k,i)=>map.set(k,i));return{tag:String(h.tag),model:String(h.model),dim:h.dim,map,q:new Int8Array(b,9+hl,h.keys.length*h.dim)}}catch(e){return null}}
- async function shipped(c){try{const r=await fetch('hub-embeddings.bin');if(!r.ok)return null;return parseShip(await r.arrayBuffer(),c.provider)}catch(e){return null}}
- const fromShip=(sh,k)=>{const i=sh.map.get(k);if(i===undefined)return null;const v=new Float32Array(sh.dim);for(let d=0;d<sh.dim;d++)v[d]=sh.q[i*sh.dim+d]/127;return norm(v)};
- async function exportData(C){
-  await index(C);if(!vecs||C0!==C)throw new Error('Smarter note search is not ready yet. Wait for the "ready" message, then try again.');
-  const c=cfg(),dim=vecs[0].length,keys=C.chunks.map(key),hb=new TextEncoder().encode(JSON.stringify({v:1,tag:c.provider+':'+model+':'+DIM,provider:c.provider,model,dim,keys}));
-  const out=new Uint8Array(9+hb.length+vecs.length*dim);out.set([72,69,77,66,49]);new DataView(out.buffer).setUint32(5,hb.length,true);out.set(hb,9);
-  let o=9+hb.length;for(const v of vecs)for(let d=0;d<dim;d++)out[o++]=Math.max(-127,Math.min(127,Math.round(v[d]*127)))&255;return out}
- /* downloads hub-embeddings.bin; run it once with HubEmb.exportFile() in the console, or open the site with ?exportemb=1 and then the Tutor */
- const exportFile=async()=>{const C=await corpus(),u=await exportData(C),a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([u],{type:'application/octet-stream'}));a.download='hub-embeddings.bin';document.body.appendChild(a);a.click();setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href)},2000);
-  try{info('Saved hub-embeddings.bin ('+(u.length/1048576).toFixed(1)+' MB). Upload it next to index.html.')}catch(e){}return u.length};
- /* ---- index: load saved fingerprints, make the missing ones, keep them aligned with the corpus ---- */
- function index(C){
-  if(vecs&&C0===C)return Promise.resolve(true);if(building)return building;
-  const c=cfg();if(!usable(c)||Date.now()-failedAt<6e5)return Promise.resolve(false);
-  let started=false;
-  building=(async()=>{try{
-   phase='load';const all=await loadAll(),meta=all&&all.get('meta');
-   let sh=null,m=meta&&meta.model&&String(meta.tag||'').indexOf(c.provider+':')===0?meta.model:'';
-   if(!m){sh=await shipped(c);m=sh?sh.model:await pickModel(c)}
-   const tag=c.provider+':'+m+':'+DIM;
-   const have=new Map();
-   if(meta&&meta.tag===tag)all.forEach((v,k)=>{if(k!=='meta')have.set(k,v)});
-   else{if(meta)await clearAll();await putMany([['meta',{tag,model:m}]])}
-   const keys=C.chunks.map(key);let need=[];C.chunks.forEach((ch,i)=>{if(!have.has(keys[i]))need.push(i)});
-   if(need.length&&!sh)sh=await shipped(c);
-   if(need.length&&sh&&sh.tag===tag){const add=[];need=need.filter(j=>{const v=fromShip(sh,keys[j]);if(!v)return true;have.set(keys[j],v);add.push([keys[j],v]);return false});if(add.length)await putMany(add)}
-   if(need.length){started=true;phase='embed';if(need.length>200){try{info('Setting up smarter note search. This happens once and takes a few minutes; the tutor keeps working meanwhile.')}catch(e){}}
-    for(let i=0;i<need.length;i+=BATCH){const idx=need.slice(i,i+BATCH);let out=null;
-     for(let t=0;!out;t++){try{out=await embed(c,m,idx.map(j=>C.chunks[j].text),'d')}catch(e){if(e.rl&&t<3){await nap(20000);continue}throw e}}
-     const pairs=idx.map((j,n)=>{const v=norm(out[n]);have.set(keys[j],v);return[keys[j],v]});await putMany(pairs);await nap(600)}
-    if(need.length>200){try{info('Smarter note search is ready.')}catch(e){}}}
-   const live=new Set(keys),stale=[];have.forEach((_,k)=>{if(!live.has(k))stale.push(k)});if(stale.length)delMany(stale);
-   vecs=C.chunks.map((_,i)=>have.get(keys[i]));if(vecs.some(v=>!v))throw new Error('incomplete');
-   model=m;C0=C;return true
-  }catch(e){vecs=null;failedAt=Date.now();if(started&&!told){told=true;try{info('Smarter note search could not finish setting up, so the tutor is using keyword search for now. It will try again later.')}catch(x){}}return false}
-  finally{building=null;phase=''}})();
-  return building}
- async function qvec(text){
-  if(qc.has(text))return qc.get(text);
-  const o=await Promise.race([embed(cfg(),model,[text],'q'),nap(8000).then(()=>{throw new Error('slow')})]),v=norm(o[0]);
-  qc.set(text,v);if(qc.size>40)qc.delete(qc.keys().next().value);qfail=0;return v}
- async function top(C,query,subj,n){
-  if(!vecs||C0!==C)return null;
-  try{const q=await qvec(String(query).slice(0,1500)),res=[];
-   for(let i=0;i<C.chunks.length;i++){const ch=C.chunks[i];if(subj&&subj!=='all'&&ch.subj!==subj&&ch.subj!=='hub')continue;
-    const v=vecs[i],L=Math.min(v.length,q.length);let s=0;for(let d=0;d<L;d++)s+=q[d]*v[d];res.push({c:ch,sim:s})}
-   res.sort((a,b)=>b.sim-a.sim);return res.slice(0,n)}catch(e){if(++qfail>=3){qfail=0;vecs=null;failedAt=Date.now()}return null}}
- /* start building quietly when the Tutor is opened, so it is usually ready by the first question */
- const warm=()=>{if(warmed||!usable(cfg()))return;warmed=true;corpus().then(C=>index(C)).then(ok=>{if(ok&&/[?&]exportemb\b/.test(location.search))return exportFile()}).catch(e=>{try{info(String(e&&e.message||e))}catch(x){}})};
- /* console helper: HubEmb.dbg('why did Weimar collapse') prints the closest notes and their scores, handy for tuning MINSIM */
- const dbg=async(q,subj)=>{const C=await corpus();await index(C);const t=await top(C,q,subj||'all',8);if(!t)return console.log('Semantic search is not ready:',failedAt?'setup failed recently':'no usable key');
-  console.table(t.map(x=>({sim:+x.sim.toFixed(3),subj:x.c.subj,text:x.c.text.slice(0,90)})))};
- return{index,top,warm,dbg,exportFile,MINSIM,phase:()=>phase,ready:()=>!!vecs,model:()=>model}})();
-window.HubEmb=HubEmb;
-/* hybrid search: keyword results and meaning results are merged (reciprocal rank fusion), so a note found by both rises to the top.
-   The returned list has .sem=true when meaning search took part; the tutor then skips the paid AI keyword-expansion step. */
-async function hsearch(C,q,subj,n){
- const kw=search(C,q,subj,30);
- /* wait briefly while saved fingerprints load from the browser, but never while a long first-time build is running */
- try{const p=HubEmb.index(C);await Promise.race([p,new Promise(r=>{const t0=Date.now(),iv=setInterval(()=>{if(HubEmb.phase()==='embed'||Date.now()-t0>1500){clearInterval(iv);r()}},40)})])}catch(e){}
- const sm=await HubEmb.top(C,q,subj,30);
- if(!sm)return kw.slice(0,n);
- const floor=Math.max(HubEmb.MINSIM,(sm[0]?sm[0].sim:0)-.12),f=new Map();
- const put=(c,rank)=>{let o=f.get(c.id);if(!o){o={c,s:0,cov:0};f.set(c.id,o)}o.s+=1/(60+rank);return o};
- kw.forEach((h,i)=>{put(h.c,i).cov=h.cov});
- sm.forEach((h,i)=>{if(h.sim>=floor)put(h.c,i)});
- const out=[...f.values()].sort((a,b)=>b.s-a.s).slice(0,n);out.sem=true;return out}
+/* note search: keyword search over the Hub's notes (the AI keyword-expansion step in the tutor handles reworded questions) */
+async function hsearch(C,q,subj,n){return search(C,q,subj,n)}
+/* tidy up fingerprints saved in this browser by the removed 'smarter note search' */
+try{indexedDB.deleteDatabase('hsc-hub-emb')}catch(e){}
 
 /* ---- prompt ---- */
 function system(hits,last){
@@ -47183,7 +47072,7 @@ html:not([data-nav=bottom]) main:has(#tt) .tt{height:auto;flex:1 1 0;min-height:
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
-function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();try{HubEmb.warm()}catch(e){}
+function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();
  const atEnd=b.scrollHeight-b.scrollTop-b.clientHeight<90,y=b.scrollTop;
  const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';c.innerHTML=ctlHtml();b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();
  b.scrollTop=qz?(scroll?0:y):!T.msgs.length?0:(scroll||atEnd?b.scrollHeight:y);
