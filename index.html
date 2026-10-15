@@ -47197,14 +47197,15 @@ main:has(#tt){max-width:none!important}.tt{max-width:none;width:100%}.tt-box.emp
 .tt-in{min-height:52px}
 .tt-in:focus-visible{outline:none;border-color:var(--tc,var(--br));box-shadow:inset 0 0 0 2px var(--tc,var(--br)),inset 0 0 18px -6px var(--tc,var(--br))}
 .tt-in{border-color:color-mix(in srgb,var(--tc,var(--ln)) 45%,var(--ln))}
-.tt-send{background:var(--tc,var(--br))!important}
+.tt-send{background:var(--tc,var(--br))!important;box-shadow:0 10px 26px -10px var(--tc,var(--br))!important}
+.tt-comp{--tth:50px;align-items:flex-end}.tt-in{min-height:var(--tth)!important;box-sizing:border-box}.tt-send{box-sizing:border-box;height:var(--tth);min-height:var(--tth);padding-top:0;padding-bottom:0;flex:none;align-self:flex-end}
 @media(max-width:600px){.tt{display:block;height:auto}.tt-box,.tt-box.empty{flex:none;padding:10px 0;max-height:calc(100dvh - 340px)}.tt-box.empty{max-height:none}.tt-empty h2{font-size:calc(22px*var(--fs,1))}.tt-opts{padding:12px}}
 [data-nav=bottom] .tt{display:block;height:auto}[data-nav=bottom] .tt-box{flex:none;max-height:calc(100dvh - 340px)}[data-nav=bottom] .tt-box.empty{max-height:none}
 .tt-dot{display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:#e5484d;vertical-align:middle}
 body[data-tt-unread] .nv[data-go=tutor]::after{content:'';position:absolute;right:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:#e5484d}
 body[data-tt-unread] #bnav button[data-go=tutor]{position:relative}body[data-tt-unread] #bnav button[data-go=tutor]::after{content:'';position:absolute;top:8px;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%;background:#e5484d}
 /* no page scroll on the Tutor: the page is exactly one screen tall and only the chat area scrolls inside it */
-@media(min-width:601px){html:not([data-nav=bottom]) main:has(#tt){box-sizing:border-box;height:100dvh;padding-bottom:24px;display:flex;flex-direction:column}
+@media(min-width:601px){html:not([data-nav=bottom]) main:has(#tt){box-sizing:border-box;height:100dvh;padding-bottom:12px;display:flex;flex-direction:column}
 html:not([data-nav=bottom]) main:has(#tt) .tt{height:auto;flex:1 1 0;min-height:420px}}
 [data-nav=bottom] main:has(#tt){box-sizing:border-box;height:100dvh;display:flex;flex-direction:column;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px)/var(--uz,1))}
 [data-nav=bottom] main:has(#tt) .tt{display:flex;flex-direction:column;flex:1 1 0;min-height:0;height:auto;padding-bottom:0}
@@ -47219,9 +47220,11 @@ html[data-nav=bottom]:has(#tt),html[data-nav=bottom]:has(#tt) body{overflow:hidd
 @media(max-width:600px){
 [data-nav=bottom] main:has(#tt) .tt{display:flex!important;flex-direction:column;flex:1 1 0!important;min-height:0!important;height:auto!important;padding-bottom:0!important}
 [data-nav=bottom] main:has(#tt) .tt h1{font-size:28px;margin:0 0 6px}
-[data-nav=bottom] main:has(#tt) .tt-subj{margin:8px 0 6px!important}
+[data-nav=bottom] main:has(#tt) .tt-subj{margin:8px -16px 6px!important;padding-left:16px;padding-right:16px}
 [data-nav=bottom] main:has(#tt) .tt-subj .chip{padding:8px 16px;font-size:15px;min-height:0;line-height:1.2}
-[data-nav=bottom] main:has(#tt) .tt-pin{flex-wrap:nowrap!important;overflow-x:auto;margin:2px -2px 6px!important;padding:0 2px 4px;scrollbar-width:none;gap:8px!important}
+[data-nav=bottom] main:has(#tt) .tt-pin{flex-wrap:nowrap!important;overflow-x:auto;margin:2px -16px 6px!important;padding:2px 16px 4px;scrollbar-width:none;gap:8px!important}
+[data-nav=bottom] main:has(#tt) .tt-pin .chip,[data-nav=bottom] main:has(#tt) .tt-pin .chip.on,[data-nav=bottom] main:has(#tt) .tt-subj .chip.on{box-shadow:none!important}
+[data-nav=bottom] main:has(#tt) .tt-box{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px);mask-image:linear-gradient(to bottom,transparent 0,#000 18px)}
 [data-nav=bottom] main:has(#tt) .tt-pin::-webkit-scrollbar{display:none}
 [data-nav=bottom] main:has(#tt) .tt-pin .tt-ol{flex:none;white-space:nowrap}
 [data-nav=bottom] main:has(#tt) .tt-pin .chips{display:flex;flex-wrap:nowrap!important;gap:8px}
@@ -47234,9 +47237,10 @@ html[data-nav=bottom]:has(#tt),html[data-nav=bottom]:has(#tt) body{overflow:hidd
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
+function ttReveal(c,old){try{[['.tt-subj','s'],['.tt-pin','p']].forEach(k=>{const r=c.querySelector(k[0]);if(!r)return;if(old&&old[k[1]]!=null)r.scrollLeft=old[k[1]];const on=r.querySelector('.chip.on');if(!on)return;const a=r.getBoundingClientRect(),b=on.getBoundingClientRect();if(b.left<a.left+8||b.right>a.right-8)r.scrollLeft+=b.left-a.left-(r.clientWidth-b.width)/2})}catch(e){}}
 function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();
  const atEnd=b.scrollHeight-b.scrollTop-b.clientHeight<90,y=b.scrollTop;
- const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';c.innerHTML=ctlHtml();b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();
+ const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';const o0={},sj0=c.querySelector('.tt-subj'),pn0=c.querySelector('.tt-pin');if(sj0)o0.s=sj0.scrollLeft;if(pn0)o0.p=pn0.scrollLeft;c.innerHTML=ctlHtml();ttReveal(c,o0);b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();
  b.scrollTop=qz?(scroll?0:y):!T.msgs.length?0:(scroll||atEnd?b.scrollHeight:y);
  if(s){s.disabled=T.busy;s.textContent=T.busy?'Sending…':'Send'}}
 const EXEMPT=/\b(?:study|studying|revise|revising|revision|plan|planning|timetable|schedule|routine|motivat\w*|stress\w*|anxious|anxiety|nervous|overwhelm\w*|relax\w*|calm\w*|burn(?:ed|t)? ?out|tired|sleep\w*|wellbeing|procrastinat\w*|focus\w*|concentrat\w*|after (?:my|the|an) exams?|tips?|advice|what should i|where (?:do|should) i (?:start|begin)|how (?:do|should|can) i (?:remember|memori[sz]e|prepare|answer|write|structure|approach|manage)|exam (?:technique|strategy)|time management|feedback|my (?:weak|progress|results))\b/i;
@@ -47266,7 +47270,7 @@ async function run(){if(T.busy||!T.msgs.length||T.msgs[T.msgs.length-1].r!=='u')
 function send(txt){if(T.busy)return;if(!HubAI.ready()){T.err='Add your API key in Settings > AI Setup first.';paint();return}
  learn(txt);T.msgs.push({r:'u',t:String(txt).slice(0,3000)});T.draft='';const i=Q('#ttIn');if(i){i.value='';i.style.height=''}T.err='';persist();run()}
 const submit=()=>{const i=Q('#ttIn'),v=(i?i.value:T.draft).trim(),m=/\[(?:topic|this|that)\]/.exec(v);if(m&&i){i.focus();i.setSelectionRange(m.index,m.index+m[0].length);return}if(v)send(v)};
-V.tutor=()=>{readNow();setTimeout(()=>{const b=Q('#ttBox');if(b)b.scrollTop=(T.msgs.length&&T.view!=='quiz')?b.scrollHeight:0;if(!CORP&&!CORPP)setTimeout(()=>{if(Q('#tt'))corpus().then(()=>paint(false))},500)},0);
+V.tutor=()=>{readNow();setTimeout(()=>{ttReveal(Q('#ttCtl'));const b=Q('#ttBox');if(b)b.scrollTop=(T.msgs.length&&T.view!=='quiz')?b.scrollHeight:0;if(!CORP&&!CORPP)setTimeout(()=>{if(Q('#tt'))corpus().then(()=>paint(false))},500)},0);
  window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}
  const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const s=SUBS.find(x=>x[0]===T.subj);return s?s[2]:''}}catch(e){}return ''})();
  return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div class="tt-comp"><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
