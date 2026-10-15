@@ -1135,7 +1135,7 @@ function setMode(g,m){var c=COPY[m],q=function(x){return g.querySelector(x)};g.d
  q('#sbUp').classList.add('p');q('#sbIn').classList.add('p');q('#sbIn').hidden=m==='new';q('#sbUp').hidden=m!=='new';
  q('#sbForgot').hidden=m==='new';q('#sbSw').textContent=c.sw;q('#sbMode').textContent=c.swl;
  q('.sbg-row').hidden=m==='new';
- q('#sbP').setAttribute('autocomplete',m==='new'?'new-password':'current-password');q('#sbF2').hidden=m!=='new';q('#sbP2').value='';q('#sbM').textContent=''}
+ q('#sbP').setAttribute('autocomplete',m==='new'?'new-password':'current-password');q('#sbF2').hidden=m!=='new';q('#sbF0').hidden=m!=='new';q('#sbP2').value='';q('#sbM').textContent=''}
 window.__sbGateMake=function(){
  var g=document.createElement('div');g.id='sbGate';g.setAttribute('role','dialog');g.setAttribute('aria-modal','true');g.setAttribute('aria-label','Sign in');
  g.innerHTML='<div class="sbg-bg" aria-hidden="true"></div><div class="sbg-depth" aria-hidden="true">'+depth()+'</div><div class="sbg-wrap">'
@@ -1144,6 +1144,7 @@ window.__sbGateMake=function(){
  +'<p>Your progress, marks and study streak follow you from phone to iPad to laptop.</p>'
  +'</div>'
  +'<div class="sbg-card"><h2>Welcome back</h2><p class="sbg-sub">Sign in to sync your progress.</p>'
+ +'<div class="sbg-f" id="sbF0" hidden><input id="sbN" type="text" autocomplete="name" autocapitalize="words" maxlength="40" spellcheck="false" placeholder=" " aria-label="Your name"><label for="sbN">Your name</label></div>'
  +'<div class="sbg-f"><input id="sbE" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder=" " aria-label="Email"><label for="sbE">Email</label></div>'
  +'<div class="sbg-f"><input id="sbP" type="password" autocomplete="current-password" placeholder=" " aria-label="Password"><label for="sbP">Password (6+ characters)</label><button type="button" class="sbg-eye" id="sbEye" aria-label="Show password" aria-pressed="false">'+EYE+'</button></div>'
  +'<div class="sbg-f" id="sbF2" hidden><input id="sbP2" type="password" autocomplete="new-password" placeholder=" " aria-label="Confirm password"><label for="sbP2">Confirm password</label></div>'
@@ -1154,7 +1155,7 @@ window.__sbGateMake=function(){
  +'<p class="sbg-skip"><button type="button" class="lnk" id="sbSkip">Continue without an account</button></p></div></div>';
  setMode(g,known()?'back':'new');
  var busy=0,sw=function(m){if(busy||g.dataset.mode===m)return;if(m==='back'){try{localStorage.setItem('hsc-sb-known','1')}catch(e){}}
-  var done=function(){var e=g.querySelector('#sbE');if(e&&!e.value&&matchMedia('(pointer:fine)').matches)e.focus({preventScroll:true})};
+  var done=function(){var e=g.querySelector(m==='new'?'#sbN':'#sbE');if(e&&!e.value&&matchMedia('(pointer:fine)').matches)e.focus({preventScroll:true})};
   if(matchMedia('(prefers-reduced-motion: reduce)').matches){setMode(g,m);done();return}
   busy=1;var els=[g.querySelector('.sbg-card'),g.querySelector('.sbg-story h1')];
   g.classList.add('sbg-anim');void g.offsetWidth;g.classList.add('sbg-fade');
@@ -1176,7 +1177,7 @@ window.__sbGateClose=function(g){if(!g||!g.isConnected)return;
  g.classList.add('sbg-out');setTimeout(function(){g.remove()},520)};
 try{var L=localStorage;L.removeItem('hsc-sb-skip');if(L.getItem('hsc-sb-session')||sessionStorage.getItem('hsc-sb-skip')||window.__sbHash)return;
  var g=window.__sbGateMake();document.body.appendChild(g);
- if(matchMedia('(pointer:fine)').matches)setTimeout(function(){var e=g.querySelector('#sbE');if(e&&!g.contains(document.activeElement))e.focus({preventScroll:true})},60)}catch(e){}
+ if(matchMedia('(pointer:fine)').matches)setTimeout(function(){var e=g.querySelector(g.dataset.mode==='new'?'#sbN':'#sbE');if(e&&!g.contains(document.activeElement))e.focus({preventScroll:true})},60)}catch(e){}
 })();
 </script>
 <a class="skip" href="#main">Skip to main content</a>
@@ -42708,7 +42709,6 @@ personalisation:()=>{
  const opt=(k,l)=>{const o=PERS[k];return setRow(l,(o.find(x=>x[0]===P(k))||[])[2]||'',grp(l,o.map(([v,n])=>`<button class="chip ${P(k)===v?'on':''}" aria-pressed="${P(k)===v}" data-a="pers" data-k="${k}" data-v="${v}">${n}</button>`).join('')))};
  const mine=Object.keys(PBUNDLE).find(id=>persMatch(PBUNDLE[id]));
  return `<div class="card"><h3>Presets</h3><p class="mu sm" style="margin:0 0 12px">${mine?'A starting point for background, spacing, corners, text size and animation. Your theme and accent colour stay as they are.':'You are using a custom mix. Pick a preset to start again from one of these.'}</p><div class="pre-g">${Object.entries(PBUNDLE).map(([id,b])=>`<button class="pre ${mine===id?'on':''}" aria-pressed="${mine===id}" data-a="bundle" data-v="${id}"><b>${b.name}</b><span class="mu sm">${b.d}</span></button>`).join('')}</div></div>
-<div class="card"><h3>Profile</h3>${setRow('Your name','Shown in the dashboard greeting',`<input type="text" id="nm" value="${esc(P('name'))}" placeholder="Name" maxlength="40" aria-label="Your name">`)}</div>
 <div class="card"><h3>Colour</h3>${setRow('Theme','Follow your device, or pick one',grp('Theme',['system','light','dark'].map(t=>cb('theme',t,P('theme')===t,t[0].toUpperCase()+t.slice(1))).join('')))}${setRow('Accent colour','Used for buttons, highlights and progress across the Hub and its subjects',grp('Accent colour',LOOKS.map(([k,n,c])=>cb('look',k,P('look')===k,n,'--c:'+c)).join('')+`<label class="chip acc ${P('look')==='custom'?'on':''}" style="--c:${accentFor(acc,false)}"><input type="color" id="acc" data-a="accent" value="${/^#[0-9a-f]{6}$/i.test(acc)?acc:'#6b4cf6'}" aria-label="Custom accent colour">Custom</label>`))}${opt('background','Background style')}</div>
 <div class="card"><h3>Layout and feel</h3>${opt('density','Density')}${opt('corners','Corners')}<p class="mu sm" style="margin:6px 0 0">Text size, animation and touch settings are in <button class="lnk" data-go="settings/accessibility">Accessibility</button>.</p></div>`},
 study:()=>SETV_STUDY(),immersive:()=>imView(),dashboard:()=>SETV_DASH(),notifications:()=>ntView(),
@@ -47665,7 +47665,7 @@ let cpw=''; /* the current password, only held for the few seconds between confi
 
 const api=async(path,o,tok)=>{o=o||{};const h=Object.assign({apikey:KEYP,'Content-Type':'application/json'},o.headers||{});if(tok)h.Authorization='Bearer '+tok;
  const r=await fetch(URL_+path,Object.assign({},o,{headers:h}));let j=null;try{j=await r.json()}catch(e){}return{ok:r.ok,status:r.status,j}};
-const setSess=r=>{if(r&&r.access_token){sess={access_token:r.access_token,refresh_token:r.refresh_token,exp:Date.now()+(r.expires_in||3600)*1000,uid:(r.user&&r.user.id)||(sess&&sess.uid),email:(r.user&&r.user.email)||(sess&&sess.email)};jset(SS,sess)}};
+const setSess=r=>{if(r&&r.access_token){sess={access_token:r.access_token,refresh_token:r.refresh_token,exp:Date.now()+(r.expires_in||3600)*1000,uid:(r.user&&r.user.id)||(sess&&sess.uid),email:(r.user&&r.user.email)||(sess&&sess.email)};jset(SS,sess);try{const m=r.user&&r.user.user_metadata;if(m&&m.name)applyName(m.name)}catch(e){}}};
 const token=async()=>{if(!sess)throw new Error('signed out');if(Date.now()<sess.exp-60000)return sess.access_token;
  const r=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:sess.refresh_token})});
  if(r.ok&&r.j&&r.j.access_token){setSess(r.j);return sess.access_token}
@@ -47857,12 +47857,12 @@ function gate(){let g=document.getElementById('sbGate');if(g&&g.dataset.b)return
  const shut=()=>{if(window.__sbGateClose)window.__sbGateClose(g);else g.remove()};
  const E=g.querySelector('#sbE'),P=g.querySelector('#sbP'),M=g.querySelector('#sbM'),C=g.querySelector('.sbg-card'),eye=g.querySelector('#sbEye'),P2=g.querySelector('#sbP2');
  const say=(t,ok)=>{M.textContent=t;M.style.color=ok?'var(--ink)':'';if(t&&!ok){C.classList.remove('sbg-shake');void C.offsetWidth;C.classList.add('sbg-shake')}};
- const go=async kind=>{const email=E.value.trim(),pw=P.value;if(!email||!pw)return say('Enter your email and password.');if(kind==='up'&&pw.length<6)return say('Use at least 6 characters for the password.');if(kind==='up'&&P2.value!==pw)return say(P2.value?'Passwords do not match.':'Confirm your password.');
+ const N=g.querySelector('#sbN');const go=async kind=>{const email=E.value.trim(),pw=P.value,nm=N?N.value.trim():'';if(kind==='up'&&!nm)return say('Enter your name.');if(!email||!pw)return say('Enter your email and password.');if(kind==='up'&&pw.length<6)return say('Use at least 6 characters for the password.');if(kind==='up'&&P2.value!==pw)return say(P2.value?'Passwords do not match.':'Confirm your password.');
   say('');const btn=g.querySelector(kind==='up'?'#sbUp':'#sbIn');btn.classList.add('sbg-busy');g.querySelectorAll('button').forEach(b=>b.disabled=true);
-  try{const r=await api(kind==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pw})});
+  try{const r=await api(kind==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify(kind==='up'?{email,password:pw,data:{name:nm}}:{email,password:pw})});
    if(!r.ok||!r.j||!r.j.access_token){const m=(r.j&&(r.j.msg||r.j.error_description||r.j.message))||'';
     say(kind==='up'&&r.ok?'Account created. Check your email to confirm it, then sign in.':(/invalid login/i.test(m)?'Wrong email or password.':m||'Could not sign in. Try again.'),kind==='up'&&r.ok);return}
-   setSess(r.j);try{localStorage.removeItem(SKIP)}catch(e){}shut();mount();refresh();check('login');keyTick();devTick()
+   setSess(r.j);if(kind==='up')applyName(nm);try{localStorage.removeItem(SKIP)}catch(e){}shut();mount();refresh();check('login');keyTick();devTick()
   }catch(e){say('No connection. Check your internet and try again.')}
   finally{btn.classList.remove('sbg-busy');g.querySelectorAll('button').forEach(b=>b.disabled=false)}};
  g.querySelector('#sbForgot').onclick=async()=>{const email=E.value.trim();if(!email)return say('Type your email above first, then tap Forgot password.');
@@ -47876,13 +47876,26 @@ function gate(){let g=document.getElementById('sbGate');if(g&&g.dataset.b)return
  if(!g.contains(document.activeElement)&&matchMedia('(pointer:fine)').matches)setTimeout(()=>E.focus({preventScroll:true}),50)}
 
 const refresh=()=>{try{if(/^#settings\/(account|data)/.test(location.hash)&&typeof render==='function')render()}catch(e){}};
+/* the account's name: stored on the account itself (not in the per-device settings), so every device shows the same greeting */
+const localName=()=>{try{return String(HubSettings.get('personalisation.name')||'').trim()}catch(e){return''}};
+function applyName(n){n=String(n||'').trim().slice(0,40);try{if(!n||!window.HubSettings||localName()===n)return;HubSettings.set('personalisation.name',n);
+ const gr=document.getElementById('gr');if(gr)gr.textContent=gr.textContent.replace(/,.*$/,'')+', '+n;refresh()}catch(e){}}
+async function nameTick(){try{if(!sess)return;const t=await token();const r=await api('/auth/v1/user',{},t);if(!r.ok||!r.j)return;
+ const rn=String((r.j.user_metadata||{}).name||'').trim();
+ if(rn)applyName(rn);
+ else if(localName())api('/auth/v1/user',{method:'PUT',body:JSON.stringify({data:{name:localName()}})},t).catch(()=>{})}catch(e){}}   /* an older account with no name yet takes the name already on this device */
+function nameModal(){inputModal({title:'Change name',body:'This name is shown in your dashboard greeting on every device.',type:'text',auto:'name',cap:'words',val:localName(),ph:'Your name',go:'Save name',
+ check:v=>v?(v.length>40?'Use 40 characters or fewer.':''):'Enter a name.',
+ run:async v=>{const t=await token();const r=await api('/auth/v1/user',{method:'PUT',body:JSON.stringify({data:{name:v}})},t);
+  if(!r.ok)return{err:(r.j&&(r.j.msg||r.j.message))||'Could not change the name.'};return{name:v}},
+ done:r=>{if(r&&r.name)applyName(r.name);refresh();mount()}})}
 function localOut(){delDev();sess=null;devCache=null;meta={};asked=false;try{localStorage.removeItem(SS);localStorage.removeItem(SM);localStorage.removeItem('hsc-sb-keyhash')}catch(e){}setSt('');mount();refresh()}
 function signOut(){modal('Sign out?','Your progress stays on this device. It just stops syncing until you sign in again.',[['Sign out',localOut,'x'],['Cancel']])}
 function signOutAll(){modal('Sign out everywhere?','This signs out every phone, tablet and computer, including this one. Your progress stays saved in your account.',
  [['Sign out everywhere',async()=>{try{try{await dapi('?user_id=eq.'+sess.uid,{method:'DELETE'})}catch(e){}const t=await token();const r=await api('/auth/v1/logout?scope=global',{method:'POST'},t);if(!r.ok&&r.status!==204&&r.status!==401)throw 0;localOut()}catch(e){modal('Could not sign out everywhere','Check your connection and try again.',[['OK']])}},'x'],['Cancel']])}
 /* a small form dialog: one input, a Save button, errors shown inline */
 function inputModal(o){const old=document.getElementById('sbIm');if(old)old.remove();
- const d=mk('<div id="sbIm" role="dialog" aria-modal="true" aria-label="'+esc(o.title)+'" style="position:fixed;inset:0;z-index:2147483200;display:grid;place-items:center;padding:20px;background:rgba(5,8,20,.6)"><div class="card" style="max-width:420px;width:100%"><h3 style="margin-top:0">'+esc(o.title)+'</h3><p class="mu" style="margin:0 0 12px">'+o.body+'</p><input id="sbIi" type="'+(o.type||'text')+'" autocomplete="'+(o.auto||'off')+'" autocapitalize="off" spellcheck="false" placeholder="'+esc(o.ph||'')+'" aria-label="'+esc(o.ph||o.title)+'" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><p id="sbIe" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn '+(o.cls||'p')+'" id="sbIs" style="justify-content:center;min-height:46px">'+esc(o.go)+'</button><button type="button" class="btn" id="sbIc" style="justify-content:center;min-height:46px">Cancel</button></div></div></div>');
+ const d=mk('<div id="sbIm" role="dialog" aria-modal="true" aria-label="'+esc(o.title)+'" style="position:fixed;inset:0;z-index:2147483200;display:grid;place-items:center;padding:20px;background:rgba(5,8,20,.6)"><div class="card" style="max-width:420px;width:100%"><h3 style="margin-top:0">'+esc(o.title)+'</h3><p class="mu" style="margin:0 0 12px">'+o.body+'</p><input id="sbIi" type="'+(o.type||'text')+'" autocomplete="'+(o.auto||'off')+'" autocapitalize="'+(o.cap||'off')+'" spellcheck="false" value="'+esc(o.val||'')+'" placeholder="'+esc(o.ph||'')+'" aria-label="'+esc(o.ph||o.title)+'" style="width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:inherit;font:inherit;font-size:16px;margin-bottom:10px"><p id="sbIe" role="alert" class="sm" style="min-height:1.4em;margin:0 0 10px;color:#e2483f"></p><div class="chips" style="flex-direction:column"><button type="button" class="btn '+(o.cls||'p')+'" id="sbIs" style="justify-content:center;min-height:46px">'+esc(o.go)+'</button><button type="button" class="btn" id="sbIc" style="justify-content:center;min-height:46px">Cancel</button></div></div></div>');
  document.body.appendChild(d);const I=d.querySelector('#sbIi'),E=d.querySelector('#sbIe');
  const go=async()=>{const v=I.value.trim();const bad=o.check&&o.check(v);if(bad){E.textContent=bad;return}E.textContent='';d.querySelectorAll('button').forEach(b=>b.disabled=true);
   try{const r=await o.run(v);if(r&&r.err){E.textContent=r.err}else{d.remove();if(o.done)o.done(r)}}catch(e){E.textContent='No connection, or you were signed out. Try again.'}
@@ -47917,7 +47930,7 @@ const devName=()=>{const u=navigator.userAgent||'';
 const dapi=async(q,o)=>{const t=await token();return api('/rest/v1/hub_devices'+q,o,t)};
 const dq=()=>'?user_id=eq.'+sess.uid+'&device_id=eq.'+encodeURIComponent(devId());
 const delDev=()=>{if(!sess)return;const q=dq();token().then(t=>api('/rest/v1/hub_devices'+q,{method:'DELETE'},t)).catch(()=>{})};
-async function devTick(){try{if(!sess)return;
+async function devTick(){try{if(!sess)return;nameTick();
  const r=await dapi(dq()+'&select=revoked,last_seen');if(!r.ok)return;const row=r.j&&r.j[0];
   if(row&&row.revoked){delDev();localOut();modal('Signed out','This device was removed from your account on another device. Sign in again to link it back.',[['OK']]);return}
  if(!row||Date.now()-lastBeat>300000||Date.now()-new Date(row.last_seen)>300000){lastBeat=Date.now();
@@ -47939,7 +47952,7 @@ const row=(l,sub,ctl)=>'<div class="set-row"><div class="set-lbl"><b>'+l+'</b>'+
 const sbb=(a,t,c)=>'<button type="button" class="btn '+(c||'')+'" data-sb="'+a+'">'+t+'</button>';
 function view(){
  if(!sess)return '<div class="card"><h3>Account</h3><p class="mu sm" style="margin-top:0">You are not signed in. Sign in to keep your progress and AI key in sync between your phone, iPad and laptop.</p><div class="chips">'+sbb('gate','Sign in or create account','p')+'</div></div>';
- return '<div class="card"><h3>Account</h3>'+row('Signed in as',esc(sess.email),'')+row('Sync','<span id="sbSt">'+esc(st)+'</span>',sbb('sync','Sync now','p'))+'<p class="mu sm" style="margin:10px 0 0">Progress, activity, favourites, exam attempts and your AI key sync. Theme, layout and other device settings stay on each device.</p></div>'
+ return '<div class="card"><h3>Account</h3>'+row('Name','Shown in your dashboard greeting on every device',esc(localName()||'Not set')+' '+sbb('name','Change name'))+row('Signed in as',esc(sess.email),'')+row('Sync','<span id="sbSt">'+esc(st)+'</span>',sbb('sync','Sync now','p'))+'<p class="mu sm" style="margin:10px 0 0">Progress, activity, favourites, exam attempts and your AI key sync. Theme, layout and other device settings stay on each device.</p></div>'
  +'<div class="card"><h3>Email and password</h3>'+row('Email',esc(sess.email),sbb('email','Change email'))+row('Password','',sbb('pw','Change password'))+'</div>'
  +'<div class="card"><h3>Devices</h3><p class="mu sm" style="margin-top:0">Phones, tablets and computers signed in to this account. A removed device signs itself out the next time it opens the app.</p><div id="sbDev"><p class="mu sm" style="margin:0">Loading…</p></div></div>'
  +'<div class="card"><h3>Sign out</h3>'+row('This device','Stops syncing here. Your data stays on this device.',sbb('out','Sign out'))+row('Every device','Signs out your phone, iPad and laptop. Useful if you lose one.',sbb('outall','Sign out everywhere'))+'</div>'
@@ -47951,13 +47964,13 @@ function mount(){devFill();const h=[...document.querySelectorAll('.card>h3')].fi
  const tgt=h.parentElement;if(cur&&cur.nextElementSibling===tgt&&!!cur.querySelector('[data-sb=out]')===!!sess)return;if(cur)cur.remove();tgt.insertAdjacentHTML('beforebegin',card())}
 new MutationObserver(()=>mount()).observe(document.body,{childList:true,subtree:true});
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-sb]');if(!t)return;const a=t.dataset.sb;
- if(a==='gate')gate();else if(a==='out')signOut();else if(a==='pw')confirmPw(pwModal,'To change your password, enter your current password first. If you have forgotten it, sign out and use the reset link on the sign-in screen.');else if(a==='email')confirmPw(emailModal,'To change your email, enter your password first. This protects your account if someone else gets hold of this device or your inbox.');else if(a==='devrm')devRemove(t.dataset.id);else if(a==='outall')signOutAll();else if(a==='del')deleteModal();else if(a==='sync'){asked=false;snoozeTo=0;check('manual')}});
+ if(a==='gate')gate();else if(a==='name')nameModal();else if(a==='out')signOut();else if(a==='pw')confirmPw(pwModal,'To change your password, enter your current password first. If you have forgotten it, sign out and use the reset link on the sign-in screen.');else if(a==='email')confirmPw(emailModal,'To change your email, enter your password first. This protects your account if someone else gets hold of this device or your inbox.');else if(a==='devrm')devRemove(t.dataset.id);else if(a==='outall')signOutAll();else if(a==='del')deleteModal();else if(a==='sync'){asked=false;snoozeTo=0;check('manual')}});
 
 /* rhythm: after load, when you leave or come back, shortly after you change something, and every 10s while it is open */
 const soon=ms=>{clearTimeout(dbt);dbt=setTimeout(()=>check('poll'),Math.max(ms,10000-(Date.now()-lastRun)))};
 addEventListener('online',()=>check('poll'));
 addEventListener('pagehide',()=>{if(sess)check('hide')});
-document.addEventListener('visibilitychange',()=>{if(!sess)return;if(document.hidden){hiddenAt=Date.now();check('hide')}else check(Date.now()-hiddenAt>15000?'show':'poll')});
+document.addEventListener('visibilitychange',()=>{if(!sess)return;if(document.hidden){hiddenAt=Date.now();check('hide')}else{check(Date.now()-hiddenAt>15000?'show':'poll');nameTick()}});
 setInterval(()=>{if(!sess||document.hidden)return;const f=fpNow();if(f!==lastFp&&f!==seenFp){seenFp=f;meta.lt=Date.now();saveMeta();soon(2500)}},3000);
 let slow=0;setInterval(()=>{if(sess&&!document.hidden){check('poll');if(++slow%3===0){keyTick();devTick()}}},10000);
 setTimeout(refresh,0);const rec=!!window.__sbHash;if(rec)setTimeout(recovery,500);if(!sess&&!rec&&!sessionStorage.getItem(SKIP))gate();
