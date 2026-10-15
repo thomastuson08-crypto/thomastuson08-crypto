@@ -47785,7 +47785,7 @@ const recentAp=()=>{const a=jget(AP),t=Date.now();return Array.isArray(a)?a.filt
 const noteAp=()=>{const a=recentAp();a.push(Date.now());jset(AP,a)};
 const canApply=mode=>{if(mode==='login'||mode==='manual')return true;
  if(recentAp().length>=3||mockRunning()||boxHasText()||leaveBlocked())return false;
- return mode==='load'||(!document.hidden&&!timerRunning()&&!typing()&&(mode==='show'||Date.now()-lastAct>60000))};
+ return mode==='load'||(!document.hidden&&!timerRunning()&&!typing()&&(mode==='show'||Date.now()-lastAct>10000))};
 const setMeta=o=>{meta=Object.assign({uid:sess.uid,lt:meta.lt,safeAt:meta.safeAt},o);saveMeta()};
 const doneAt=m=>setSt(m+' '+when(Date.now()));
 
