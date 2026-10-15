@@ -47214,10 +47214,9 @@ html:not([data-nav=bottom]) main:has(#tt) .tt{height:auto;flex:1 1 0;min-height:
 /* keep chat bubbles clear of the scrollbar */
 .tt-box{scrollbar-gutter:stable;padding-right:14px!important;box-sizing:border-box}
 .tt-box.empty{padding-right:2px!important}
-/* phone: the Tutor page may scroll, so the chat box keeps a usable height instead of being squashed into one screen */
-[data-nav=bottom] main:has(#tt){height:auto;min-height:100dvh;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px)/var(--uz,1))}
-[data-nav=bottom] main:has(#tt) .tt{flex:none;display:block;min-height:0;height:auto}
-[data-nav=bottom] main:has(#tt) .tt-box:not(.empty){flex:none;min-height:max(340px,55dvh);max-height:max(340px,calc(100dvh - 260px))}
+/* phone: the Tutor is pinned to exactly the space between the status bar and the bottom nav, so the page itself can never scroll or reveal a blank gap. Only the chat area scrolls. */
+[data-nav=bottom] main:has(#tt){position:fixed;top:calc(env(safe-area-inset-top,0px)/var(--uz,1));left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:12px;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px)/var(--uz,1))}
+html[data-nav=bottom]:has(#tt),html[data-nav=bottom]:has(#tt) body{overflow:hidden;overscroll-behavior:none}
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
