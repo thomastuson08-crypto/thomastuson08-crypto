@@ -259,7 +259,7 @@ body.xc-on{overflow:hidden}
 .xc-nb button.cur{background:var(--br);color:#fff;border-color:var(--br)}
 .xc-leg{font-size:12px;color:var(--mu);margin-top:8px}
 .xc-meta{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:8px}
-.xc-qt{font-size:18px;font-weight:600;margin:0 0 16px}
+.xc-qt{font-size:18px;font-weight:600;margin:0 0 16px}.xc-mk{white-space:nowrap;font-weight:700;color:var(--mu,inherit);opacity:.85}
 .xc-stim{padding:12px 14px;border:1px solid var(--ln);border-left:4px solid var(--br);border-radius:8px;background:var(--sf);margin:0 0 16px;font-size:15px}
 .xc-stim table{border-collapse:collapse;width:100%}.xc-stim td,.xc-stim th{border:1px solid var(--ln);padding:5px 9px;text-align:left}
 .xc-opt{display:flex;gap:12px;width:100%;text-align:left;padding:12px 14px;margin:0 0 9px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink);font:inherit;cursor:pointer}
@@ -43394,6 +43394,7 @@ function xnav(){const r=X.run,el=$('#xcnv');if(!el)return;const its=xitems(r);
  const f=$('#xcfl');if(f)f.textContent=r.fl[r.cur]?'⚑ Unflag':'⚑ Flag for review'}
 function xpk(r,q){const sec=r.paper.sections.find(s=>s.id===q.sec);if(!sec.choose)return'';const on=r.pick[sec.id]===q.id;
  return `<div class="xc-rd" id="xcpk"><span>${on?'✓ You are answering this question.':'Answer <b>one</b> question in this section.'}${sec.note?'<br><span class="mu sm">'+sec.note+'</span>':''}</span>${on?'':`<button class="btn" data-xc="pick" data-q="${q.id}" ${r.phase==='reading'?'disabled':''}>Choose this question</button>`}</div>`}
+function xmk(q){const t=String(q.q==null?'':q.q),m=q.marks?` <span class="xc-mk" title="${q.marks} mark${q.marks>1?'s':''}">(${q.marks})</span>`:'';return/<\/p>\s*$/i.test(t)?t.replace(/<\/p>\s*$/i,m+'</p>'):t+m}
 function xmain(keep){const r=X.run,q=xfind(r.paper,r.cur),el=$('#xcmain');if(!q||!el)return;const lock=r.phase==='reading',dis=lock?'disabled':'',sec=r.paper.sections.find(s=>s.id===q.sec),y=el.scrollTop;let h='<div class="xc-w">';
  if(lock)h+=`<div class="xc-rd"><span><b>Reading time.</b> Writing is disabled. Writing time starts in <b id="xcrdt"></b>.</span><button class="btn" data-xc="skiprd">Begin writing now</button></div>`;
  h+=`<div class="xc-meta">${esc(sec.title)} · ${esc(xttl(q))} · ${q.marks} mark${q.marks>1?'s':''}</div>`+xpk(r,q);
@@ -43401,7 +43402,7 @@ function xmain(keep){const r=X.run,q=xfind(r.paper,r.cur),el=$('#xcmain');if(!q|
  if(q.stim)h+=`<div class="xc-stim">${q.stim}</div>`;
  if(q.type==='mc')h+=`<div class="xc-qt">${q.q}</div>`+q.options.map((o,i)=>`<button class="xc-opt ${r.a[q.id]===i?'on':''}" ${dis} data-xc="opt" data-q="${q.id}" data-v="${i}"><b>${'ABCD'[i]}</b><span>${o}</span></button>`).join('');
  else if(q.type==='sa'){const a=r.a[q.id]||[];h+=q.parts.map((p,i)=>`<div class="xc-pt">(${'abcdefgh'[i]}) ${p.q} <span class="mu sm">[${p.marks} mark${p.marks>1?'s':''}]</span></div>${q.draw?xpad(r,q,i,lock):`<textarea name=hf51-xc-ta class="xc-ta" rows="${Math.min(14,3+p.marks)}" ${dis} data-xa="${q.id}" data-p="${i}" aria-label="Answer part ${'abcdefgh'[i]}">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`}`).join('')}
- else h+=`<div class="xc-qt">${q.q}</div><textarea name=hf52-xc-ta class="xc-ta" rows="${q.rows||20}" ${dis} data-xa="${q.id}" aria-label="Written answer">${esc(r.a[q.id]||'')}</textarea><div class="xc-wc">${xwc(r.a[q.id])} words</div>`;
+ else h+=`<div class="xc-qt">${xmk(q)}</div><textarea name=hf52-xc-ta class="xc-ta" rows="${q.rows||20}" ${dis} data-xa="${q.id}" aria-label="Written answer">${esc(r.a[q.id]||'')}</textarea><div class="xc-wc">${xwc(r.a[q.id])} words</div>`;
  el.innerHTML=h+'</div>';el.scrollTop=keep===true?y:0;el.querySelectorAll('canvas[data-xcv]').forEach(xcpaint);xtick()}
 function xgo(id){const r=X.run;if(!r)return;r.cur=id;xsaveD();const n=$('#xcnv');if(n)n.classList.remove('open');xnav();xmain()}
 function xstep(d){const r=X.run,l=xall(r.paper),i=l.findIndex(q=>q.id===r.cur)+d;if(l[i])xgo(l[i].id)}
