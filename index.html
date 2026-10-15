@@ -42298,7 +42298,7 @@ HubSettings.register('study',{focusMode:'manual',focusNav:true,focusBg:true,focu
 const st=k=>HubSettings.get('study.'+k);
 HubSettings.register('device',{mode:'auto',nav:'auto',width:'auto',cards:'auto',touch:'auto',dashDensity:'auto',bottomAutoHide:false});
 HubSettings.register('progress',{weeklyGoal:0,examDates:{},trackSessions:true,trackActive:true,idleMin:3,streakMin:20,countHand:true,trackPractice:true,saveExams:true,recordActivity:true,detectWeak:true});
-HubSettings.register('notifications',{system:false,quietOn:true,quietFrom:'22:00',quietTo:'07:00',study:false,studyTime:'16:00',studyDays:[1,2,3,4,5],studySkip:true,exam:false,examLead:[7,1,0],done:true,daily:false,dailyTime:'07:30',milestones:false});
+HubSettings.register('notifications',{system:false,quietOn:true,quietFrom:'22:00',quietTo:'07:00',study:false,studyTime:'16:00',studyDays:[1,2,3,4,5],studySkip:true,exam:false,examLead:[7,1,0],done:true,daily:false,dailyTime:'07:30',milestones:false,push:false,pushUrl:''});
 const PT=k=>HubSettings.get('progress.'+k)!==false;   /* Phase 6: is this kind of progress being recorded? */
 HubSettings.register('accessibility',{calm:false,fx:{bg:1,glow:1,shine:1,intro:1,loop:1,hover:1,blur:1},followSystem:true,uiScale:100,contrast:'system',spacing:'normal',focus:'standard',pullRefresh:true,touchFx:false});
 try{if(!localStorage.getItem('hsc-hub-touchfx-off')){localStorage.setItem('hsc-hub-touchfx-off','1');HubSettings.set('accessibility.touchFx',false)}}catch(e){}
@@ -43081,6 +43081,8 @@ document.addEventListener('click',e=>{
   else if(Notification.permission==='granted'){HubSettings.set('notifications.system',true);rerender()}
   else if(Notification.permission==='default')ntAsk().then(p=>{if(p==='granted')HubSettings.set('notifications.system',true);else if(p!=='denied')ntNote='Permission was not given. Reminders will keep appearing inside the Hub.';rerender()});
   else rerender()}
+ else if(a==='ntpush'){(ntPushOn()?pushDisable():pushEnable()).then(()=>rerender())}
+ else if(a==='ntptest'){pushTest()}
  else if(a==='nttest'){toast('This is how a reminder looks. It fades on its own.');if(g('notifications.system')&&ntPerm()==='granted')ntSys('This is how a system notification looks.','test')}
  else if(a==='acprof'){acProfApply(v);rerender()}
  else if(a==='acsz'){HubSettings.set('personalisation.fontSize',v);rerender()}
@@ -44095,19 +44097,19 @@ function ntCheck(){
  Object.keys(N.f).forEach(k=>{if(/^(study|daily)\|/.test(k)&&now-N.f[k]>3*864e5)delete N.f[k]});
  if(S.run||X.run||xo||ntQuiet(d))return;   /* never interrupt a timer or an exam, and stay quiet in quiet hours */
  const dk=d.toLocaleDateString('en-CA'),trig=s=>{const h=ntHM(s);return h?new Date(now).setHours(h[0],h[1],0,0):null};
- if(on('exam')){if(!N.s.exam)N.s.exam=now;const due=[],leads=g('notifications.examLead')||[];
+ if(on('exam')&&!ntPushOn()){if(!N.s.exam)N.s.exam=now;const due=[],leads=g('notifications.examLead')||[];
   EXAMS.forEach(x=>{const t=at(x);if(t<=now)return;let best=null;
    leads.forEach(L=>{const b=new Date(t);b.setDate(b.getDate()-L);b.setHours(8,0,0,0);const tr=+b,key='exam|'+x.id+'|'+L;
     if(now>=tr&&now<tr+864e5&&tr>=N.s.exam&&!N.f[key]&&(!best||L<best.L))best={x,t,L,key}});if(best)due.push(best)});
   if(due.length){due.sort((a,b)=>a.t-b.t);const pick=due.slice(0,2),tm=t=>new Date(t).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}),
    line=o=>{const dd=Math.round((ntDay(o.t)-ntDay(now))/864e5);return o.x.name+(dd===0?' is today at '+tm(o.t):dd===1?' is tomorrow at '+tm(o.t):' is in '+dd+' days ('+whenS(o.t)+')')};
    if(ntSend(pick.map(line).join(' · '),'exam')){pick.forEach(o=>N.f[o.key]=now);save();return}}}
- if(on('study')){if(!N.s.study)N.s.study=now;const tr=trig(g('notifications.studyTime')),k='study|'+dk;
+ if(on('study')&&!ntPushOn()){if(!N.s.study)N.s.study=now;const tr=trig(g('notifications.studyTime')),k='study|'+dk;
   if(tr!=null&&(g('notifications.studyDays')||[]).includes(d.getDay())&&now>=tr&&now<tr+54e5&&tr>=N.s.study&&!N.f[k]){
    const t0=ntDay(now);
    if(g('notifications.studySkip')!==false&&PT('trackSessions')&&(cSess().some(s=>s.t>=t0)||dayMinAll(Date.now())>=SMIN())){N.f[k]=now;save()}
    else{const gl=S.goal||0,tx='Time for a study session'+(gl>0&&PT('trackSessions')?' · '+ntWeek()+' of '+gl+' min in the last 7 days':'');if(ntSend(tx,'study')){N.f[k]=now;save();return}}}}
- if(on('daily')){if(!N.s.daily)N.s.daily=now;const tr=trig(g('notifications.dailyTime')),k='daily|'+dk;
+ if(on('daily')&&!ntPushOn()){if(!N.s.daily)N.s.daily=now;const tr=trig(g('notifications.dailyTime')),k='daily|'+dk;
   if(tr!=null&&now>=tr&&tr>=N.s.daily&&!N.f[k]){const f=ntFocus(),tx=f?'Today\'s focus: '+f.s.name+'. Exam in '+f.dl+' day'+(f.dl>1?'s':''):'A short session is a good place to start today';
    if(ntSend(tx,'daily')){N.f[k]=now;save();return}}}
  if(on('milestones')){const gl=S.goal||0,wt=ntWeek(),items=ntItems();
@@ -44124,6 +44126,63 @@ document.addEventListener('change',e=>{const i=e.target.id||'';if(i.slice(0,3)!=
 setInterval(ntCheck,30000);setTimeout(ntCheck,4000);
 const ntsw=(k,l)=>`<button class="sw" role="switch" aria-checked="${g('notifications.'+k)===true}" aria-label="${l}" data-a="ntt" data-v="${k}"></button>`;
 const ntTime=(k,l)=>`<input type="time" id="nt-${k}" value="${esc(g('notifications.'+k))}" aria-label="${l}" style="width:auto">`;
+/* ---------- Push reminders: reach this device even when the Hub is closed ----------
+   The Hub gives your push worker (see PUSH-SETUP.md) this device's push address and your reminder settings.
+   The worker sends the study, exam and daily reminders at the right times; sw.js shows them. Milestones and
+   timer-complete messages stay inside the Hub. */
+const PUSH_DEFAULT='https://hsc-hub-push.thomastuson08.workers.dev';   /* your push worker; can be overridden in Settings > Notifications */
+const pushUrl=()=>String(g('notifications.pushUrl')||PUSH_DEFAULT).trim().replace(/\/+$/,'');
+const pushSupported=()=>ntSupported()&&'serviceWorker' in navigator&&'PushManager' in window;
+let PUSHOK=false,pushNote='',pushT=0;
+const ntPushOn=()=>g('notifications.push')===true&&PUSHOK;
+const pushKey=s=>{const r=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))};
+const pushSub=async()=>{try{const r=await navigator.serviceWorker.ready;return await r.pushManager.getSubscription()}catch(e){return null}};
+function pushSched(){const N=NT(),on=k=>g('notifications.'+k)===true,now=Date.now();
+ ['study','exam','daily'].forEach(k=>{if(on(k)&&!N.s[k])N.s[k]=now});
+ const t0=ntDay(now),done=(PT('trackSessions')&&(cSess().some(s=>s.t>=t0)||dayMinAll(now)>=SMIN()))?new Date(now).toLocaleDateString('en-CA'):'',f=ntFocus();
+ return{tz:Intl.DateTimeFormat().resolvedOptions().timeZone,done,
+  quiet:on('quietOn')?[g('notifications.quietFrom'),g('notifications.quietTo')]:null,
+  study:on('study')?{time:g('notifications.studyTime'),days:g('notifications.studyDays')||[],skip:g('notifications.studySkip')!==false,since:N.s.study}:null,
+  daily:on('daily')?{time:g('notifications.dailyTime'),since:N.s.daily,focus:f?{name:f.s.name,t:at(f.o)}:null}:null,
+  exam:on('exam')?{lead:g('notifications.examLead')||[],since:N.s.exam,list:EXAMS.map(x=>({id:x.id,name:x.name,t:at(x)})).filter(x=>x.t>now)}:null}}
+async function pushSync(){try{const u=pushUrl();if(!u||g('notifications.push')!==true||!pushSupported())return;
+ const s=await pushSub();if(!s){PUSHOK=false;return}
+ PUSHOK=true;const body=JSON.stringify({sub:s.toJSON(),sched:pushSched()});save();
+ await fetch(u+'/subscribe',{method:'POST',headers:{'content-type':'text/plain;charset=UTF-8'},body,keepalive:true})}catch(e){}}
+const pushLater=()=>{clearTimeout(pushT);pushT=setTimeout(pushSync,1500)};
+async function pushEnable(){pushNote='';const u=pushUrl();
+ if(!pushSupported()){pushNote='This browser cannot receive push notifications.';return}
+ if(!/^https:\/\//.test(u)){pushNote='Add your push server address first. It starts with https://';return}
+ const p=await ntAsk();   /* first thing, so it still counts as your tap */
+ if(p!=='granted'){pushNote=p==='denied'?'Notifications are blocked for the Hub. Allow them in your device settings, then try again.':'Permission was not given.';return}
+ try{const key=(await (await fetch(u+'/vapid-public')).text()).trim(),r=await navigator.serviceWorker.ready,old=await r.pushManager.getSubscription();
+  if(old)await old.unsubscribe();
+  await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKey(key)});
+  HubSettings.set('notifications.push',true);await pushSync();
+  if(!PUSHOK)pushNote='Could not finish setting up push. Check the server address.'}
+ catch(e){PUSHOK=false;HubSettings.set('notifications.push',false);pushNote='Could not set up push. Check the server address, and that you opened the Hub from your Home Screen.'}}
+async function pushDisable(){try{const s=await pushSub(),u=pushUrl();
+ if(s){if(u)await fetch(u+'/unsubscribe',{method:'POST',headers:{'content-type':'text/plain;charset=UTF-8'},body:JSON.stringify({endpoint:s.endpoint})}).catch(()=>{});await s.unsubscribe()}}catch(e){}
+ HubSettings.set('notifications.push',false);PUSHOK=false;pushNote=''}
+async function pushTest(){pushNote='';try{const s=await pushSub(),u=pushUrl();
+ if(!s||!u)pushNote='Push is not set up on this device yet.';
+ else{await pushSync();const r=await fetch(u+'/test',{method:'POST',headers:{'content-type':'text/plain;charset=UTF-8'},body:JSON.stringify({endpoint:s.endpoint})});
+  pushNote=r.ok?'Test sent. It should appear in a few seconds.':'The server could not deliver the test (code '+r.status+'). Check the setup steps.'}}
+ catch(e){pushNote='Could not reach the push server. Check the address.'}rerender()}
+async function pushInit(){if(g('notifications.push')!==true)return;
+ if(!pushSupported()||!pushUrl()){PUSHOK=false;return}
+ const s=await pushSub();
+ if(!s||Notification.permission!=='granted'){PUSHOK=false;HubSettings.set('notifications.push',false);return}
+ PUSHOK=true;pushSync()}
+HubSettings.subscribe(p=>{if(typeof p==='string'&&/^(notifications|progress)\./.test(p))pushLater()});
+document.addEventListener('visibilitychange',()=>{if(g('notifications.push')!==true)return;if(document.hidden)pushSync();else pushLater()});
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='ntp-url'){HubSettings.set('notifications.pushUrl',e.target.value.trim());pushNote='';rerender()}});
+setTimeout(pushInit,1500);
+const pushCard=()=>{const sup=pushSupported(),on=ntPushOn();
+ const ctl=!sup?setRow('Push notifications','On iPhone or iPad, push needs iOS 16.4 or later, and the Hub added to your Home Screen and opened from there.','<span class="mu sm">Unavailable</span>'):
+  setRow('Push reminders','Study, exam and daily reminders reach this device even when the Hub is closed. They are sent by your push server.',`<button class="sw" role="switch" aria-checked="${on}" aria-label="Push reminders" data-a="ntpush"></button>`);
+ const url=setRow('Push server','The address of your Hub push worker. You set it up once, see PUSH-SETUP.md.',`<input type="url" id="ntp-url" value="${esc(pushUrl())}" placeholder="https://hsc-hub-push.yourname.workers.dev" aria-label="Push server address" style="width:min(22em,100%)" autocapitalize="off" autocorrect="off" spellcheck="false">`);
+ return `<div class="card"><h3>Push notifications</h3>${ctl}${url}${on?setRow('Try it','Sends a real push to this device','<button class="btn" data-a="ntptest">Send a test push</button>'):''}${pushNote?`<p class="mu sm" role="status" style="margin:6px 0 0">${esc(pushNote)}</p>`:''}</div>`};
 function ntView(){
  const sup=ntSupported(),pm=ntPerm(),sysOn=g('notifications.system')===true&&pm==='granted',on=k=>g('notifications.'+k)===true;
  const why=!/^https?:$/.test(location.protocol)?'Browsers do not allow notifications for a file opened from your device. Host the Hub (for example on GitHub Pages) and open it over https.':!('Notification' in window)?'This browser does not support notifications. On iPhone or iPad, add the Hub to your Home Screen and open it from there.':'Notifications need a secure (https) connection.';
@@ -44133,7 +44192,8 @@ function ntView(){
  return `<div class="card"><h3>Study</h3>${setRow('Study reminders','A gentle reminder at the time and on the days you choose',ntsw('study','Study reminders'))}${on('study')?setRow('Remind me at','',ntTime('studyTime','Study reminder time'))+setRow('On these days','',grp('Reminder days',NTDAYS.map(([d,n])=>cb('ntday',d,(g('notifications.studyDays')||[]).includes(d),n)).join('')))+setRow('Skip if I have already studied today','Based on sessions the Hub has logged',ntsw('studySkip','Skip if already studied today')):''}${setRow('Daily study prompt','Once a day, the first time you open the Hub after the time you pick, with a suggested subject based on your exam dates',ntsw('daily','Daily study prompt'))}${on('daily')?setRow('Show it after','',ntTime('dailyTime','Daily prompt time')):''}${setRow('Study session complete','A short message when a timer runs out',ntsw('done','Study session complete'))}</div>
 <div class="card"><h3>Exams</h3>${setRow('Exam reminders','Shown at 8:00 am on each day you choose, using the exam dates in <button class="lnk" data-go="settings/progress">Progress settings</button>',ntsw('exam','Exam reminders'))}${on('exam')?setRow('Remind me','',grp('Exam reminder timing',NTLEAD.map(([d,n])=>cb('ntlead',d,(g('notifications.examLead')||[]).includes(d),n)).join(''))):''}</div>
 <div class="card"><h3>Progress</h3>${setRow('Milestones','Weekly goal reached, study streaks, hours studied and progress a subject has reported. Only real, saved activity counts. What you had already reached when you switch this on is not announced.',ntsw('milestones','Milestones'))}</div>
-<div class="card"><h3>How they appear</h3><p class="mu sm" style="margin:0 0 8px">Reminders appear as a small message inside the Hub that fades on its own, with no sound. The Hub can only remind you while it is open in a browser tab or as an installed app. They never interrupt a running timer or exam.</p>${sysRow}${ntNote?`<p class="mu sm" role="status" style="margin:6px 0 0">${esc(ntNote)}</p>`:''}${setRow('Quiet hours','Study, exam, daily and milestone messages wait until later. Timer-complete messages still show.',ntsw('quietOn','Quiet hours'))}${on('quietOn')?setRow('Quiet from','',ntTime('quietFrom','Quiet hours start'))+setRow('Until','',ntTime('quietTo','Quiet hours end')):''}${setRow('Try it','Shows a sample message'+(sysOn?' and a sample system notification':''),'<button class="btn" data-a="nttest">Send a test</button>')}</div>`}
+${pushCard()}
+<div class="card"><h3>How they appear</h3><p class="mu sm" style="margin:0 0 8px">Reminders appear as a small message inside the Hub that fades on its own, with no sound. Without push, the Hub can only remind you while it is open in a browser tab or as an installed app. They never interrupt a running timer or exam.</p>${sysRow}${ntNote?`<p class="mu sm" role="status" style="margin:6px 0 0">${esc(ntNote)}</p>`:''}${setRow('Quiet hours','Study, exam, daily and milestone messages wait until later. Timer-complete messages still show.',ntsw('quietOn','Quiet hours'))}${on('quietOn')?setRow('Quiet from','',ntTime('quietFrom','Quiet hours start'))+setRow('Until','',ntTime('quietTo','Quiet hours end')):''}${setRow('Try it','Shows a sample message'+(sysOn?' and a sample system notification':''),'<button class="btn" data-a="nttest">Send a test</button>')}</div>`}
 
 /* ---------- Phase 8: accessibility settings ---------- */
 const ACS=[['small','Small'],['medium','Default'],['large','Large'],['xlarge','Extra large'],['xxlarge','Largest']],ACU=[90,100,110,125,150],
@@ -46982,7 +47042,7 @@ async function expand(q){try{const mp=mapText();const o=await HubAI.chat("You he
 const selPh=(el,from)=>{const m=/\[[^\]]+\]/g;m.lastIndex=from;const r=m.exec(el.value);if(r){el.setSelectionRange(r.index,r.index+r[0].length);return true}return false};
 let OPT=false;
 const ctlHtml=()=>{const qz=T.view==='quiz';
- const head=`<div class="tt-head"><h1>Tutor</h1><div class="tt-headr"><div class="tt-seg tt-view" role="group" aria-label="Tutor view"><button type="button" class="${qz?'':'on'}" data-tt="view:chat" aria-pressed="${!qz}">Chat</button><button type="button" class="${qz?'on':''}" data-tt="view:quiz" aria-pressed="${qz}">Quiz</button></div>${!qz&&T.msgs.length?`<button type="button" class="tt-quiet" data-tt="new">New chat</button>`:''}<button type="button" class="tt-quiet tt-gear${OPT?' on':''}" data-tt="opts" aria-expanded="${OPT}" aria-controls="ttOpts">Options <span aria-hidden="true">${OPT?'\u25B4':'\u25BE'}</span></button></div></div>`;
+ const head=`<div class="tt-head"><h1>Tutor</h1><div class="tt-headr"><div class="tt-seg tt-view" role="group" aria-label="Tutor view"><button type="button" class="${qz?'':'on'}" data-tt="view:chat" aria-pressed="${!qz}">Chat</button><button type="button" class="${qz?'on':''}" data-tt="view:quiz" aria-pressed="${qz}">Quiz</button></div><button type="button" class="tt-quiet tt-newb" data-tt="new"${!qz&&T.msgs.length?'':' disabled'}>New chat</button><button type="button" class="tt-quiet tt-gear${OPT?' on':''}" data-tt="opts" aria-expanded="${OPT}" aria-controls="ttOpts">Options <span aria-hidden="true">${OPT?'\u25B4':'\u25BE'}</span></button></div></div>`;
  const subj=`<div class="chips tt-subj" role="group" aria-label="Subject">${SUBS.map(s=>`<button type="button" class="chip ${T.subj===s[0]?'on':''}" style="--c:${s[2]}" data-tt="subj:${s[0]}" aria-pressed="${T.subj===s[0]}">${esc(s[1])}${UNREAD[s[0]]?'<span class="tt-dot" role="img" aria-label="new reply"></span>':''}</button>`).join('')}</div>`;
  const row=(l,c)=>`<div class="tt-orow"><span class="tt-ol">${l}</span>${c}</div>`;
  const panel=OPT?`<div class="tt-opts" id="ttOpts">${qz?'':row('Teaching style',`<div class="tt-seg" role="group" aria-label="Teaching style"><button type="button" class="${T.mode==='explain'?'on':''}" data-tt="mode:explain" aria-pressed="${T.mode==='explain'}">Explain</button><button type="button" class="${T.mode==='guide'?'on':''}" data-tt="mode:guide" aria-pressed="${T.mode==='guide'}">Guide me</button></div>`)}${row('Tone',`<div class="tt-seg" role="group" aria-label="Teacher tone">${Object.keys(TONES).map(k=>`<button type="button" class="${T.tone===k?'on':''}" data-tt="tone:${k}" aria-pressed="${T.tone===k}">${TONES[k][0]}</button>`).join('')}</div>`)}${qz?'':`<label class="tt-chk"><input name=hf69-checkbox type="checkbox" data-tt="strict" ${strictNow()?'checked':''}> Facts from my notes only</label>`}</div>`:'';
@@ -47234,10 +47294,20 @@ html[data-nav=bottom]:has(#tt),html[data-nav=bottom]:has(#tt) body{overflow:hidd
 [data-nav=bottom] main:has(#tt) #ttFoot{flex:none;margin:0}
 [data-nav=bottom] main:has(#tt) .tt-note{margin:6px 0 2px!important;font-size:11.5px!important;line-height:1.3;text-align:center}
 }
+/* header + tab strip identical whether the chat is empty or has messages */
+.tt-newb[disabled]{opacity:.35;pointer-events:none;cursor:default}
+@media(max-width:600px){
+.tt-head{flex-wrap:nowrap;gap:8px}
+.tt-headr{flex-wrap:nowrap;gap:0;flex:none}
+.tt-head h1{flex:none}
+.tt-headr .tt-quiet{padding:6px 8px;white-space:nowrap}
+.tt-head .tt-seg button{padding:7px 12px}
+}
+@media(max-width:350px){.tt-head{flex-wrap:wrap}}
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
-function ttReveal(c,old){try{[['.tt-subj','s'],['.tt-pin','p']].forEach(k=>{const r=c.querySelector(k[0]);if(!r)return;if(old&&old[k[1]]!=null)r.scrollLeft=old[k[1]];const on=r.querySelector('.chip.on');if(!on)return;const a=r.getBoundingClientRect(),b=on.getBoundingClientRect();if(b.left<a.left+8||b.right>a.right-8)r.scrollLeft+=b.left-a.left-(r.clientWidth-b.width)/2})}catch(e){}}
+function ttReveal(c,old){try{[['.tt-subj','s'],['.tt-pin','p']].forEach(k=>{const r=c.querySelector(k[0]);if(!r)return;if(old&&old[k[1]]!=null)r.scrollLeft=old[k[1]];const on=r.querySelector('.chip.on');if(!on)return;const a=r.getBoundingClientRect(),b=on.getBoundingClientRect();if(k[0]==='.tt-subj'||b.left<a.left+8||b.right>a.right-8)r.scrollLeft+=b.left-a.left-(r.clientWidth-b.width)/2})}catch(e){}}
 function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();
  const atEnd=b.scrollHeight-b.scrollTop-b.clientHeight<90,y=b.scrollTop;
  const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';const o0={},sj0=c.querySelector('.tt-subj'),pn0=c.querySelector('.tt-pin');if(sj0)o0.s=sj0.scrollLeft;if(pn0)o0.p=pn0.scrollLeft;c.innerHTML=ctlHtml();ttReveal(c,o0);b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();

@@ -7,7 +7,7 @@
  * connected subject, so offline works automatically. Listing it in SUBJECT_FILES as well makes it download on
  * install, so it is ready the very first time, not just after the first visit.
  */
-const VERSION = 'v127';
+const VERSION = 'v129';
 const CORE_CACHE = 'hsc-hub-core-' + VERSION;   // versioned: replaced on every update
 const FONT_CACHE = 'hsc-hub-fonts-v1';          // Google font files: kept across updates, they never change
 const KEEP = [CORE_CACHE, FONT_CACHE];
@@ -100,4 +100,26 @@ self.addEventListener('fetch', e => {
   } else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' || url.hostname === 'cdnjs.cloudflare.com') {
     e.respondWith(staleWhileRevalidate(req, e));
   }
+});
+
+/* ---------- push notifications (sent by the Hub push worker, see PUSH-SETUP.md) ----------
+ * Every push must show a notification, so this always does, even if the message could not be read. */
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
+  e.waitUntil(self.registration.showNotification(d.title || 'HSC Hub', {
+    body: d.body || 'Time to study',
+    tag: d.tag || 'hsc',
+    icon: 'icon-192.png',
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const target = abs((e.notification.data && e.notification.data.url) || './');
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow(target);
+  }));
 });
