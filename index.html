@@ -991,8 +991,6 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
  .set-body .set-row .set-ctl.chips>.btn{flex:1 1 auto}
 }
 /* tutor: an empty chat fits the screen, no page scroll until there is history */
-body:has(#tt .tt-box.empty) main{padding-bottom:0!important}
-[data-nav=bottom] #tt:has(.tt-box.empty){padding-bottom:0}
 #tt.tt-fit{display:flex;flex-direction:column;overflow:hidden}
 #tt.tt-fit .tt-box.empty{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;display:flex}
 #tt.tt-fit .tt-comp{position:static!important;flex:none;margin-top:8px}
@@ -47217,6 +47215,22 @@ html:not([data-nav=bottom]) main:has(#tt) .tt{height:auto;flex:1 1 0;min-height:
 /* phone: the Tutor is pinned to exactly the space between the status bar and the bottom nav, so the page itself can never scroll or reveal a blank gap. Only the chat area scrolls. */
 [data-nav=bottom] main:has(#tt){position:fixed;top:calc(env(safe-area-inset-top,0px)/var(--uz,1));left:0;right:0;bottom:0;width:auto;height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding-top:12px;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px)/var(--uz,1))}
 html[data-nav=bottom]:has(#tt),html[data-nav=bottom]:has(#tt) body{overflow:hidden;overscroll-behavior:none}
+/* phone: compact header so the chat gets the room, composer + note pinned straight above the bottom nav */
+@media(max-width:600px){
+[data-nav=bottom] main:has(#tt) .tt{display:flex!important;flex-direction:column;flex:1 1 0!important;min-height:0!important;height:auto!important;padding-bottom:0!important}
+[data-nav=bottom] main:has(#tt) .tt h1{font-size:28px;margin:0 0 6px}
+[data-nav=bottom] main:has(#tt) .tt-subj{margin:8px 0 6px!important}
+[data-nav=bottom] main:has(#tt) .tt-subj .chip{padding:8px 16px;font-size:15px;min-height:0;line-height:1.2}
+[data-nav=bottom] main:has(#tt) .tt-pin{flex-wrap:nowrap!important;overflow-x:auto;margin:2px -2px 6px!important;padding:0 2px 4px;scrollbar-width:none;gap:8px!important}
+[data-nav=bottom] main:has(#tt) .tt-pin::-webkit-scrollbar{display:none}
+[data-nav=bottom] main:has(#tt) .tt-pin .tt-ol{flex:none;white-space:nowrap}
+[data-nav=bottom] main:has(#tt) .tt-pin .chips{display:flex;flex-wrap:nowrap!important;gap:8px}
+[data-nav=bottom] main:has(#tt) .tt-pin .chip{flex:none;white-space:nowrap;padding:7px 14px;font-size:14px;min-height:0;line-height:1.2}
+[data-nav=bottom] main:has(#tt) .tt-box,[data-nav=bottom] main:has(#tt) .tt-box.empty{flex:1 1 0!important;min-height:0!important;max-height:none!important}
+[data-nav=bottom] main:has(#tt) .tt-comp{position:static!important;flex:none;margin:8px 0 0!important;padding:0!important;background:none}
+[data-nav=bottom] main:has(#tt) #ttFoot{flex:none;margin:0}
+[data-nav=bottom] main:has(#tt) .tt-note{margin:6px 0 2px!important;font-size:11.5px!important;line-height:1.3;text-align:center}
+}
 `;
 document.head.appendChild(css);
 const Q=s=>document.querySelector(s);
@@ -47537,7 +47551,7 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
 /* sizes the empty tutor to exactly the space between its top and the bottom nav */
 (()=>{const fit=()=>{const t=document.getElementById('tt');if(!t)return;
  const empty=!!t.querySelector('.tt-box.empty');
- if(!empty){t.classList.remove('tt-fit');t.style.height='';return}
+ const mn=t.closest('main');if(!empty||(mn&&getComputedStyle(mn).display==='flex')){t.classList.remove('tt-fit');t.style.height='';return}
  t.classList.add('tt-fit');t.style.height='';
  const top=t.getBoundingClientRect().top+scrollY,bn=document.getElementById('bnav'),
   nav=bn&&getComputedStyle(bn).display!=='none'?bn.offsetHeight:0,
