@@ -44298,7 +44298,7 @@ const HubBackup=(()=>{
   for(;;){try{localStorage.setItem(SK,JSON.stringify(a));return b}catch(e){if(a.length<=1)return null;a.pop()}}}
  const valid=j=>!!j&&j.app==='hsc-hub'&&j.ls&&typeof j.ls==='object'&&!Array.isArray(j.ls)&&(j.v==null||j.v<=2);
  function download(b,name){const u=URL.createObjectURL(new Blob([JSON.stringify(b)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1e3)}
- async function restore(b){await snap('safety');window.__hubRestoring=true;   /* stops the page saving its old in-memory state over the restored data as it reloads */
+ async function restore(b,o){if(!(o&&o.nosafe))await snap('safety');window.__hubRestoring=true;   /* stops the page saving its old in-memory state over the restored data as it reloads */
   for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k!==SK&&k.indexOf('hsc-hub')===0&&!(k in b.ls))localStorage.removeItem(k)}
   Object.entries(b.ls).forEach(([k,v])=>{if(typeof v==='string'&&k!==SK)localStorage.setItem(k,v)});
   for(const id of Object.keys(mods))if(b.mods&&id in b.mods){try{await mods[id].import(b.mods[id])}catch(e){}}
@@ -47641,8 +47641,17 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
 const URL_='https://kjwmbxdgkwugliourdoi.supabase.co',KEYP='sb_publishable_h4JqllGDec-SqVMFXF7HJw_mr3EkEx5';
 const SS='hsc-sb-session',SM='hsc-sb-meta',SKIP='hsc-sb-skip';
 /* things that stay per device and are never synced */
-const EXC=new Set(['hsc-hub-backups-v1','ai-marking-key-v1','ai-marking-usage-v1','hsc-hub-settings-v1','hubx','hsc-hub-setui','hsc-hub-touchfx-off','hsc-hub-idx','hsc-hub-idxv']);
+const EXC=new Set(['hsc-hub-backups-v1','ai-marking-key-v1','ai-marking-usage-v1','hsc-hub-settings-v1','hubx','hsc-hub-setui','hsc-hub-touchfx-off','hsc-hub-idx','hsc-hub-idxv','hx-qi']);
 const keep=k=>!(EXC.has(k)||k.indexOf('hsc-sb-')===0);
+/* Inside the main hsc-hub-v1 JSON these fields mirror the per-device settings store (the app rewrites them from it at every start),
+ * so they stay per device and are never synced. Otherwise a new device would push its defaults over the account and two devices with
+ * different settings would keep overwriting each other and reloading. */
+const DEVF=['name','theme','look','calm','fx','goal','ea'],HK='hsc-hub-v1';
+let svRaw=null,svOut=null;
+const stripDev=s=>{if(typeof s!=='string')return s;if(s===svRaw)return svOut;let out=s;
+ try{const o=JSON.parse(s);if(o&&typeof o==='object'&&!Array.isArray(o)){DEVF.forEach(f=>{delete o[f]});out=JSON.stringify(o)}}catch(e){}
+ svRaw=s;svOut=out;return out};
+const sv=(k,v)=>k===HK?stripDev(v):v;
 const jget=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -47664,23 +47673,78 @@ const rest=async(q,o)=>{const t=await token();return api('/rest/v1/hub_data'+q,o
 const canon=(ls,xh)=>{let s='';Object.keys(ls).sort().forEach(k=>{s+=k+'\u0001'+ls[k]+'\u0002'});
  const h=(xh||[]).slice().sort((a,b)=>String(a&&a.id).localeCompare(String(b&&b.id)));return s+JSON.stringify(h)};
 const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)+'.'+s.length};
-const snapshot=async()=>{const b=await HubBackup.build('sync');const ls={};for(const k in b.ls)if(keep(k))ls[k]=b.ls[k];
+const snapshot=async()=>{const b=await HubBackup.build('sync');const ls={};for(const k in b.ls)if(keep(k))ls[k]=sv(k,b.ls[k]);
  return{ls,xh:b.xh||[],mods:b.mods||{},hash:hash(canon(ls,b.xh))}};
 
-const push=async snap=>{const data={v:1,ls:snap.ls,xh:snap.xh,mods:snap.mods},now=new Date().toISOString();let r;
- if(meta.at){r=await rest('?user_id=eq.'+sess.uid+'&updated_at=eq.'+encodeURIComponent(meta.at),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({data,updated_at:now})});
-  if(r.ok&&Array.isArray(r.j)&&!r.j.length)return'conflict'}
- else{r=await rest('',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:sess.uid,data,updated_at:now})});if(r.status===409)return'conflict'}
- if(!r.ok)throw new Error('push '+r.status);
- meta={uid:sess.uid,at:(r.j&&r.j[0]&&r.j[0].updated_at)||now,hash:snap.hash};saveMeta();return'ok'};
+/* ---------- automatic merge (three-way) ----------
+ * l = this device now, b = the last state both sides agreed on, r = the account now. No question is ever asked:
+ * a side that changed something wins over a side that did not; lists (sessions, saved items, attempts...) are joined,
+ * so nothing is lost; the same field changed on both sides: the newest change wins (a bigger number wins for counters). */
+const isO=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+const sl=a=>a.every(x=>typeof x==='string'||isO(x));   /* a "set-like" list: only text and objects, so order does not matter */
+const cj=v=>v===undefined?'~':Array.isArray(v)?(sl(v)?'['+v.map(cj).sort().join(',')+']':'['+v.map(cj).join(',')+']'):isO(v)?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+cj(v[k])).join(',')+'}':JSON.stringify(v);
+const P=s=>{if(typeof s!=='string')return undefined;try{const v=JSON.parse(s);return v&&typeof v==='object'?v:undefined}catch(e){return undefined}};
+const idk=x=>isO(x)&&x.id!=null?'i:'+x.id:'j:'+cj(x);
+function mset(l,b,r,pref,hasB,fresh){
+ const M=a=>{const m=new Map();a.forEach(x=>m.set(idk(x),x));return m};
+ const ml=M(l),mb=M(b||[]),mr=M(r),out=[];
+ for(const k of new Set([...ml.keys(),...mr.keys()])){
+  const x=ml.get(k),y=mr.get(k),z=mb.get(k),byId=k[0]==='i';
+  if(x!==undefined&&y!==undefined){out.push(byId?m3(x,z,y,pref,fresh):x);continue}
+  const v=x!==undefined?x:y;   /* only on one side: it was added there, unless the other side deleted it since the last sync */
+  if(!hasB||z===undefined||(byId&&cj(v)!==cj(z)))out.push(v)}
+ if(out.length&&out.every(o=>isO(o)&&typeof o.t==='number')){
+  const asc=l.length>1&&l.every((o,i)=>isO(o)&&typeof o.t==='number'&&(i===0||o.t>=l[i-1].t));
+  out.sort((p,q)=>(asc?p.t-q.t:q.t-p.t)||(cj(p)<cj(q)?-1:1))}
+ return out}
+function m3(l,b,r,pref,fresh){
+ if(cj(l)===cj(r))return l;
+ if(cj(l)===cj(b))return r;
+ if(cj(r)===cj(b))return l;
+ if(isO(l)&&isO(r)){const bo=isO(b)?b:{},o={};
+  for(const k of new Set([...Object.keys(l),...Object.keys(r)])){const v=m3(l[k],bo[k],r[k],pref,fresh);if(v!==undefined)o[k]=v}
+  return o}
+ if(Array.isArray(l)&&Array.isArray(r)&&sl(l)&&sl(r)&&(b===undefined||(Array.isArray(b)&&sl(b))))return mset(l,b,r,pref,b!==undefined,fresh);
+ if(!fresh&&typeof l==='number'&&typeof r==='number'&&(typeof b!=='number'||(l>b&&r>b)))return Math.max(l,r);   /* counters such as minutes studied (not on a first-time device: there the account's number wins) */
+ return pref==='local'?l:r}
+/* values are stored as text; most of it is JSON */
+function ms(l,b,r,pref,fresh){
+ if(l===r)return l;if(l===b)return r;if(r===b)return l;
+ const pl=P(l),pr=P(r);
+ if(pl&&pr)return JSON.stringify(m3(pl,P(b),pr,pref,fresh));
+ return pref==='local'?l:r}
+function mergeSnap(L,B,R,pref,fresh){
+ const ls={},bl=(B&&B.ls)||{};
+ for(const k of new Set([...Object.keys(L.ls||{}),...Object.keys(R.ls||{})])){const v=ms((L.ls||{})[k],bl[k],(R.ls||{})[k],pref,fresh);if(v!==undefined)ls[k]=v}
+ const bx=B?B.xh:undefined,bm=B?B.mods:undefined;
+ return{ls,xh:m3(L.xh||[],bx,R.xh||[],pref,fresh),mods:m3(L.mods||{},bm,R.mods||{},pref,fresh)}}
+/* a whole snapshot as one comparable string, ignoring key order and list order */
+const sc=S=>{const o={};for(const k in(S.ls||{})){const p=P(S.ls[k]);o[k]=p!==undefined?p:S.ls[k]}return cj({ls:o,xh:S.xh||[],mods:S.mods||{}})};
+/* the base: the last state this device and the account agreed on. Kept in IndexedDB because it can be large. */
+const bdb=()=>new Promise((ok,no)=>{try{const q=indexedDB.open('hsc-sb-base',1);q.onupgradeneeded=()=>q.result.createObjectStore('k');q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)}catch(e){no(e)}});
+let memBase=null;   /* fallback when IndexedDB is not available (private mode, blocked storage): kept for as long as the page stays open */
+const baseGet=async()=>{if(memBase&&sess&&memBase.uid===sess.uid)return memBase.snap;
+ try{const d=await bdb();return await new Promise(ok=>{const t=d.transaction('k').objectStore('k').get('base');t.onsuccess=()=>ok(t.result&&sess&&t.result.uid===sess.uid?t.result.snap:null);t.onerror=()=>ok(null)})}catch(e){return null}};
+const baseSet=async s=>{if(sess)memBase={uid:sess.uid,snap:{ls:s.ls,xh:s.xh,mods:s.mods}};
+ try{const d=await bdb();await new Promise((ok,no)=>{const t=d.transaction('k','readwrite');t.objectStore('k').put({uid:sess.uid,snap:{ls:s.ls,xh:s.xh,mods:s.mods}},'base');t.oncomplete=ok;t.onerror=no})}catch(e){}};
 
-const remoteSame=async snap=>{try{const r=await rest('?select=data&user_id=eq.'+sess.uid);const d=r.ok&&r.j&&r.j[0]&&r.j[0].data;if(!d)return false;const ls={};Object.keys(d.ls||{}).forEach(k=>{if(keep(k))ls[k]=d.ls[k]});return hash(canon(ls,Array.isArray(d.xh)?d.xh:[]))===snap.hash}catch(e){return false}};
-const pull=async()=>{const r=await rest('?select=data,updated_at&user_id=eq.'+sess.uid);if(!r.ok||!r.j||!r.j[0])throw new Error('pull');
- const row=r.j[0],d=row.data||{},ls={};
- Object.keys(d.ls||{}).forEach(k=>{if(keep(k))ls[k]=d.ls[k]});
+/* save a snapshot to the account. `at` = the account version we are replacing; if someone else saved in between, the answer is {c:1} and we merge again */
+const push=async(snap,at)=>{const data={v:1,ls:snap.ls,xh:snap.xh,mods:snap.mods},now=new Date().toISOString(),body=JSON.stringify({data,updated_at:now}),ka=body.length<60000;let r;
+ if(at){r=await rest('?user_id=eq.'+sess.uid+'&updated_at=eq.'+encodeURIComponent(at),{method:'PATCH',keepalive:ka,headers:{Prefer:'return=representation'},body});if(r.ok&&Array.isArray(r.j)&&!r.j.length)return{c:1}}
+ else{r=await rest('',{method:'POST',keepalive:ka,headers:{Prefer:'return=representation'},body:JSON.stringify({user_id:sess.uid,data,updated_at:now})});if(r.status===409)return{c:1}}
+ if(!r.ok)throw new Error('push '+r.status);
+ return{at:(r.j&&r.j[0]&&r.j[0].updated_at)||now}};
+const fetchRemote=async()=>{const r=await rest('?select=data,updated_at&user_id=eq.'+sess.uid);if(!r.ok||!r.j||!r.j[0])throw new Error('pull');
+ const row=r.j[0],d=row.data||{},ls={};Object.keys(d.ls||{}).forEach(k=>{if(keep(k))ls[k]=sv(k,d.ls[k])});
+ return{at:row.updated_at,snap:{ls,xh:Array.isArray(d.xh)?d.xh:[],mods:d.mods||{}}}};
+/* a quick fingerprint of what would sync, to notice edits without building a full snapshot */
+const fpNow=()=>{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&keep(k))ks.push(k)}ks.sort();let s='';for(const k of ks)s+=k+'\u0001'+sv(k,localStorage.getItem(k))+'\u0002';return hash(s)};
+/* put a merged state on this device (this reloads the page, like a restore) */
+const applyLocal=async(M,safe)=>{const ls=Object.assign({},M.ls);
+ {const mine=jget(HK),rm=P(ls[HK]);   /* this device's own name, theme, look, calm, fx, goal, ea stay as they are here */
+  if(mine&&typeof mine==='object'&&!Array.isArray(mine)&&rm&&typeof rm==='object'&&!Array.isArray(rm)){DEVF.forEach(f=>{if(f in mine)rm[f]=mine[f];else delete rm[f]});ls[HK]=JSON.stringify(rm)}}
  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!keep(k)&&k.indexOf('hsc-sb-')!==0&&!(k in ls))ls[k]=localStorage.getItem(k)}   /* per-device keys stay as they are here */
- meta={uid:sess.uid,at:row.updated_at,hash:null,rebase:true};saveMeta();
- await HubBackup.restore({app:'hsc-hub',v:2,at:Date.now(),kind:'sync',ls,xh:Array.isArray(d.xh)?d.xh:[],mods:d.mods||{}})};
+ await HubBackup.restore({app:'hsc-hub',v:2,at:Date.now(),kind:'sync',ls,xh:Array.isArray(M.xh)?M.xh:[],mods:M.mods||{}},{nosafe:!safe})};
 
 /* small UI helpers */
 const mk=h=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstElementChild};
@@ -47701,35 +47765,63 @@ const banner=(txt,label,fn)=>{const old=document.getElementById('sbBn');if(old)o
  const b=mk('<div id="sbBn" role="status" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:2147483100;max-width:calc(100% - 24px);display:flex;gap:10px;align-items:center;padding:10px 12px 10px 16px;border-radius:14px;background:var(--ink);color:var(--bg);font-weight:600;box-shadow:0 10px 30px -10px rgba(0,0,0,.45)"><span>'+esc(txt)+'</span><button type="button" class="btn p" style="padding:6px 12px">'+esc(label)+'</button></div>');
  b.querySelector('button').onclick=()=>{b.remove();fn()};document.body.appendChild(b);setTimeout(()=>{if(b.isConnected)b.remove()},20000)};
 
-function conflict(remoteAt){if(asked||Date.now()<snoozeTo)return;asked=true;
- modal('Which data do you want to keep?','This device and your account both have progress that the other does not. Account data was last saved '+esc(when(remoteAt))+'. A safety backup of this device is saved first, so you can undo it from Backups.',
-  [['Use my account data',()=>{asked=false;pull().catch(()=>setSt('Could not load account data.'))},'p'],
-   ['Keep this device and overwrite the account',async()=>{asked=false;try{meta={uid:sess.uid};const s=await snapshot();const r=await rest('?select=updated_at&user_id=eq.'+sess.uid);meta.at=r.j&&r.j[0]?r.j[0].updated_at:null;const p=await push(s);setSt(p==='ok'?'Synced '+when(Date.now()):'Try again');}catch(e){setSt('Offline. Will retry.')}}],
-   ['Decide later',()=>{asked=false;snoozeTo=Date.now()+15*60000;setSt('Waiting for your choice. Tap Sync now when ready.')}]])}
+/* ---------- the sync loop: no questions, ever ----------
+ * Each round: if only this device changed, save it. If the account changed too, merge both (see above), save the merge,
+ * and put the other device's changes onto this one. Because the page keeps what is on screen in memory, putting changes
+ * onto the screen means a quick reload, so that only happens when it is safe: when the app opens, when you come back to
+ * it, when you press Sync now, or when you have been idle for a minute with no timer running. Otherwise your own changes
+ * still go to the account straight away and a small "Update" button waits. */
+let again=null,hiddenAt=0,lastAct=Date.now(),lastFp='',seenFp='',fullN=0,bannerAt=null,lastRun=0,dbt=0;
+['pointerdown','keydown','touchstart','wheel'].forEach(e=>addEventListener(e,()=>{lastAct=Date.now()},{passive:true,capture:true}));
+const timerRunning=()=>{try{const s=JSON.parse(localStorage.getItem('hsc-hub-v1'));return!!(s&&s.run)}catch(e){return false}};
+const typing=()=>{const a=document.activeElement;return!!a&&(/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)||!!a.isContentEditable)};
+/* Putting the account's data on screen reloads the page, so automatic updates hold back while that could cost something:
+ * a mock exam is running, a visible text box has text in it, or this device already updated 3 times in the last 3 minutes. */
+const AP='hsc-sb-ap';
+const mockRunning=()=>{try{return typeof mockState!=='undefined'&&!!mockState&&mockState.phase==='running'}catch(e){return false}};
+const leaveBlocked=()=>{try{const e=new Event('beforeunload',{cancelable:true});window.dispatchEvent(e);return e.defaultPrevented}catch(e){return false}};   /* the other exam screens ask the browser to confirm leaving */
+const boxHasText=()=>[...document.querySelectorAll('textarea')].some(t=>!!t.value&&t.value.trim()!==''&&(t.offsetWidth>0||t.offsetHeight>0||t.getClientRects().length>0));
+const recentAp=()=>{const a=jget(AP),t=Date.now();return Array.isArray(a)?a.filter(x=>typeof x==='number'&&t-x<18e4):[]};
+const noteAp=()=>{const a=recentAp();a.push(Date.now());jset(AP,a)};
+const canApply=mode=>{if(mode==='login'||mode==='manual')return true;
+ if(recentAp().length>=3||mockRunning()||boxHasText()||leaveBlocked())return false;
+ return mode==='load'||(!document.hidden&&!timerRunning()&&!typing()&&(mode==='show'||Date.now()-lastAct>60000))};
+const setMeta=o=>{meta=Object.assign({uid:sess.uid,lt:meta.lt,safeAt:meta.safeAt},o);saveMeta()};
+const doneAt=m=>setSt(m+' '+when(Date.now()));
 
-async function check(mode){if(!sess||busy)return;busy=true;
+async function check(mode){if(!sess)return;if(busy){again=mode;return}busy=true;lastRun=Date.now();
  try{setSt('Syncing…');
-  const r=await rest('?select=updated_at&user_id=eq.'+sess.uid);if(!r.ok)throw new Error('net '+r.status);
-  const row=r.j&&r.j[0],snap=await snapshot();
-  if(meta.uid&&meta.uid!==sess.uid)meta={};
-  if(!row){meta={uid:sess.uid};const p=await push(snap);setSt(p==='ok'?'Synced '+when(Date.now()):'Try again');return}
-  if(!meta.at){ /* first time on this device */
-   if(mode==='manual'||mode==='load'||mode==='login'){const same=false;modal('Account data found','Your account already has saved progress (last saved '+esc(when(row.updated_at))+'). Load it onto this device, or keep what is on this device and overwrite the account?',
-    [['Load my account data',()=>{pull().catch(()=>setSt('Could not load account data.'))},'p'],['Keep this device and overwrite the account',async()=>{try{meta={uid:sess.uid,at:row.updated_at};const p=await push(snap);setSt(p==='ok'?'Synced '+when(Date.now()):'Try again')}catch(e){setSt('Offline. Will retry.')}}],['Not now',()=>setSt('Not synced yet')]]);setSt('Waiting for your choice')}
-   return}
-  if(row.updated_at===meta.at){
-   if(meta.rebase){meta.hash=snap.hash;delete meta.rebase;saveMeta();setSt('Up to date '+when(Date.now()));return}
-   if(snap.hash!==meta.hash){const p=await push(snap);if(p==='conflict'){conflict(row.updated_at);setSt('Needs your choice');return}setSt('Synced '+when(Date.now()))}
-   else setSt('Up to date '+when(Date.now()));
-   return}
-  /* the account changed on another device */
-  if(snap.hash===meta.hash||meta.rebase){
-   if(mode==='load'||mode==='login'||mode==='manual'){await pull();return}
-   banner('Newer progress from another device','Update',()=>pull());setSt('Newer data available');return}
-  if(await remoteSame(snap)){meta={uid:sess.uid,at:row.updated_at,hash:snap.hash};saveMeta();setSt('Up to date '+when(Date.now()));return}
-  conflict(row.updated_at);setSt('Needs your choice');
- }catch(e){setSt(sess?'Offline. Will sync when you are back online.':st)}finally{busy=false}}
-
+  for(let n=0;n<3;n++){
+   const r=await rest('?select=updated_at&user_id=eq.'+sess.uid);if(!r.ok)throw new Error('net '+r.status);
+   const row=r.j&&r.j[0];
+   if(meta.uid&&meta.uid!==sess.uid)meta={};
+   const quiet=!!row&&meta.at===row.updated_at&&!meta.behind;
+   if(quiet&&mode==='poll'&&fpNow()===lastFp&&(++fullN%6)){doneAt('Up to date');return}   /* nothing changed anywhere: skip the heavy part */
+   const fp0=fpNow(),L=await snapshot();
+   if(!row){const p=await push(L,null);if(p.c)continue;setMeta({at:p.at,hash:L.hash});await baseSet(L);lastFp=fp0;doneAt('Synced');return}
+   if(quiet){   /* the account has not changed since we last looked */
+    if(L.hash!==meta.hash){const p=await push(L,row.updated_at);if(p.c)continue;setMeta({at:p.at,hash:L.hash});await baseSet(L);doneAt('Synced')}
+    else doneAt('Up to date');
+    lastFp=fp0;return}
+   /* the account has something this device does not (or this is a new device): merge, never ask */
+   const rem=await fetchRemote(),fresh=!meta.at,B=fresh?null:await baseGet();
+   const pref=fresh?'remote':((meta.lt||0)>Date.parse(rem.at)?'local':'remote');
+   const M=mergeSnap(L,B,rem.snap,pref,fresh);M.hash=hash(canon(M.ls,M.xh));
+   let at=rem.at;
+   if(sc(M)!==sc(rem.snap)){const p=await push(M,rem.at);if(p.c)continue;at=p.at}
+   if(sc(M)!==sc(L)){   /* this device is missing things the account has */
+    if(canApply(mode)){
+     if(fpNow()!==fp0)continue;   /* this device changed while we were merging: merge again with the newer state rather than overwrite it */
+     const safe=!meta.safeAt||Date.now()-meta.safeAt>6*36e5;await baseSet(M);
+     if(canApply(mode)&&fpNow()===fp0){noteAp();setMeta({at,hash:M.hash,safeAt:safe?Date.now():meta.safeAt});setSt('Updating from your other device…');await applyLocal(M,safe);return}
+     /* it stopped being safe while we saved: do not reload, fall through to the "newer data" path below */}
+    await baseSet(L);setMeta({at,hash:L.hash,behind:true});lastFp=fp0;
+    if(bannerAt!==at){bannerAt=at;banner('Newer progress from another device','Update',()=>check('manual'))}
+    setSt('Newer data from your other device');return}
+   await baseSet(L);setMeta({at,hash:L.hash});lastFp=fp0;doneAt('Synced');return}
+  setSt('Will retry shortly')
+ }catch(e){setSt(sess?'Offline. Will sync when you are back online.':st)}
+ finally{busy=false;if(again){const m=again;again=null;setTimeout(()=>check(m),300)}}}
 
 /* set / change password (also used after opening a reset link) */
 function pwModal(){if(document.getElementById('sbPw'))return;
@@ -47823,10 +47915,12 @@ const dq=()=>'?user_id=eq.'+sess.uid+'&device_id=eq.'+encodeURIComponent(devId()
 const delDev=()=>{if(!sess)return;const q=dq();token().then(t=>api('/rest/v1/hub_devices'+q,{method:'DELETE'},t)).catch(()=>{})};
 async function devTick(){try{if(!sess)return;
  const r=await dapi(dq()+'&select=revoked,last_seen');if(!r.ok)return;const row=r.j&&r.j[0];
- if(row&&row.revoked){delDev();localOut();modal('Signed out','This device was removed from your account on another device. Sign in again to link it back.',[['OK']]);return}
+  if(row&&row.revoked){delDev();localOut();modal('Signed out','This device was removed from your account on another device. Sign in again to link it back.',[['OK']]);return}
  if(!row||Date.now()-lastBeat>300000||Date.now()-new Date(row.last_seen)>300000){lastBeat=Date.now();
   await dapi('?on_conflict=user_id,device_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:sess.uid,device_id:devId(),name:devName(),platform:navigator.platform||'',last_seen:new Date().toISOString()})})}}catch(e){}}
-async function devList(){const r=await dapi('?select=device_id,name,last_seen,revoked&user_id=eq.'+sess.uid+'&order=last_seen.desc');if(!r.ok)throw new Error('devices');return r.j||[]}
+async function devList(){const r=await dapi('?select=device_id,name,last_seen,revoked&user_id=eq.'+sess.uid+'&order=last_seen.desc');if(!r.ok)throw new Error('devices');const me=devId(),all=r.j||[];
+ /* a removed device keeps a hidden 'removed' mark so it cannot register itself again; it clears the mark itself when it signs out */
+ return all.filter(d=>!(d.revoked&&d.device_id!==me))}
 const ago=t=>{const m=(Date.now()-new Date(t))/60000;return m<3?'Active now':m<60?Math.round(m)+' min ago':m<1440?Math.round(m/60)+' h ago':when(t)};
 function devHtml(L){const me=devId();if(!L.length)return'<p class="mu sm" style="margin:0">No devices yet.</p>';
  return L.map(d=>row(esc(d.name)+(d.device_id===me?' <span class="mu sm">(this device)</span>':''),d.revoked?'Removed. Signs out next time it opens.':ago(d.last_seen),(d.device_id===me||d.revoked)?'':'<button type="button" class="btn" data-sb="devrm" data-id="'+esc(d.device_id)+'">Remove</button>')).join('')}
@@ -47834,8 +47928,8 @@ function devFill(){const el=document.getElementById('sbDev');if(!el||!sess)retur
  if(devCache&&!el.dataset.c){el.dataset.c='1';el.innerHTML=devHtml(devCache)}
  if(el.dataset.busy)return;el.dataset.busy='1';
  devList().then(L=>{devCache=L;el.innerHTML=devHtml(L)}).catch(()=>{if(!devCache)el.innerHTML='<p class="mu sm" style="margin:0">Could not load devices. Check your connection, and that the devices table has been created in Supabase.</p>'})}
-function devRemove(id){modal('Remove this device?','It is signed out the next time it opens the app, which is within about a minute if it is open now. If a device is lost or stolen, use Sign out everywhere instead.',
- [['Remove',async()=>{try{await dapi('?user_id=eq.'+sess.uid+'&device_id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({revoked:true})});if(devCache)devCache.forEach(d=>{if(d.device_id===id)d.revoked=true});refresh()}catch(e){modal('Could not remove it','Check your connection and try again.',[['OK']])}},'x'],['Cancel']])}
+function devRemove(id){modal('Sign out this device?','It is signed out the next time it opens the app (within about a minute if it is open now) and cannot come back without signing in again. It leaves this list straight away. If a device is lost or stolen, use Sign out everywhere instead.',
+ [['Sign out',async()=>{try{const r=await dapi('?user_id=eq.'+sess.uid+'&device_id=eq.'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({revoked:true})});if(!r.ok)throw new Error('del');devCache=(devCache||[]).filter(d=>d.device_id!==id);refresh()}catch(e){modal('Could not remove it','Check your connection and try again.',[['OK']])}},'x'],['Cancel']])}
 /* the Account tab in Settings */
 const row=(l,sub,ctl)=>'<div class="set-row"><div class="set-lbl"><b>'+l+'</b>'+(sub?'<span class="mu sm">'+sub+'</span>':'')+'</div><div class="set-ctl chips">'+ctl+'</div></div>';
 const sbb=(a,t,c)=>'<button type="button" class="btn '+(c||'')+'" data-sb="'+a+'">'+t+'</button>';
@@ -47847,7 +47941,7 @@ function view(){
  +'<div class="card"><h3>Sign out</h3>'+row('This device','Stops syncing here. Your data stays on this device.',sbb('out','Sign out'))+row('Every device','Signs out your phone, iPad and laptop. Useful if you lose one.',sbb('outall','Sign out everywhere'))+'</div>'
  +'<div class="card"><h3>Delete account</h3><p class="mu sm" style="margin-top:0">Permanently deletes your account, synced progress and saved AI key from the cloud. Data already on this device is kept.</p>'+sbb('del','Delete my account and data','x')+'</div>'}
 /* account card in Settings > Your data */
-const card=()=>'<div class="card" id="sbCard"><h3>Account and sync</h3>'+(sess?'<p class="mu sm" style="margin-top:0">Signed in as <b>'+esc(sess.email)+'</b>. Progress syncs to this account on every device you sign in on. Settings, theme, layout and your AI key stay on each device.</p><p class="sm" id="sbSt">'+esc(st)+'</p><div class="chips"><button type="button" class="btn p" data-sb="sync">Sync now</button><button type="button" class="btn" data-sb="pw">Change password</button><button type="button" class="btn" data-sb="out">Sign out</button></div>':'<p class="mu sm" style="margin-top:0">Sign in to keep your progress in sync between your phone, iPad and laptop.</p><div class="chips"><button type="button" class="btn p" data-sb="gate">Sign in or create account</button></div>')+'</div>';
+const card=()=>'<div class="card" id="sbCard"><h3>Account and sync</h3>'+(sess?'<p class="mu sm" style="margin-top:0">Signed in as <b>'+esc(sess.email)+'</b>. Progress syncs to this account on every device you sign in on, and merges automatically, so you can switch between devices or use two at once without being asked to choose. Settings, theme, layout and your AI key stay on each device.</p><p class="sm" id="sbSt">'+esc(st)+'</p><div class="chips"><button type="button" class="btn p" data-sb="sync">Sync now</button><button type="button" class="btn" data-sb="pw">Change password</button><button type="button" class="btn" data-sb="out">Sign out</button></div>':'<p class="mu sm" style="margin-top:0">Sign in to keep your progress in sync between your phone, iPad and laptop.</p><div class="chips"><button type="button" class="btn p" data-sb="gate">Sign in or create account</button></div>')+'</div>';
 function mount(){devFill();const h=[...document.querySelectorAll('.card>h3')].find(x=>x.textContent==='Backup and export');const cur=document.getElementById('sbCard');
  if(!h){if(cur&&!document.querySelector('[data-bk]'))cur.remove();return}
  const tgt=h.parentElement;if(cur&&cur.nextElementSibling===tgt&&!!cur.querySelector('[data-sb=out]')===!!sess)return;if(cur)cur.remove();tgt.insertAdjacentHTML('beforebegin',card())}
@@ -47855,10 +47949,13 @@ new MutationObserver(()=>mount()).observe(document.body,{childList:true,subtree:
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-sb]');if(!t)return;const a=t.dataset.sb;
  if(a==='gate')gate();else if(a==='out')signOut();else if(a==='pw')confirmPw(pwModal,'To change your password, enter your current password first. If you have forgotten it, sign out and use the reset link on the sign-in screen.');else if(a==='email')confirmPw(emailModal,'To change your email, enter your password first. This protects your account if someone else gets hold of this device or your inbox.');else if(a==='devrm')devRemove(t.dataset.id);else if(a==='outall')signOutAll();else if(a==='del')deleteModal();else if(a==='sync'){asked=false;snoozeTo=0;check('manual')}});
 
-/* rhythm: check shortly after load, when you come back to the tab, and every 30s while it is open */
+/* rhythm: after load, when you leave or come back, shortly after you change something, and every 10s while it is open */
+const soon=ms=>{clearTimeout(dbt);dbt=setTimeout(()=>check('poll'),Math.max(ms,10000-(Date.now()-lastRun)))};
 addEventListener('online',()=>check('poll'));
-document.addEventListener('visibilitychange',()=>{if(sess)check('poll')});
-setInterval(()=>{if(sess&&!document.hidden){check('poll');keyTick();devTick()}},30000);
+addEventListener('pagehide',()=>{if(sess)check('hide')});
+document.addEventListener('visibilitychange',()=>{if(!sess)return;if(document.hidden){hiddenAt=Date.now();check('hide')}else check(Date.now()-hiddenAt>15000?'show':'poll')});
+setInterval(()=>{if(!sess||document.hidden)return;const f=fpNow();if(f!==lastFp&&f!==seenFp){seenFp=f;meta.lt=Date.now();saveMeta();soon(2500)}},3000);
+let slow=0;setInterval(()=>{if(sess&&!document.hidden){check('poll');if(++slow%3===0){keyTick();devTick()}}},10000);
 setTimeout(refresh,0);const rec=!!window.__sbHash;if(rec)setTimeout(recovery,500);if(!sess&&!rec&&!sessionStorage.getItem(SKIP))gate();
 setTimeout(()=>{if(sess){check('load');keyTick();devTick()}else if(!rec&&!sessionStorage.getItem(SKIP))gate();mount()},2500);
 

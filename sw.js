@@ -7,7 +7,7 @@
  * connected subject, so offline works automatically. Listing it in SUBJECT_FILES as well makes it download on
  * install, so it is ready the very first time, not just after the first visit.
  */
-const VERSION = 'v129';
+const VERSION = 'v131';
 const CORE_CACHE = 'hsc-hub-core-' + VERSION;   // versioned: replaced on every update
 const FONT_CACHE = 'hsc-hub-fonts-v1';          // Google font files: kept across updates, they never change
 const KEEP = [CORE_CACHE, FONT_CACHE];
@@ -107,7 +107,7 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
-  e.waitUntil(self.registration.showNotification(d.title || 'HSC Hub', {
+  e.waitUntil(self.registration.showNotification(d.title || 'Reminder', {
     body: d.body || 'Time to study',
     tag: d.tag || 'hsc',
     icon: 'icon-192.png',
