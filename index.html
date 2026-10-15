@@ -1000,6 +1000,10 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
 <style id="sbgCss">
 #sbGate{position:fixed;inset:0;z-index:2147483100;overflow:auto;overscroll-behavior:contain;background:var(--bg);color:var(--ink);display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));isolation:isolate;font:inherit;transition:opacity .5s ease,transform .5s ease}
 #sbGate *{box-sizing:border-box}
+/* phone fix: cover the whole screen including under the browser's floating toolbar, and never let the app show through around the sign-in screen */
+@supports(height:100lvh){#sbGate{height:100lvh;min-height:100%}}
+html:has(#sbGate){background:var(--bg)}
+html:has(#sbGate:not(.sbg-out)) body>:not(#sbGate){visibility:hidden!important}
 #sbGate .sbg-bg{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
 #sbGate .sbg-bg::before,#sbGate .sbg-bg::after{content:"";position:absolute;z-index:0;width:70vmax;height:70vmax;border-radius:50%;pointer-events:none;will-change:transform}
 #sbGate .sbg-bg::before{top:-28vmax;left:-22vmax;background:radial-gradient(closest-side,color-mix(in srgb,var(--br) 34%,transparent),transparent)}
