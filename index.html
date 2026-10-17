@@ -49510,6 +49510,17 @@ gListen(ed,true);
 (function(){var a=document.getElementById('nav'),sc=document.getElementById('sc');if(a)gListen(a,false);if(sc)gListen(sc,false)})();
 })();
 </script>
-<style id="ipad-polish">@media (pointer:coarse){.set-body .chip,.set-body .btn,.set-tabs .chip,.set-nav .nv{min-height:44px}.set-body .set-row{padding-block:16px}.set-nav{scroll-padding-inline:8px}}</style><style id="vh-fix">html{background:var(--bg)}@supports(height:100lvh){:root:is([data-nav=sidebar],[data-nav=rail]) body aside:not(.x){height:calc(100lvh/var(--uz,1))}body{min-height:calc(100lvh/var(--uz,1))}}</style>
+<style id="ipad-polish">@media (pointer:coarse){.set-body .chip,.set-body .btn,.set-tabs .chip,.set-nav .nv{min-height:44px}.set-body .set-row{padding-block:16px}.set-nav{scroll-padding-inline:8px}}</style><style id="rail-fill">
+/* sidebar/rail background always runs to the very bottom (and top) of the screen, whatever the browser reports for the viewport height */
+html[data-nav=rail] body:not(.insub)::after,html[data-nav=sidebar] body:not(.insub)::after{content:"";position:fixed;left:0;top:0;bottom:0;width:var(--railw,0px);background:color-mix(in srgb,var(--sf) 78%,transparent);border-right:1px solid var(--ln);z-index:-1;pointer-events:none}
+html{background:var(--bg)}
+/* keyboard open in the Tutor: stop the animated background and blur layers so iPadOS does not flicker */
+html.tt-kb #fx,html.tt-kb #tod,html.tt-kb #hx-tint,html.tt-kb #amb,html.tt-kb #atm,html.tt-kb #imo,html.tt-kb #sw,html.tt-kb body::before{display:none!important}
+html.tt-kb *,html.tt-kb *::before,html.tt-kb *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;animation:none!important;transition:none!important}
+html.tt-kb aside{overflow:hidden}
+</style>
+<script id="rail-fill-js">(function(){var R=document.documentElement;function f(){var a=document.querySelector('aside');var w=a&&getComputedStyle(a).display!=='none'?a.getBoundingClientRect().width:0;var v=Math.round(w)+'px';if(R.style.getPropertyValue('--railw')!==v)R.style.setProperty('--railw',v)}
+addEventListener('resize',f);addEventListener('orientationchange',f);addEventListener('load',f);setTimeout(f,300);setTimeout(f,1500);
+new MutationObserver(function(){f()}).observe(R,{attributes:true,attributeFilter:['data-nav','data-w','data-size']});})();</script>
 </body>
 </html>
