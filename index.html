@@ -43172,7 +43172,7 @@ addEventListener('pointermove',e=>{if(document.body.classList.contains('tr-full'
  function size(){const d=devicePixelRatio||1;W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';x.setTransform(d,0,0,d,0,0);
   P=Array.from({length:Math.min(70,Math.round(innerWidth*innerHeight/24000))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,c:cols[Math.random()*4|0]}))}
  let lw=innerWidth;addEventListener('resize',()=>{const t=document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);if(t&&innerWidth===lw)return;lw=innerWidth;size()});addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY},{passive:true});size();
- function loop(){requestAnimationFrame(loop);if(!fx('bg')||document.documentElement.dataset.bg!=='network'||document.hidden)return;
+ function loop(){requestAnimationFrame(loop);if(!fx('bg')||document.documentElement.dataset.bg!=='network'||document.hidden)return;if(document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)&&innerHeight<screen.height*.75)return;
   x.clearRect(0,0,innerWidth,innerHeight);const dk=document.documentElement.dataset.theme==='dark';
   for(const p of P){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;
    const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);if(d<140){p.x+=dx/d*1.2;p.y+=dy/d*1.2}
@@ -48998,47 +48998,6 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
  new MutationObserver(sched).observe(document.body,{childList:true,subtree:true});
  addEventListener('resize',sched);if(window.visualViewport)visualViewport.addEventListener('resize',sched);
  addEventListener('hashchange',sched);sched()})();
-</script>
-<script id="tt-kb">
-/* iPad: the Tutor page is one screen (100dvh) plus the top bar, so when the keyboard opens Safari scrolls the page to reveal the box (the one-second jump).
-   While the on-screen keyboard is up, shrink the Tutor page to the visible area above it so there is nothing left to scroll. Everything stays in normal flow. */
-(()=>{const vv=window.visualViewport;if(!vv)return;
- const st=document.createElement('style');st.id='tt-kb-css';
- st.textContent=
- 'html.tt-kb:not([data-nav=bottom]) main:has(#tt){height:var(--tt-mh)!important;min-height:0!important;padding-bottom:8px!important;overflow:hidden}'+
- 'html.tt-kb:not([data-nav=bottom]) main:has(#tt) .tt{display:flex!important;flex-direction:column;flex:1 1 0!important;min-height:0!important;height:auto!important}'+
- 'html.tt-kb:not([data-nav=bottom]) main:has(#tt) .tt-box,html.tt-kb:not([data-nav=bottom]) main:has(#tt) .tt-box.empty{flex:1 1 0;min-height:60px;max-height:none;overscroll-behavior:contain}'+
- 'html.tt-kb:not([data-nav=bottom]) main:has(#tt) .tt-comp{position:static!important;flex:none}'+
- 'html.tt-kb:not([data-nav=bottom]) main:has(#tt) #ttCtl,html.tt-kb:not([data-nav=bottom]) main:has(#tt) #ttFiles{flex:none}'+
- 'html.tt-kb:not([data-nav=bottom]) main:has(#tt) #ttFoot{display:none}';
- document.head.appendChild(st);
- const root=document.documentElement;
- let on=false,base=0,saveY=0,q=0,enterT=0;
- const toBottom=()=>{const b=document.getElementById('ttBox');if(b&&b.querySelector('.tt-m'))b.scrollTop=b.scrollHeight};
- /* the chat box changes size when the keyboard comes or goes; Safari keeps the old scroll offset (blank gap) until it is re-set, so re-pin to the newest message once the layout has settled */
- const settle=()=>{toBottom();requestAnimationFrame(toBottom);setTimeout(toBottom,120);setTimeout(toBottom,400)};
- const inTT=()=>{const a=document.activeElement;return !!a&&a.id==='ttIn'};
- const uz=()=>parseFloat(getComputedStyle(root).getPropertyValue('--uz'))||1;
- const exit=()=>{if(!on)return;on=false;root.classList.remove('tt-kb');root.style.removeProperty('--tt-mh');
-  const y=saveY;scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y));settle()};
- const apply=()=>{
-  if(!document.getElementById('tt')||!inTT()||root.dataset.nav==='bottom'){exit();return}
-  const drop=Math.max(base,innerHeight)-vv.height;
-  if(drop<140){exit();return}                 /* hardware keyboard, floating keyboard, desktop: leave everything alone */
-  const z=uz(),tb=document.querySelector('.top'),topH=tb&&getComputedStyle(tb).display!=='none'?tb.offsetHeight:0;
-  const mh=Math.max(240,vv.height/z-topH);
-  root.style.setProperty('--tt-mh',mh+'px');
-  const entering=!on;if(entering){on=true;enterT=Date.now();root.classList.add('tt-kb')}
-  scrollTo(0,0);                              /* the page is now exactly the visible height, so it sits at the top */
-  if(entering||Date.now()-enterT<800)settle();
- };
- const sched=()=>{cancelAnimationFrame(q);q=requestAnimationFrame(apply)};
- document.addEventListener('focusin',e=>{if(e.target&&e.target.id==='ttIn'){if(!on){base=vv.height;saveY=window.scrollY||0}sched()}});
- document.addEventListener('focusout',e=>{if(e.target&&e.target.id==='ttIn')setTimeout(sched,80)});
- vv.addEventListener('resize',sched);vv.addEventListener('scroll',()=>{if(on)sched()});
- addEventListener('orientationchange',()=>{base=0;setTimeout(sched,300)});
- addEventListener('pagehide',exit);
-})();
 </script><script id="hub-account">
 /* HSC Hub account + cross-device sync (Supabase email/password). Progress is stored as one private row per account. */
 (()=>{try{
