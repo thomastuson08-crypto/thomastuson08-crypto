@@ -43134,10 +43134,10 @@ addEventListener('pointermove',e=>{if(document.body.classList.contains('tr-full'
 /* particle network */
 (function(){const cv=$('#fx'),x=cv.getContext('2d');let W,H,P=[],mx=-999,my=-999;
  const cols=SUBJECTS.map(s=>s.c);
- function size(){const d=devicePixelRatio||1;W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;x.setTransform(d,0,0,d,0,0);
+ function size(){const d=devicePixelRatio||1;W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';x.setTransform(d,0,0,d,0,0);
   P=Array.from({length:Math.min(70,Math.round(innerWidth*innerHeight/24000))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,c:cols[Math.random()*4|0]}))}
- addEventListener('resize',size);addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY},{passive:true});size();
- function loop(){requestAnimationFrame(loop);if(!fx('bg')||document.documentElement.dataset.bg!=='network'||document.hidden)return;
+ let lw=innerWidth;addEventListener('resize',()=>{const t=document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);if(t&&innerWidth===lw)return;lw=innerWidth;size()});addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY},{passive:true});size();
+ function loop(){requestAnimationFrame(loop);if(!fx('bg')||document.documentElement.dataset.bg!=='network'||document.hidden)return;if(document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)&&innerHeight<screen.height*.75)return;
   x.clearRect(0,0,innerWidth,innerHeight);const dk=document.documentElement.dataset.theme==='dark';
   for(const p of P){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;
    const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);if(d<140){p.x+=dx/d*1.2;p.y+=dy/d*1.2}
@@ -47811,6 +47811,32 @@ const TTD=(()=>{
   return{h:y+(dn?104:52),svg:o.join(''),alt:'Cash-flow timeline over '+n+' periods. '+F.map(f=>(/^[-\u2212]/.test(f.t)?'Out ':'In ')+f.t.replace(/^[-\u2212]\s*/,'')+' at period '+f.i).join('; ')+'.'+(s.rate?' '+s.rate+'.':''),
    cap:'Period 0 is the start. Arrows up are money coming in (deposits); arrows down are money going out (withdrawals or repayments).'}}
 
+ /* 26b. annuity table: the factor for an annuity of $1 per period, for chosen rates (per period) and numbers of periods.
+    The Tutor only names the table and gives the rates and periods; this code works out every table value. */
+ function atable(s){
+  const pv=/^p/i.test(String(s.kind||s.table||s.type||'').replace(/^(annuity|annuities|annuitytable)/i,'').replace(/^[^a-z]*/i,'')),
+   R=(Array.isArray(s.rates)?s.rates:(s.rate!=null?[s.rate]:[1,2,3,4,5])).map(v=>parseFloat(v)).filter(v=>v>0&&v<=100).slice(0,5);
+  if(!R.length)return null;
+  let N=Array.isArray(s.periods)?s.periods.map(v=>Math.round(parseFloat(v))):[...Array(Math.round(num(s.periods,6))||0)].map((_,i)=>i+1);
+  N=N.filter((v,i)=>v>=1&&v<=360&&N.indexOf(v)===i).slice(0,12);if(!N.length)return null;
+  const fac=(n,r)=>{r/=100;return pv?(1-Math.pow(1+r,-n))/r:(Math.pow(1+r,n)-1)/r},
+   c=R.length,x0=6,lw=58,cw=(334-x0-lw)/c,y0=32,rh=26,hd=[x0+lw/2,y0+17],cx=j=>x0+lw+cw*j+cw/2,ry=i=>y0+rh*(i+1),o=[];
+  const hn=Array.isArray(s.highlight)?Math.round(parseFloat(s.highlight[0])):NaN,hr=Array.isArray(s.highlight)?parseFloat(s.highlight[1]):NaN,
+   hi=N.indexOf(hn),hj=R.findIndex(v=>Math.abs(v-hr)<1e-9);
+  o.push(TL(170,16,(pv?'Present':'Future')+' value of $1 per period','v g'));
+  o.push(`<rect class="k f" x="${x0}" y="${y0}" width="${f1(lw+cw*c)}" height="${rh}" rx="4"/>`);
+  if(hi>=0&&hj>=0)o.push(`<rect class="k a f" x="${f1(x0+lw+cw*hj)}" y="${f1(ry(hi-1)+rh)}" width="${f1(cw)}" height="${rh}"/>`);
+  o.push(TL(hd[0],hd[1],'Periods','n'));R.forEach((r,j)=>o.push(TL(cx(j),hd[1],fv(r)+'%','v')));
+  for(let i=0;i<=N.length;i++)o.push(L([x0,y0+rh*i+(i?0:0)],[x0+lw+cw*c,y0+rh*i]).replace('class="k"','class="gr"'));
+  o.push(L([x0,y0+rh*(N.length+1)],[x0+lw+cw*c,y0+rh*(N.length+1)]).replace('class="k"','class="gr"'));
+  o.push(L([x0+lw,y0],[x0+lw,y0+rh*(N.length+1)]).replace('class="k"','class="gr"'));
+  N.forEach((n,i)=>{const y=ry(i)+17;o.push(TL(x0+lw/2,y,n,'v'));R.forEach((r,j)=>o.push(TL(cx(j),y,fac(n,r).toFixed(4),i===hi&&j===hj?'q g':'q')))});
+  let cap=pv?'Table value = (1 \u2212 (1 + r)^\u2212n) \u00F7 r. Multiply it by the payment to find the present value.':'Table value = ((1 + r)^n \u2212 1) \u00F7 r, where r is the rate per period. Multiply it by the contribution to find the future value.',wk='';
+  const pay=num(s.payment!=null?s.payment:s.amount,NaN);
+  if(hi>=0&&hj>=0){const f=fac(N[hi],R[hj]);wk=' Highlighted: n = '+N[hi]+', r = '+fv(R[hj])+'% gives '+f.toFixed(4)+'.';
+   if(pay>0)wk+=' '+(pv?'PV':'FV')+' = $'+fv(pay)+' \u00D7 '+f.toFixed(4)+' = $'+(Math.round(pay*+f.toFixed(4)*100)/100).toFixed(2)+'.'}
+  return{h:y0+rh*(N.length+1)+10,svg:o.join(''),alt:(pv?'Present':'Future')+' value annuity table for rates '+R.map(r=>fv(r)+'%').join(', ')+' per period and periods '+N.join(', ')+'.'+wk,cap:cap+wk}}
+
  /* 27. unit ladders: the multiply or divide factor for each step between units */
  const UN={length:[['mm','cm','m','km'],[10,100,1000]],area:[['mm\u00B2','cm\u00B2','m\u00B2','ha','km\u00B2'],[100,10000,10000,100]],volume:[['mm\u00B3','cm\u00B3','m\u00B3'],[1000,1000000]],capacity:[['mL','L','kL','ML'],[1000,1000,1000]],mass:[['mg','g','kg','t'],[1000,1000,1000]],time:[['s','min','h','day'],[60,60,24]],energy:[['J','kJ','MJ'],[1000,1000]]},
   UNOTE={volume:'1 cm\u00B3 = 1 mL, so 1000 cm\u00B3 = 1 L.',capacity:'1 L = 1000 cm\u00B3 = 0.001 m\u00B3.',energy:'1 kWh = 3600 kJ and 1 cal = 4.184 J.',area:'1 ha = 10 000 m\u00B2.'};
@@ -48157,7 +48183,7 @@ const TTD=(()=>{
  const bad='<p class="tt-dgx">I tried to draw a diagram here but it did not come out right. Ask me to draw it again.</p>';
  function draw(j){try{const s=parse(j);if(!s||typeof s!=='object')return bad;
    const ty=String(s.type||'').toLowerCase().replace(/[^a-z]/g,'');let r=null;
-   if(/^(globe|earth|latlong|latitudelongitude|latitude|longitude)/.test(ty))r=globe(s);else if(/^(twonormal|normals|comparenormal|normalcompare|normalcurves)/.test(ty)||(/^(normal|bell|zscore)/.test(ty)&&Array.isArray(s.curves)&&s.curves.length>=2))r=normal2(s);else if(/^(sampling|systematic|stratified|randomsample|simplerandom)/.test(ty)||(ty==='sample'&&(s.method||s.population||s.strata)))r=sampling(s);else if(/^pareto/.test(ty))r=pareto(s);else if(/^compass/.test(ty))r=compass(s);else if(/^(radial|survey)/.test(ty))r=radial(s);else if(/^(scale|scaledrawing|mapscale|map|plan|siteplan)$/.test(ty))r=scaled(s);else if(/^(flow|maxflow|mincut|networkflow|flownetwork)/.test(ty))r=flowNet(s);else if(/^(cpm|critical|activitynetwork|activity)/.test(ty))r=cpm(s);else if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
+   if(/^(annuit|futurevalue|presentvalue|fvtable|pvtable)/.test(ty))r=atable(s);else if(/^(globe|earth|latlong|latitudelongitude|latitude|longitude)/.test(ty))r=globe(s);else if(/^(twonormal|normals|comparenormal|normalcompare|normalcurves)/.test(ty)||(/^(normal|bell|zscore)/.test(ty)&&Array.isArray(s.curves)&&s.curves.length>=2))r=normal2(s);else if(/^(sampling|systematic|stratified|randomsample|simplerandom)/.test(ty)||(ty==='sample'&&(s.method||s.population||s.strata)))r=sampling(s);else if(/^pareto/.test(ty))r=pareto(s);else if(/^compass/.test(ty))r=compass(s);else if(/^(radial|survey)/.test(ty))r=radial(s);else if(/^(scale|scaledrawing|mapscale|map|plan|siteplan)$/.test(ty))r=scaled(s);else if(/^(flow|maxflow|mincut|networkflow|flownetwork)/.test(ty))r=flowNet(s);else if(/^(cpm|critical|activitynetwork|activity)/.test(ty))r=cpm(s);else if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
    if(!r)return bad;if(s.caption){const c=String(s.caption).replace(/\s+/g,' ').trim().slice(0,160);if(c)r.cap=c}return fig(r)}catch(e){return bad}}
  /* cuts a reply into plain-text pieces and diagram pieces: [{t:'text'|'dg', v}] (code fences round a tag are ignored; a half-written tag is dropped) */
  function split(txt){let s=String(txt).replace(/`+\s*(\[\[\s*DIAGRAM[\s\S]*?\]\])\s*`+/gi,'$1'),out=[],last=0,m;RE.lastIndex=0;
@@ -48198,6 +48224,7 @@ DIAGRAMS (maths questions only): The student cannot practise maths without seein
 28. Flow network (maximum flow, minimum cut): [[DIAGRAM {"type":"flow","source":"S","sink":"T","edges":[["S","A",10],["S","B",8],["A","B",3],["A","T",7],["B","T",11]],"flow":true,"cut":true}]]  Each edge is [from, to, capacity] and runs from the first node to the second (no edge may run both ways between the same two nodes; at most 10 nodes). The Hub works out the maximum flow itself. Leave out "flow" and "cut" to draw only the capacities for the student to work on. "flow":true prints flow/capacity on every edge. "cut":true draws the minimum cut and its capacity (which equals the maximum flow), or give "cut":["S","A"] to draw the cut that puts those nodes, with the source, on one side and every other node on the other, and print its capacity. "source" and "sink" are optional (the Hub finds them), so make your working agree with the printed numbers.
 29. Critical path analysis (activity network with EST, LST and float): [[DIAGRAM {"type":"cpm","activities":[["A",3],["B",4,["A"]],["C",2,["A"]],["D",5,["B","C"]]]}]]  Each activity is [name, duration, predecessors]; predecessors is a list of the activities that must finish first (leave it out for an activity that can start straight away). Up to 10 activities. The Hub works out every EST (forward scan), LST (backward scan), float, the minimum completion time and the critical path(s) and prints them in the boxes and caption. Use this instead of the network shape for any critical path, EST, LST or float question. Add "times":false to draw only the activities and arrows when the student has to find the times themselves, and make your working agree with the printed numbers.
 30. Compass rose (true and compass bearings): [[DIAGRAM {"type":"compass","marks":[["A","N60\u00B0E"],["B",150],["C","S25\u00B0W"]]}]]  Each mark is [letter, bearing] with the bearing written either way: a true bearing (60 or "150") or a compass bearing ("N60\u00B0E", "S25\u00B0W", or a point like "NE"). The Hub shows every mark as both a compass bearing and a true bearing and marks the acute angle from north or south. Up to 6 marks. Use it for converting between the two kinds of bearing.
+31. Annuity table (the table of annuity factors, for future value or present value of $1 per period): [[DIAGRAM {"type":"annuitytable","kind":"fv","rates":[1,2,3,4,5],"periods":8,"highlight":[4,3],"payment":2000}]]  "kind" is "fv" (future value, the default) or "pv" (present value). "rates" are the interest rates PER PERIOD as percentages (up to 5), so turn an annual rate into a rate per period first (for example 6% p.a. compounded quarterly is 1.5). "periods" is a number (rows 1 to that number) or a list such as [1,2,4,8] (up to 12 rows). "highlight":[period, rate] marks one cell, and with "payment" the caption shows payment \u00D7 table value. The Hub works out every table value itself, so make your working agree with the printed numbers.
 31. Compass radial survey (area of a block of land from a centre point): [[DIAGRAM {"type":"radial","centre":"O","legs":[[20,35,"35 m"],[95,42,"42 m"],[170,30,"30 m"],[250,38,"38 m"],[320,28,"28 m"]],"area":true}]]  Each leg is [true bearing, distance, optional label] from the centre to one corner, in order round the boundary (3 to 8 legs). The boundary is closed for you. Add "area":true to print the area, worked out as the sum of the triangles (1/2) a b sin C, and add "unit" if it is not metres.
 32. Scale drawing or map: [[DIAGRAM {"type":"scale","ratio":"1:500","plan":"4.2 cm","actual":"x"}]]  "ratio" is written 1:n. "plan" is the length on the drawing or map and "actual" is the real length: give the one you know and "x" for the one to find (the Hub converts the units). For an area, give the plan lengths instead: [[DIAGRAM {"type":"scale","ratio":"1:200","width":"6 cm","height":"4 cm"}]]. Add "answer":true to print the calculated value instead of x. It draws a scale bar. For maps, building plans and site plans.
 33. Graph extras (add these to a graph from item 5): "vlines":[[3,"x = 3"]] draws dashed vertical lines (an axis of symmetry, or an asymptote such as x = 0), "hlines":[[0,"y = 0"]] draws dashed horizontal lines (an asymptote, a target level), each as [value, label], up to 4 of each. "shade" colours regions, up to 3: {"between":[0,1],"from":"cross","label":"Profit"} shades between curve 0 and curve 1 (curves are numbered from 0 in the order you list them), starting where the two curves meet ("from":"cross" or "to":"cross"; or give x values; leave both out to cover the whole graph). Also {"under":0} (between curve 0 and the x-axis), {"above":0} and {"below":0}, each with optional "from", "to" and "label". For a break-even graph draw cost and revenue as two lines, mark the meeting point in "marks", then shade profit with {"between":[1,0],"from":"cross","label":"Profit"} and loss with {"between":[1,0],"to":"cross","label":"Loss"}. Trigonometric graphs work in degrees: use "sin(x)", "cos(x)", "tan(x)" with brackets and a scale such as xmin 0, xmax 180 (add "radians":true to use radians). Reciprocal graphs (y = k/x) are written "k/x"; add "vlines":[[0,"x = 0"]] and "hlines":[[0,"y = 0"]] for the asymptotes.
@@ -48539,8 +48566,8 @@ async function run(){if(T.busy||!T.msgs.length||T.msgs[T.msgs.length-1].r!=='u')
   while(hist.length&&hist[0].role!=='user')hist.shift();
   const calc=!wrong&&needsCalc(last,sj),sysP=wrong?'':as(()=>system(hits,last,gate))+memCtx(sj)+(KF?'\nATTACHED UPLOAD: the files from the student\'s earlier upload are attached to this message again, because they may be asking about them. Use them only if this message refers to them; otherwise ignore them. Never invent anything that is not visible.':'')+(calc?'\nThis question needs a calculation. Use the code tool to compute it so the numbers are right, then show the working in short plain steps and state the final answer. Do not show the code itself.':''),
    out=wrong?'':await HubAI.chat(sysP,hist,KF?KF.files:undefined,calc).catch(e=>{if(!calc||/rejected|limit|quota/i.test((e&&e.message)||''))throw e;return HubAI.chat(sysP.split('\nThis question needs a calculation.')[0],hist,KF?KF.files:undefined)});
-  if(wrong)ch.push({r:'a',id:ttid(),q:last,q0:last,sub:sj,sw:wrong,t:'That one is outside '+snm(sj)+'. It looks like '+snm(wrong)+', where your notes cover it, so it is better asked in that tab.',src:[]});
-  else{if(KF)useKeep(sj);ch.push({r:'a',id:ttid(),q:q,sub:as(()=>ttsubOfHits(hits)),gate:gate,t:nameCheck(String(out).trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)}))});try{const sid=as(()=>ttsubOfHits(hits));if(sid)logChat(sid,as(()=>tttopic(sid,q)))}catch(e){}}if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info((PERS[sj]||PERS.all)[0]+' replied in '+snm(sj))}}
+  if(wrong)ch.push({r:'a',d:Date.now(),id:ttid(),q:last,q0:last,sub:sj,sw:wrong,t:'That one is outside '+snm(sj)+'. It looks like '+snm(wrong)+', where your notes cover it, so it is better asked in that tab.',src:[]});
+  else{if(KF)useKeep(sj);ch.push({r:'a',d:Date.now(),id:ttid(),q:q,sub:as(()=>ttsubOfHits(hits)),gate:gate,t:nameCheck(String(out).trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)}))});try{const sid=as(()=>ttsubOfHits(hits));if(sid)logChat(sid,as(()=>tttopic(sid,q)))}catch(e){}}if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info((PERS[sj]||PERS.all)[0]+' replied in '+snm(sj))}}
  catch(e){as(()=>{T.err=(e&&e.message)||'Something went wrong.'});if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info('Something went wrong in '+snm(sj)+'. Open it to try again.')}}
  as(()=>{T.busy=false});persist();paint(here());try{memFold(sj)}catch(e){}}
 /* ---- Tutor memory: a rolling chat summary plus a saved record of each trial paper (text only, no images) ---- */
@@ -48601,7 +48628,7 @@ async function analyse(v){if(T.busy)return;
   ask=v||'Please look at what I have attached and help me with it.',
   hist=merge(T.msgs.slice(-12).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t.slice(0,m.r==='a'?1800:3000)})).concat([{role:'user',content:ask}]));
  while(hist.length&&hist[0].role!=='user')hist.shift();
- const um={r:'u',t:'\ud83d\udcce '+files.map(f=>f.name).join(', ')+(v?'\n'+v:'')};
+ const um={r:'u',d:Date.now(),t:'\ud83d\udcce '+files.map(f=>f.name).join(', ')+(v?'\n'+v:'')};
  T.msgs.push(um);FIL[sj]=[];T.draft='';T.busy=true;T.err='';persist();paint(true);
  try{const C=await corpus();let pk='',q=(v||'').trim(),hits=tok(q).length?search(C,q,sj,10):[];
   if(!hits.length||hits.conf<GATES[T.gm][1]){pk=await peek(files,v);if(pk){q=(q+' '+pk).trim();hits=tok(q).length?search(C,q,sj,10):[]}}   /* the extra look at the picture is only made when the typed question alone does not find the right notes */
@@ -48613,7 +48640,7 @@ async function analyse(v){if(T.busy)return;
   dm=/^\s*DIGEST:\s*([\s\S]*)$/im.exec(out),rp=dm?out.slice(0,dm.index):out,mt=/^\s*TOPICS:\s*(.+)$/im.exec(rp),tp=mt?mt[1].split('|').map(s=>s.trim().replace(/[.*]+$/,'')).filter(Boolean).slice(0,5):[],
   sid=as(()=>ttsubOfHits(hits));
   try{if(sid){LASTSUB=sid;window.__ttEng=effSub()}}catch(e){}
-  (CH[sj]||T.msgs).push({r:'a',id:ttid(),q:v||'uploaded file',sub:sj==='all'?(sid||undefined):sj,gate:gate,t:nameCheck(rp.replace(/^\s*TOPICS:.*$/im,'').trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)})),tp:tp});
+  (CH[sj]||T.msgs).push({r:'a',d:Date.now(),id:ttid(),q:v||'uploaded file',sub:sj==='all'?(sid||undefined):sj,gate:gate,t:nameCheck(rp.replace(/^\s*TOPICS:.*$/im,'').trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)})),tp:tp});
   if(dm){(MEM.rec[sj]=MEM.rec[sj]||[]).unshift({d:new Date().toLocaleDateString('en-AU'),tp:tp,dg:dm[1].trim().slice(0,1800)});MEM.rec[sj]=MEM.rec[sj].slice(0,3);memSave()}
   KEEP[sj]={files:files,left:KEEPN,kw:pk,on:false};
   try{const s2=sid||(sj!=='all'?sj:'');if(s2)logChat(s2,as(()=>tttopic(s2,q)))}catch(e){}
@@ -48624,7 +48651,7 @@ async function analyse(v){if(T.busy)return;
 const CALCW=/\b(calculat\w*|work out|solve|evaluate|simplify|expand|factori[sz]e|differentiate|derivative|integrate|integral|percentage change|percent change|multiplier|gini|cpi|inflation rate|growth rate|unemployment rate|participation rate|terms of trade|elasticity|ped|yed|xed|mps|mpc|real gdp|real wage|exchange rate|budget (?:balance|deficit|surplus)|current account|how much|standard deviation|mean|median|probability|compound|interest|profit|margin|break[- ]?even|roi|ratio)\b/i;
 const needsCalc=(t,sj)=>['maths','economics','business','all'].includes(sj)&&/\d/.test(t)&&CALCW.test(t);
 function send(txt){if(T.busy)return;if(!HubAI.ready()){T.err='Add your API key in Settings > AI Setup first.';paint();return}
- learn(txt);T.msgs.push({r:'u',t:String(txt).slice(0,3000)});T.draft='';const i=Q('#ttIn');if(i){i.value='';i.style.height=''}T.err='';persist();run()}
+ learn(txt);T.msgs.push({r:'u',d:Date.now(),t:String(txt).slice(0,3000)});T.draft='';const i=Q('#ttIn');if(i){i.value='';i.style.height=''}T.err='';persist();run()}
 const submit=()=>{const i=Q('#ttIn'),v=(i?i.value:T.draft).trim(),m=/\[(?:topic|this|that)\]/.exec(v);if(m&&i){i.focus();i.setSelectionRange(m.index,m.index+m[0].length);return}if(tfl().length){analyse(v);return}if(v)send(v)};
 V.tutor=()=>{readNow();setTimeout(()=>{ttReveal(Q('#ttCtl'));const b=Q('#ttBox');if(b)b.scrollTop=(T.msgs.length&&T.view!=='quiz')?b.scrollHeight:0;if(!CORP&&!CORPP)setTimeout(()=>{if(Q('#tt'))corpus().then(()=>paint(false))},500)},0);
  window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}
@@ -49004,9 +49031,27 @@ function ms(l,b,r,pref,fresh){
  const pl=P(l),pr=P(r);
  if(pl&&pr)return JSON.stringify(m3(pl,P(b),pr,pref,fresh));
  return pref==='local'?l:r}
+/* Tutor chats: join both copies by message (id, or text+time), never trim, order by timestamp (older untimestamped messages stay first, in their saved order) */
+function tms(l,b,r,pref,fresh){
+ if(l===r)return l;if(l===b)return r;if(r===b)return l;
+ const pl=P(l),pr=P(r);if(!pl||!pr||Array.isArray(pl)||Array.isArray(pr))return undefined;
+ const pb=P(b),cb=(pb&&pb.chats)||{},cl=pl.chats||{},cr=pr.chats||{};
+ const strip=o=>{const c=Object.assign({},o||{});delete c.chats;return c};
+ const out=m3(strip(pl),strip(pb),strip(pr),pref,fresh);out.chats={};
+ const key=x=>isO(x)&&x.id!=null?'i:'+x.id:'j:'+cj(x);
+ for(const k of new Set([...Object.keys(cl),...Object.keys(cr)])){
+  const A=Array.isArray(cl[k])?cl[k]:[],B2=Array.isArray(cr[k])?cr[k]:[],Z=Array.isArray(cb[k])?cb[k]:[],zk=new Set(Z.map(key));
+  let a=A,c=B2;
+  if(!A.length&&Z.length)c=B2.filter(x=>!zk.has(key(x)));   /* this side started a new chat on purpose: drop what was already there, keep anything newer */
+  else if(!B2.length&&Z.length)a=A.filter(x=>!zk.has(key(x)));
+  const seen=new Set(),all=[];
+  for(const x of [...a,...c]){if(!isO(x))continue;const q=key(x);if(seen.has(q))continue;seen.add(q);all.push(x)}
+  const old=all.filter(x=>typeof x.d!=='number'),nw=all.filter(x=>typeof x.d==='number').map((x,i)=>[x,i]).sort((p,q)=>p[0].d-q[0].d||p[1]-q[1]).map(p=>p[0]);
+  if(old.length||nw.length)out.chats[k]=old.concat(nw)}
+ return JSON.stringify(out)}
 function mergeSnap(L,B,R,pref,fresh){
  const ls={},bl=(B&&B.ls)||{};
- for(const k of new Set([...Object.keys(L.ls||{}),...Object.keys(R.ls||{})])){const v=ms((L.ls||{})[k],bl[k],(R.ls||{})[k],pref,fresh);if(v!==undefined)ls[k]=v}
+ for(const k of new Set([...Object.keys(L.ls||{}),...Object.keys(R.ls||{})])){const v=(k==='hsc-hub-tutor-v1'&&tms((L.ls||{})[k],bl[k],(R.ls||{})[k],pref,fresh))||ms((L.ls||{})[k],bl[k],(R.ls||{})[k],pref,fresh);if(v!==undefined)ls[k]=v}
  const bx=B?B.xh:undefined,bm=B?B.mods:undefined;
  return{ls,xh:m3(L.xh||[],bx,R.xh||[],pref,fresh),mods:m3(L.mods||{},bm,R.mods||{},pref,fresh)}}
 /* a whole snapshot as one comparable string, ignoring key order and list order */
