@@ -50,6 +50,29 @@ try{HubDevice.apply(data&&data.device)}catch(e){}
 try{var p=data&&data.personalisation,d=document.documentElement;if(!p)return;
 d.dataset.theme=p.theme==='dark'||p.theme==='light'?p.theme:(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
 if(p.look)d.dataset.look=p.look;if(p.background)d.dataset.bg=p.background;if(p.density)d.dataset.density=p.density;if(p.corners)d.dataset.corners=p.corners;if(p.fontSize)d.dataset.size=p.fontSize}catch(e){}})();</script>
+<script id="no-sticky-hover">/* iPad/iPhone keep :hover on the last element you touched, so things light up "randomly" while scrolling.
+   On touch-first screens this removes every :hover rule (document and subject shadow roots). Mouse and trackpad devices are untouched. */
+(function(){try{if(!matchMedia('(hover:none)').matches)return}catch(e){return}
+var seen=typeof WeakSet==='function'?new WeakSet():null;
+function hov(p){return p.replace(/:not\([^()]*(?:\([^()]*\)[^()]*)*\)/g,function(m){return m.indexOf(':hover')>-1?'':m}).indexOf(':hover')>-1}
+function split(t){var o=[],d=0,c='',q=null,i,ch;for(i=0;i<t.length;i++){ch=t.charAt(i);if(q){c+=ch;if(ch===q&&t.charAt(i-1)!=='\\')q=null;continue}
+ if(ch==='"'||ch==="'"){q=ch;c+=ch;continue}if(ch==='('||ch==='[')d++;else if(ch===')'||ch===']')d--;
+ if(ch===','&&d===0){o.push(c);c=''}else c+=ch}o.push(c);return o}
+function clean(list,parent){for(var i=list.length-1;i>=0;i--){var r=list[i];
+ if(r.type===1&&r.selectorText&&r.selectorText.indexOf(':hover')>-1){var ps=split(r.selectorText),keep=ps.filter(function(x){return !hov(x)});
+  if(keep.length===ps.length)continue;
+  if(!keep.length){try{parent.deleteRule(i)}catch(e){}}else{try{r.selectorText=keep.join(',')}catch(e){}}}
+ else if(r.cssRules&&r.type!==1&&r.type!==5&&r.type!==4){clean(r.cssRules,r)}
+ else if(r.type===4&&r.cssRules){clean(r.cssRules,r)}}}
+function sheets(root){var ss;try{ss=root.styleSheets}catch(e){return}
+ for(var i=0;i<ss.length;i++){var sh=ss[i];if(seen){if(seen.has(sh))continue;seen.add(sh)}var rl;try{rl=sh.cssRules}catch(e){continue}clean(rl,sh)}}
+function watch(root,target){var t=0;try{new MutationObserver(function(){clearTimeout(t);t=setTimeout(function(){sheets(root)},60)}).observe(target,{childList:true,subtree:true})}catch(e){}}
+var roots=[];function run(){sheets(document);for(var i=0;i<roots.length;i++)sheets(roots[i])}
+var orig=Element.prototype.attachShadow;
+if(orig){Element.prototype.attachShadow=function(o){var sr=orig.call(this,o);roots.push(sr);watch(sr,sr);return sr}}
+document.addEventListener('DOMContentLoaded',run);addEventListener('load',run);
+watch(document,document.documentElement);
+})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <style>html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
 
@@ -329,7 +352,7 @@ body.xc-on{overflow:hidden}
 .set{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto 1fr;gap:16px 28px;align-items:start;margin-top:0}
 .set-top{grid-column:2;grid-row:1;min-width:0}
 .set-top h1{margin:0 0 4px}.set-top p{margin:0}
-.set-nav{grid-column:1;grid-row:1/span 2;position:fixed;top:28px;width:216px;max-height:calc(var(--vh) - 48px);overflow-y:auto;overscroll-behavior:auto;scrollbar-width:none;padding:0 4px 0 0;display:flex;flex-direction:column;gap:2px}
+.set-nav{grid-column:1;grid-row:1/span 2;position:fixed;top:calc(28px + var(--hub-top,0px));width:216px;max-height:calc(var(--vh) - 48px - var(--hub-top,0px));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:0 4px 0 0;display:flex;flex-direction:column;gap:2px}
 .set-nav::-webkit-scrollbar{display:none}
 /* the settings menu is pinned: it does not move when the page scrolls, and is tightened to fit shorter windows rather than scrolling on its own */
 :root:not([data-device=phone]) .set-nav .nv{padding-block:clamp(2px,calc(2px + (var(--vh) - 600px)*.022),9px)}:root:not([data-device=phone]) .set-nav .sg{margin-top:clamp(3px,calc(4px + (var(--vh) - 600px)*.032),14px)}:root:not([data-device=phone]) .set-nav .sg:first-child{margin-top:0}
@@ -992,6 +1015,13 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
  .set-body .card .chips>.btn{flex:1 1 100%;justify-content:center;min-height:44px}
  .set-body .set-row .set-ctl.chips>.btn{flex:1 1 auto}
 }
+/* iPad: backgrounds never leave a strip at the bottom, no grey tap flash, dark pages tell Safari to paint dark */
+html{background-color:var(--bg)}
+:root[data-theme=dark]{color-scheme:dark}
+:root[data-theme=light]{color-scheme:light}
+*{-webkit-tap-highlight-color:transparent}
+body::before{bottom:-160px}
+#tod,#hx-tint,#amb,#atm,#imo{bottom:-160px!important}
 /* tutor: an empty chat fits the screen, no page scroll until there is history */
 #tt.tt-fit{display:flex;flex-direction:column;overflow:hidden}
 #tt.tt-fit .tt-box.empty{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;display:flex}
@@ -49337,6 +49367,39 @@ window.HubKeySync={pull:async()=>{await keyTick();return !!kloc().key},push:keyP
 
 window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
 }catch(err){console.warn('Account module not loaded',err)}})();
+</script>
+<script id="ipad-fixes">
+/* iPad fixes that need to run after the Tutor's own styles: fit the Tutor to the real visible screen (top bar + on-screen keyboard),
+   keep the selected subject tab in view, and keep Safari's toolbar colour in step with the theme. */
+(function(){
+ var st=document.createElement('style');st.id='ipad-fixes-css';
+ st.textContent=`
+ html body .app{min-height:calc(var(--vh) - var(--hub-top,0px))}
+ @media(min-width:601px){
+  html:not([data-nav=bottom]) body main:has(#tt){height:calc(var(--tt-vh,100dvh) - var(--hub-top,0px))!important;max-height:calc(var(--tt-vh,100dvh) - var(--hub-top,0px))!important;min-height:0!important;overflow:hidden;padding-bottom:max(12px,calc(env(safe-area-inset-bottom,0px)/var(--uz,1)))!important}
+  html:not([data-nav=bottom]) body main:has(#tt) .tt{min-height:0!important}
+ }
+ /* the chat list is the only thing that scrolls, and it never pushes the text box off the screen */
+ main:has(#tt) .tt-box{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ main:has(#tt) .tt-comp,main:has(#tt) #ttFoot,main:has(#tt) .tt-note{flex:none}
+ `;
+ document.head.appendChild(st);
+ var vv=window.visualViewport,raf=0;
+ function fit(){raf=0;var r=document.documentElement,h=vv?vv.height:innerHeight,kb=vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0;
+  var open=kb>120&&!!document.getElementById('tt');
+  if(open){r.style.setProperty('--tt-vh',Math.round(h)+'px');if(vv&&vv.offsetTop>0||scrollY>0){scrollTo(0,0)}}
+  else r.style.removeProperty('--tt-vh')}
+ function sched(){if(!raf)raf=requestAnimationFrame(fit)}
+ if(vv){vv.addEventListener('resize',sched);vv.addEventListener('scroll',sched)}
+ addEventListener('resize',sched);addEventListener('orientationchange',sched);
+ document.addEventListener('focusout',function(){setTimeout(sched,120)});
+ /* keep the active subject tab centred in the scrolling tab row */
+ function tabs(){var t=document.querySelector('.tt-subj');if(!t||t.scrollWidth<=t.clientWidth+2)return;var a=t.querySelector('.chip.on');if(a)t.scrollLeft=Math.max(0,a.offsetLeft-(t.clientWidth-a.offsetWidth)/2)}
+ var tt=0;try{new MutationObserver(function(){clearTimeout(tt);tt=setTimeout(tabs,80)}).observe(document.getElementById('main')||document.body,{childList:true,subtree:true})}catch(e){}
+ /* Safari colours its toolbar from this tag: follow the page background */
+ function theme(){try{var m=document.querySelector('meta[name="theme-color"]');if(!m)return;var c=getComputedStyle(document.body).backgroundColor;if(c&&c!=='rgba(0, 0, 0, 0)')m.setAttribute('content',c)}catch(e){}}
+ try{new MutationObserver(theme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-look','data-xp']})}catch(e){}
+ setTimeout(theme,300);sched()})();
 </script>
 </body>
 </html>
