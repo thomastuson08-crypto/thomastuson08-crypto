@@ -42528,7 +42528,8 @@ let lastLay='',keepNav=false;
 /* height of the Hub's own sticky bar (0 when it is hidden) so embedded subject headers pin right underneath it */
 function syncHubTop(){const t=document.querySelector('.top'),r=document.documentElement;let h=0;
  if(t){const cs=getComputedStyle(t);if(cs.display!=='none'&&cs.position==='sticky')h=(parseFloat(cs.top)||0)+t.offsetHeight}
- r.style.setProperty('--hub-top',h+'px')}
+ r.style.setProperty('--hub-top',h+'px');
+ {const cs=getComputedStyle(r),sat=parseFloat(cs.paddingTop)||0,sab=parseFloat(cs.paddingBottom)||0;r.style.setProperty('--hub-used',((h>0?h:sat)+sab)+'px')}}
 function applyDevice(){
  const s=HubDevice.apply(HubSettings.section('device'));
  if((s.nav==='sidebar'||s.nav==='rail')&&!(document.body.classList.contains('insub')&&matchMedia('(pointer:coarse)').matches))document.body.classList.remove('nav');
@@ -42880,7 +42881,7 @@ function render(){
  const r=location.hash.slice(1).split('/')[0]||'dash',s=sub(r);
  if(s){S.last=s.id;save()}
  const item=(id,t,d,c)=>`<button class="nv ${r===id?'on':''}" ${c?`style="--c:${c}"`:''} data-go="${id}" title="${t}" aria-label="${t}">${ic(d)}${t}</button>`;
- $('#nav').innerHTML=`<div class="brand"><span class="logo"></span>HSC Hub</div><button class="nv cpb" data-cp title="Search" aria-label="Search">${ic('M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5')}Search<kbd>⌘K</kbd></button>${item('dash','Dashboard',ICON.dash)}<div class="grp">Subjects</div>${SUBJECTS.map(x=>item(x.id,x.name,x.d,x.c)).join('')}<div class="grp">Learn</div>${item('tutor','Tutor',ICON.tutor||ICON.teach)}${item('teach','Teach Room',ICON.teach)}${item('strategy','Strategy',ICON.strategy)}<div class="grp">Practise</div>${item('quick','Study Timer',ICON.quick)}${item('exam','Exam Centre',ICON.exam)}<div class="grp">Review</div>${item('progress','Progress',ICON.prog)}${item('saved','Saved',ICON.saved)}<div style="flex:1"></div>${item('settings','Settings',ICON.set)}`;
+ $('#nav').innerHTML=`<div class="brand"><span class="logo"></span>HSC Hub</div><button class="nv cpb" data-cp title="Search" aria-label="Search">${ic('M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-5-5')}Search<kbd>⌘K</kbd></button>${item('dash','Dashboard',ICON.dash)}<div class="grp">Subjects</div>${SUBJECTS.map(x=>item(x.id,x.name,x.d,x.c)).join('')}<div class="grp">Learn</div>${item('tutor','Tutor',ICON.tutor||ICON.teach)}${item('teach','Teach Room',ICON.teach)}${item('strategy','Strategy',ICON.strategy)}<div class="grp">Practise</div>${item('quick','Study Timer',ICON.quick)}${item('exam','Exam Centre',ICON.exam)}<div class="grp">Review</div>${item('progress','Progress',ICON.prog)}${item('saved','Saved',ICON.saved)}${item('settings','Settings',ICON.set)}`;
  {let bn=$('#bnav');if(!bn){bn=document.createElement('nav');bn.id='bnav';bn.setAttribute('aria-label','Quick navigation');document.body.appendChild(bn)}
   const bi=(id,t,d)=>`<button class="${r===id?'on':''}" data-go="${id}" ${r===id?'aria-current="page"':''}>${ic(d)}<span>${t}</span></button>`;
   bn.innerHTML=bi('dash','Home',ICON.dash)+bi('quick','Study',ICON.quick)+bi('exam','Exams',ICON.exam)+bi('progress','Progress',ICON.prog)+`<button class="${['dash','quick','exam','progress'].includes(r)?'':'on'}" data-a="nav" aria-label="Open menu">${ic('M4 7h16M4 12h16M4 17h16')}<span>Menu</span></button>`}
@@ -49415,6 +49416,37 @@ window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
  function theme(){try{var m=document.querySelector('meta[name="theme-color"]');if(!m)return;var c=getComputedStyle(document.body).backgroundColor;if(c&&c!=='rgba(0, 0, 0, 0)')m.setAttribute('content',c)}catch(e){}}
  try{new MutationObserver(theme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','data-look','data-xp']})}catch(e){}
  setTimeout(theme,300);sched()})();
+</script>
+
+<script id="ui-fixes">
+/* Layout fixes, added last so they win over earlier rules:
+   1) background never leaks: solid page colour behind everything (also under the home-indicator strip), no sideways page scroll, no rubber-band reveal
+   2) the page is never taller than the screen (the safe-area padding used to be added on top of a full-height page, so every page scrolled a little)
+   3) the slide-out menu is solid, so the page and glow never show through it
+   4) the Tutor page itself never scrolls; only the chat list does */
+(function(){var s=document.createElement('style');s.id='ui-fixes-css';s.textContent=`
+html::before{content:"";position:fixed;left:0;right:0;top:-200px;bottom:-200px;z-index:-9;background:var(--bg);pointer-events:none}
+html{overscroll-behavior:none;overflow-x:clip}
+body{overflow-x:clip}
+:root{--sbi:calc((env(safe-area-inset-top,0px) + env(safe-area-inset-bottom,0px))/var(--uz,1))}
+html body{min-height:calc(var(--vh) - var(--sbi))}
+html body .app{min-height:0}
+html[data-nav=sidebar] body:not(.insub) aside#nav,html[data-nav=rail] body:not(.insub) aside#nav{top:calc(env(safe-area-inset-top,0px)/var(--uz,1));height:calc(var(--vh) - var(--sbi))}
+@media(pointer:fine){html[data-nav=sidebar] body.insub aside#nav,html[data-nav=rail] body.insub aside#nav{top:calc(env(safe-area-inset-top,0px)/var(--uz,1));height:calc(var(--vh) - var(--sbi))}}
+html[data-nav=drawer] body aside#nav,html[data-nav=bottom] body aside#nav{background:var(--sf)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@media(pointer:coarse){html:is([data-nav=sidebar],[data-nav=rail]) body.insub aside#nav{background:var(--sf)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
+#sc{touch-action:none}
+html:has(#tt),html:has(#tt) body{overflow:hidden;overscroll-behavior:none}
+@media(min-width:601px){html:not([data-nav=bottom]) body main:has(#tt){height:calc(var(--vh) - var(--hub-used,0px))!important;max-height:calc(var(--vh) - var(--hub-used,0px))!important;padding-bottom:12px!important}}
+`;document.head.appendChild(s);
+if(window.syncHubTop){try{syncHubTop()}catch(e){}}
+/* slide-out menu open: the page behind it must not move. Touches on the dimmed area do nothing; touches on the menu only scroll the menu, and only if it is taller than the screen */
+document.addEventListener('touchmove',function(e){
+ if(!document.body.classList.contains('nav'))return;
+ var a=document.getElementById('nav');if(!a||getComputedStyle(a).position!=='fixed')return;
+ if(!e.target.closest||!e.target.closest('#nav')){e.preventDefault();return}
+ if(a.scrollHeight<=a.clientHeight+1)e.preventDefault()},{passive:false});
+})();
 </script>
 </body>
 </html>
