@@ -43172,7 +43172,7 @@ addEventListener('pointermove',e=>{if(document.body.classList.contains('tr-full'
  function size(){const d=devicePixelRatio||1;W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';x.setTransform(d,0,0,d,0,0);
   P=Array.from({length:Math.min(70,Math.round(innerWidth*innerHeight/24000))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,c:cols[Math.random()*4|0]}))}
  let lw=innerWidth;addEventListener('resize',()=>{const t=document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);if(t&&innerWidth===lw)return;lw=innerWidth;size()});addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY},{passive:true});size();
- function loop(){requestAnimationFrame(loop);if(!fx('bg')||document.documentElement.dataset.bg!=='network'||document.hidden)return;if(document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)&&innerHeight<screen.height*.75)return;
+ function loop(){requestAnimationFrame(loop);if(!fx('bg')||document.documentElement.dataset.bg!=='network'||document.hidden||document.documentElement.classList.contains('tt-kb'))return;if(document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)&&innerHeight<screen.height*.75)return;
   x.clearRect(0,0,innerWidth,innerHeight);const dk=document.documentElement.dataset.theme==='dark';
   for(const p of P){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;
    const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);if(d<140){p.x+=dx/d*1.2;p.y+=dy/d*1.2}
@@ -49516,8 +49516,7 @@ gListen(ed,true);
 /* sidebar/rail background always runs to the very bottom (and top) of the screen, whatever the browser reports for the viewport height */
 html[data-nav=rail] body:not(.insub)::after,html[data-nav=sidebar] body:not(.insub)::after{content:"";position:fixed;left:0;top:0;bottom:0;width:var(--railw,0px);background:color-mix(in srgb,var(--sf) 78%,transparent);border-right:1px solid var(--ln);z-index:-1;pointer-events:none}
 html{background:var(--bg)}
-/* keyboard open in the Tutor: stop the ANIMATED layers and blur so iPadOS does not flicker, but keep the static background (body::before, #tod, #hx-tint) visible */
-html.tt-kb #fx,html.tt-kb #amb,html.tt-kb #atm,html.tt-kb #imo,html.tt-kb #sw{display:none!important}
+/* keyboard open in the Tutor: stop the ANIMATED layers and blur so iPadOS does not flicker, but keep the static background visible (world scene #sw, #amb, #atm, #tod, #hx-tint, body::before); animations are frozen by the rule below */
 html.tt-kb *,html.tt-kb *::before,html.tt-kb *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;animation:none!important;transition:none!important}
 html.tt-kb aside{overflow:hidden}
 </style>
