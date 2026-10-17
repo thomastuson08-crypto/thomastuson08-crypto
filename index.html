@@ -49376,23 +49376,38 @@ window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
  st.textContent=`
  html body .app{min-height:calc(var(--vh) - var(--hub-top,0px))}
  @media(min-width:601px){
-  html:not([data-nav=bottom]) body main:has(#tt){height:calc(var(--tt-vh,100dvh) - var(--hub-top,0px))!important;max-height:calc(var(--tt-vh,100dvh) - var(--hub-top,0px))!important;min-height:0!important;overflow:hidden;padding-bottom:max(12px,calc(env(safe-area-inset-bottom,0px)/var(--uz,1)))!important}
+  html:not([data-nav=bottom]) body main:has(#tt){height:calc(100dvh - var(--hub-top,0px))!important;max-height:calc(100dvh - var(--hub-top,0px))!important;min-height:0!important;overflow:hidden;padding-bottom:max(12px,calc(env(safe-area-inset-bottom,0px)/var(--uz,1)))!important}
   html:not([data-nav=bottom]) body main:has(#tt) .tt{min-height:0!important}
  }
+ /* on-screen keyboard open in the Tutor: the page stops scrolling and the Tutor is pinned to exactly the part of the screen above the keyboard */
+ html.tt-kb,html.tt-kb body{overflow:hidden!important;overscroll-behavior:none}
+ html.tt-kb body .top,html.tt-kb body #bnav,html.tt-kb body #pill{display:none!important}
+ html.tt-kb body main:has(#tt){position:fixed!important;top:0!important;bottom:auto!important;left:var(--tt-left,0px)!important;right:0!important;width:auto!important;margin:0!important;
+  height:var(--vvh)!important;max-height:var(--vvh)!important;min-height:0!important;transform:translateY(var(--vvt,0px));overflow:hidden;padding-top:10px!important;padding-bottom:8px!important;background:var(--bg);z-index:30}
+ html.tt-kb body main:has(#tt) .tt{height:auto!important;flex:1 1 0!important;min-height:0!important;display:flex!important;flex-direction:column}
+ html.tt-kb body main:has(#tt) .tt-box{flex:1 1 0!important;min-height:0!important;max-height:none!important}
  /* the chat list is the only thing that scrolls, and it never pushes the text box off the screen */
  main:has(#tt) .tt-box{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
  main:has(#tt) .tt-comp,main:has(#tt) #ttFoot,main:has(#tt) .tt-note{flex:none}
  `;
  document.head.appendChild(st);
- var vv=window.visualViewport,raf=0;
- function fit(){raf=0;var r=document.documentElement,h=vv?vv.height:innerHeight,kb=vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0;
-  var open=kb>120&&!!document.getElementById('tt');
-  if(open){r.style.setProperty('--tt-vh',Math.round(h)+'px');if(vv&&vv.offsetTop>0||scrollY>0){scrollTo(0,0)}}
-  else r.style.removeProperty('--tt-vh')}
+ var vv=window.visualViewport,raf=0,R=document.documentElement;
+ function typing(){var e=document.activeElement;return !!e&&/^(TEXTAREA|INPUT)$/.test(e.tagName)&&!!e.closest('#tt')}
+ function fit(){raf=0;var h=vv?vv.height:innerHeight,open=typing()&&innerHeight-h>100;
+  if(open){var m=document.querySelector('main');if(!R.classList.contains('tt-kb')){R.style.setProperty('--tt-left',(m?Math.max(0,m.getBoundingClientRect().left+scrollX):0)+'px');R.classList.add('tt-kb')}
+   R.style.setProperty('--vvh',Math.round(h)+'px');R.style.setProperty('--vvt',Math.round(vv?vv.offsetTop:0)+'px')}
+  else if(R.classList.contains('tt-kb')){R.classList.remove('tt-kb');R.style.removeProperty('--vvh');R.style.removeProperty('--vvt');scrollTo(0,0)}}
  function sched(){if(!raf)raf=requestAnimationFrame(fit)}
  if(vv){vv.addEventListener('resize',sched);vv.addEventListener('scroll',sched)}
  addEventListener('resize',sched);addEventListener('orientationchange',sched);
- document.addEventListener('focusout',function(){setTimeout(sched,120)});
+ document.addEventListener('focusin',function(){setTimeout(sched,50);setTimeout(sched,350)});
+ document.addEventListener('focusout',function(){setTimeout(sched,120);setTimeout(sched,450)});
+ /* touch screens: tap anywhere that is not a control and the keyboard closes */
+ try{if(matchMedia('(hover:none)').matches){var sx=0,sy=0,sm=false;
+  document.addEventListener('touchstart',function(e){var t=e.touches[0];sx=t.clientX;sy=t.clientY;sm=e.touches.length>1},{passive:true});
+  document.addEventListener('touchmove',function(e){var t=e.touches[0];if(Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10)sm=true},{passive:true});
+  document.addEventListener('touchend',function(e){var a=document.activeElement;if(sm||!a||!/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName))return;
+   var el=e.target;if(el&&el.closest&&el.closest('input,textarea,select,button,a,summary,label,[contenteditable],[role=button],.chip,.btn'))return;a.blur()},{passive:true})}}catch(e){}
  /* keep the active subject tab centred in the scrolling tab row */
  function tabs(){var t=document.querySelector('.tt-subj');if(!t||t.scrollWidth<=t.clientWidth+2)return;var a=t.querySelector('.chip.on');if(a)t.scrollLeft=Math.max(0,a.offsetLeft-(t.clientWidth-a.offsetWidth)/2)}
  var tt=0;try{new MutationObserver(function(){clearTimeout(tt);tt=setTimeout(tabs,80)}).observe(document.getElementById('main')||document.body,{childList:true,subtree:true})}catch(e){}
