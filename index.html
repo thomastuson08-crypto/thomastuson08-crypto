@@ -49388,8 +49388,8 @@ window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
  html.tt-kb,html.tt-kb body{overflow:hidden!important;overscroll-behavior:none}
  html.tt-kb body .top,html.tt-kb body #bnav,html.tt-kb body #pill{display:none!important}
  html.tt-kb.tt-kb body main:has(#tt){position:fixed!important;top:0!important;bottom:auto!important;left:var(--tt-left,0px)!important;right:0!important;width:auto!important;margin:0!important;
-  height:var(--vvh)!important;max-height:var(--vvh)!important;min-height:0!important;transform:translateY(var(--vvt,0px));overflow:hidden;padding-top:10px!important;padding-bottom:8px!important;background:var(--bg);z-index:30}
- html.tt-kb body main:has(#tt) .tt{height:auto!important;flex:1 1 0!important;min-height:0!important;display:flex!important;flex-direction:column}
+  height:var(--vvh)!important;max-height:var(--vvh)!important;min-height:0!important;transform:translateY(var(--vvt,0px));overflow:hidden;overflow:clip;padding-top:10px!important;padding-bottom:8px!important;background:transparent!important;z-index:30}
+ html.tt-kb body main:has(#tt) .tt{height:auto!important;flex:1 1 0!important;min-height:0!important;display:flex!important;flex-direction:column;overflow:hidden;overflow:clip}
  html.tt-kb body main:has(#tt) .tt-box{flex:1 1 0!important;min-height:0!important;max-height:none!important}
  /* the chat list is the only thing that scrolls, and it never pushes the text box off the screen */
  main:has(#tt) .tt-box{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
@@ -49399,12 +49399,15 @@ window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
  var vv=window.visualViewport,raf=0,R=document.documentElement;
  function typing(){var e=document.activeElement;return !!e&&/^(TEXTAREA|INPUT)$/.test(e.tagName)&&!!e.closest('#tt')}
  function fit(){raf=0;var h=vv?vv.height:innerHeight,open=typing()&&innerHeight-h>100;
-  if(open){var m=document.querySelector('main');if(!R.classList.contains('tt-kb')){R.style.setProperty('--tt-left',(m?Math.max(0,m.getBoundingClientRect().left+scrollX):0)+'px');R.classList.add('tt-kb')}
-   R.style.setProperty('--vvh',Math.round(h)+'px');R.style.setProperty('--vvt',Math.round(vv?vv.offsetTop:0)+'px')}
-  else if(R.classList.contains('tt-kb')){R.classList.remove('tt-kb');R.style.removeProperty('--vvh');R.style.removeProperty('--vvt');scrollTo(0,0)}}
+  if(open){var m=document.querySelector('main');if(!R.classList.contains('tt-kb')){R.style.setProperty('--tt-left',(m?Math.max(0,m.getBoundingClientRect().left+scrollX):0)+'px');R.classList.add('tt-kb');kbSync()}
+   R.style.setProperty('--vvh',Math.round(h)+'px');R.style.setProperty('--vvt',Math.round(vv?vv.offsetTop:0)+'px');if(scrollY||scrollX)scrollTo(0,0);var mm=document.querySelector('main:has(#tt)');if(mm&&mm.scrollTop)mm.scrollTop=0}
+  else if(R.classList.contains('tt-kb')){R.classList.remove('tt-kb');kbSync();R.style.removeProperty('--vvh');R.style.removeProperty('--vvt');scrollTo(0,0)}}
  function sched(){if(!raf)raf=requestAnimationFrame(fit)}
  if(vv){vv.addEventListener('resize',sched);vv.addEventListener('scroll',sched)}
- addEventListener('resize',sched);addEventListener('orientationchange',sched);
+ addEventListener('resize',sched);addEventListener('orientationchange',sched);addEventListener('scroll',function(){if(R.classList.contains('tt-kb'))sched()},{passive:true});
+ /* keyboard open in the Tutor: only the chat list (and the text box itself) may scroll; a drag anywhere else must not move the page */
+ var kbMove=function(e){if(e.target.closest&&e.target.closest('.tt-box,textarea'))return;e.preventDefault()},kbOn=false;
+ function kbSync(){var on=R.classList.contains('tt-kb');if(on===kbOn)return;kbOn=on;if(on)document.addEventListener('touchmove',kbMove,{passive:false});else document.removeEventListener('touchmove',kbMove,{passive:false})}
  document.addEventListener('focusin',function(){setTimeout(sched,50);setTimeout(sched,350)});
  document.addEventListener('focusout',function(){setTimeout(sched,120);setTimeout(sched,450)});
  /* touch screens: tap anywhere that is not a control and the keyboard closes */
@@ -49448,38 +49451,62 @@ html[data-nav=drawer] body aside#nav,html[data-nav=bottom] body aside#nav{backgr
 :root{--on-br:#fff}
 @supports (color:oklch(from red l c h)){:root{--on-br:oklch(from var(--br) clamp(0,(0.72 - l)*1000,1) 0 0)}}
 .set-nav .set-find+.sg{margin-top:4px}
+#navEdge{position:fixed;left:0;top:calc(env(safe-area-inset-top,0px)/var(--uz,1));bottom:0;width:16px;z-index:30;touch-action:none;display:none}
+html.hub-top-on body:not(.nav) #navEdge{display:block}
+html[data-nav=drawer] body aside#nav,html[data-nav=bottom] body aside#nav,html body.insub aside#nav{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;overflow-y:auto}
 /* strip behind the status bar, above the HSC Hub row: solid page colour so scrolling content never shows through it */
-html.hub-top-on::after{content:"";position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px)/var(--uz,1));background:var(--bg);z-index:19;pointer-events:none}
+html.hub-top-on::after{content:"";position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px)/var(--uz,1));background:var(--bg);z-index:25;pointer-events:none;transform:translateZ(0);-webkit-transform:translateZ(0)}
+/* belt and braces: the top bar paints solid colour above itself too, so nothing can show in the gap over it */
+html.hub-top-on body .top{box-shadow:0 -120px 0 0 var(--bg)}
 html:has(#tt),html:has(#tt) body{overflow:hidden;overscroll-behavior:none}
 @media(min-width:601px){html:not([data-nav=bottom]) body main:has(#tt){height:calc(var(--vh) - var(--hub-used,0px))!important;max-height:calc(var(--vh) - var(--hub-used,0px))!important;padding-bottom:12px!important}}
 `;document.head.appendChild(s);
 if(window.syncHubTop){try{syncHubTop()}catch(e){}}
-/* slide-out menu open: the page behind it must not move. Touches on the dimmed area do nothing; touches on the menu only scroll the menu, and only if it is taller than the screen */
-document.addEventListener('touchmove',function(e){
- if(!document.body.classList.contains('nav'))return;
- var a=document.getElementById('nav');if(!a||getComputedStyle(a).position!=='fixed')return;
+/* ---- touch handling. Non-passive touchmove listeners make iOS wait for JavaScript before it scrolls, so they are only attached while they are needed ---- */
+var BD=document.body,HT=document.documentElement,NT={passive:false};
+/* slide-out menu open: the page behind it must not move; touches on the menu only scroll the menu and never pass the scroll on at its top or bottom */
+var y0=0,navOn=false;
+function navMove(e){var a=document.getElementById('nav');if(!a||getComputedStyle(a).position!=='fixed')return;
  if(!e.target.closest||!e.target.closest('#nav')){e.preventDefault();return}
- if(a.scrollHeight<=a.clientHeight+1)e.preventDefault()},{passive:false});
-})();
+ var dy=e.touches[0].clientY-y0,max=a.scrollHeight-a.clientHeight;
+ if(max<=4||(a.scrollTop<=0&&dy>0)||(a.scrollTop>=max-1&&dy<0))e.preventDefault()}
+function navWheel(e){if(!e.target.closest||!e.target.closest('#nav'))e.preventDefault()}
+function syncNav(){var on=BD.classList.contains('nav');if(on===navOn)return;navOn=on;
+ if(on){document.addEventListener('touchmove',navMove,NT);document.addEventListener('wheel',navWheel,NT)}
+ else{document.removeEventListener('touchmove',navMove,NT);document.removeEventListener('wheel',navWheel,NT)}}
+try{new MutationObserver(syncNav).observe(BD,{attributes:true,attributeFilter:['class']})}catch(e){}
+document.addEventListener('touchstart',function(e){y0=e.touches[0].clientY},{passive:true});
 /* settings menu (side column): a finger on it only scrolls the menu, never the page behind it */
-(function(){var y0=0;
- document.addEventListener('touchstart',function(e){y0=e.touches[0].clientY},{passive:true});
- document.addEventListener('touchmove',function(e){
-  var n=e.target.closest&&e.target.closest('.set-nav');if(!n||getComputedStyle(n).position!=='fixed')return;
-  var dy=e.touches[0].clientY-y0,max=n.scrollHeight-n.clientHeight;
-  if(max<=1||(n.scrollTop<=0&&dy>0)||(n.scrollTop>=max-1&&dy<0))e.preventDefault()},{passive:false})})();
-/* swipe from the left edge opens the side menu, swipe left closes it; only while the HSC Hub top bar is showing */
-(function(){var sx=0,sy=0,mode=0,B=document.body,H=document.documentElement;
- function typing(){var a=document.activeElement;return !!a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)}
- document.addEventListener('touchstart',function(e){mode=0;if(e.touches.length!==1||!H.classList.contains('hub-top-on')||typing())return;
-  sx=e.touches[0].clientX;sy=e.touches[0].clientY;
-  if(B.classList.contains('nav'))mode=2;else if(sx<=24)mode=1},{passive:true});
- document.addEventListener('touchmove',function(e){if(!mode)return;var t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;
-  if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>12){mode=0;return}
-  if(mode===1&&dx>50){B.classList.add('nav');mode=0}
-  else if(mode===2&&dx<-50){B.classList.remove('nav');mode=0}},{passive:true});
- document.addEventListener('touchend',function(){mode=0},{passive:true});
- document.addEventListener('touchcancel',function(){mode=0},{passive:true})})();
+var sn=null;
+function snMove(e){if(!sn)return;var dy=e.touches[0].clientY-y0,max=sn.scrollHeight-sn.clientHeight;
+ if(max<=1||(sn.scrollTop<=0&&dy>0)||(sn.scrollTop>=max-1&&dy<0))e.preventDefault()}
+function snEnd(){sn=null;document.removeEventListener('touchmove',snMove,NT);document.removeEventListener('touchend',snEnd);document.removeEventListener('touchcancel',snEnd)}
+document.addEventListener('touchstart',function(e){var n=e.target.closest&&e.target.closest('.set-nav');
+ if(!n||getComputedStyle(n).position!=='fixed')return;sn=n;
+ document.addEventListener('touchmove',snMove,NT);document.addEventListener('touchend',snEnd,{passive:true});document.addEventListener('touchcancel',snEnd,{passive:true})},{passive:true});
+/* side menu follows your finger: drag from the left edge to open, drag it (or the dim area) left to close. Only while the HSC Hub top bar is showing.
+   The edge strip is a thin element of its own, so no page-wide touch blocking is needed. */
+var ed=document.createElement('div');ed.id='navEdge';BD.appendChild(ed);
+var g=null;
+function gBegin(e,open){var a=document.getElementById('nav'),sc=document.getElementById('sc');
+ if(!a||!sc||e.touches.length!==1||getComputedStyle(a).position!=='fixed')return;
+ var t=e.touches[0];g={open:open,x:t.clientX,y:t.clientY,a:a,sc:sc,w:a.getBoundingClientRect().width||270,dir:0,p:open?0:1,lx:t.clientX,lt:Date.now(),v:0}}
+function gMove(e){if(!g)return;var t=e.touches[0],dx=t.clientX-g.x,dy=t.clientY-g.y;
+ if(!g.dir){if(Math.abs(dx)<6&&Math.abs(dy)<6)return;if(Math.abs(dy)>Math.abs(dx)&&!g.open){g=null;return}if(Math.abs(dy)>Math.abs(dx)){g=null;return}
+  g.dir=1;g.a.style.transition='none';g.sc.style.transition='none';g.sc.style.pointerEvents='auto'}
+ if(e.cancelable)e.preventDefault();
+ var p=Math.max(0,Math.min(1,(g.open?0:1)+dx/g.w)),now=Date.now();
+ g.v=(t.clientX-g.lx)/Math.max(1,now-g.lt);g.lx=t.clientX;g.lt=now;g.p=p;
+ g.a.style.transform='translateX('+(-(1-p)*102)+'%)';g.sc.style.opacity=p}
+function gEnd(){if(!g)return;var o=g;g=null;if(!o.dir)return;
+ o.a.style.transition='';o.sc.style.transition='';o.a.style.transform='';o.sc.style.opacity='';o.sc.style.pointerEvents='';
+ var open=o.v>0.35?true:o.v<-0.35?false:o.p>0.5;BD.classList.toggle('nav',open)}
+function gListen(el,open){
+ el.addEventListener('touchstart',function(e){if(!HT.classList.contains('hub-top-on'))return;if(open===BD.classList.contains('nav'))return;gBegin(e,open);if(g&&open&&e.cancelable)e.preventDefault()},NT);
+ el.addEventListener('touchmove',gMove,NT);el.addEventListener('touchend',gEnd,{passive:true});el.addEventListener('touchcancel',gEnd,{passive:true})}
+gListen(ed,true);
+(function(){var a=document.getElementById('nav'),sc=document.getElementById('sc');if(a)gListen(a,false);if(sc)gListen(sc,false)})();
+})();
 </script>
 </body>
 </html>
