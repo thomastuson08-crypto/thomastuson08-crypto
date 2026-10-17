@@ -48998,6 +48998,49 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
  new MutationObserver(sched).observe(document.body,{childList:true,subtree:true});
  addEventListener('resize',sched);if(window.visualViewport)visualViewport.addEventListener('resize',sched);
  addEventListener('hashchange',sched);sched()})();
+</script>
+<script id="tt-kb">
+/* iPad / iPhone: while the on-screen keyboard is open for the Tutor box, pin the Tutor to the visible area above the keyboard.
+   Safari scrolls and shifts the page to reveal the focused field, which left a blank gap above the top bar and squashed the chat.
+   The Tutor now fills exactly the visible area (chat on top, box just above the keyboard), so it no longer matters how Safari moves the page behind it. */
+(()=>{const vv=window.visualViewport;if(!vv)return;
+ const st=document.createElement('style');st.id='tt-kb-css';
+ st.textContent=
+ 'html.tt-kb #tt.tt-kbd{position:fixed;left:0;right:0;top:var(--kt,0px);height:var(--kh,100%)!important;width:auto;max-width:none;margin:0;z-index:45;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);padding:calc(env(safe-area-inset-top,0px)/var(--uz,1) + 8px) clamp(12px,2.4vw,28px) 8px}'+
+ 'html.tt-kb #tt.tt-kbd #ttCtl,html.tt-kb #tt.tt-kbd #ttFiles{flex:none}'+
+ 'html.tt-kb #tt.tt-kbd .tt-box,html.tt-kb #tt.tt-kbd .tt-box.empty{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain}'+
+ 'html.tt-kb #tt.tt-kbd .tt-comp{position:static!important;flex:none;margin:8px 0 0;padding:0;background:none}'+
+ 'html.tt-kb #tt.tt-kbd #ttFoot{display:none}'+
+ 'html.tt-kb #tt.tt-kbd.tt-tight #ttCtl{display:none}';
+ document.head.appendChild(st);
+ let on=false,base=0,saveY=0,q=0,t1=0;
+ const inTT=()=>{const a=document.activeElement;return !!a&&a.id==='ttIn'};
+ const uz=()=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--uz'))||1;
+ const exit=()=>{if(!on)return;on=false;
+  document.documentElement.classList.remove('tt-kb');
+  const t=document.getElementById('tt');
+  if(t){t.classList.remove('tt-kbd','tt-tight');t.style.removeProperty('--kt');t.style.removeProperty('--kh')}
+  const y=saveY;scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y));clearTimeout(t1);t1=setTimeout(()=>scrollTo(0,y),350)};
+ const apply=()=>{
+  const t=document.getElementById('tt');
+  if(!t||!inTT()){exit();return}
+  const z=uz(),drop=Math.max(base,innerHeight)-vv.height;
+  if(drop<140){exit();return}          /* no on-screen keyboard (hardware keyboard, floating keyboard, desktop): leave the layout alone */
+  const entering=!on;
+  if(entering){on=true;document.documentElement.classList.add('tt-kb')}
+  t.classList.add('tt-kbd');
+  t.style.setProperty('--kt',(vv.offsetTop/z)+'px');
+  t.style.setProperty('--kh',(vv.height/z)+'px');
+  t.classList.toggle('tt-tight',vv.height<540);
+  if(entering)requestAnimationFrame(()=>{const b=document.getElementById('ttBox');if(b&&b.querySelector('.tt-m'))b.scrollTop=b.scrollHeight});
+ };
+ const sched=()=>{cancelAnimationFrame(q);q=requestAnimationFrame(apply)};
+ document.addEventListener('focusin',e=>{if(e.target&&e.target.id==='ttIn'){if(!on){base=vv.height;saveY=window.scrollY||0}sched()}});
+ document.addEventListener('focusout',e=>{if(e.target&&e.target.id==='ttIn')setTimeout(sched,80)});
+ vv.addEventListener('resize',sched);vv.addEventListener('scroll',sched);
+ addEventListener('orientationchange',()=>{base=0;setTimeout(sched,300)});
+ addEventListener('pagehide',exit);
+})();
 </script><script id="hub-account">
 /* HSC Hub account + cross-device sync (Supabase email/password). Progress is stored as one private row per account. */
 (()=>{try{
