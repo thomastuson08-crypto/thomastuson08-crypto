@@ -43845,8 +43845,8 @@ Reply with ONLY a JSON object and no other text: {"parts":[{"evidence":[{"point"
  function gmOrder(c){const U=usage().n,pri=c.model||GM[0].id,ids=[pri].concat(c.fb==='0'?[]:GM.map(m=>m.id).filter(id=>id!==pri&&c.fbl.indexOf(id)>=0)),
    left=id=>(GM.find(m=>m.id===id)||{rpd:0}).rpd-(U[id]||0);return ids.filter(id=>left(id)>0).concat(ids.filter(id=>left(id)<=0))}
  async function gem(c,usr,ctl,subj,opt){const mp=await gmResolve(c,ctl);let r=null,n=0;const SYS=opt&&opt.system!=null?opt.system:sys(c,subj),MS=opt&&opt.msgs?opt.msgs:[{role:'user',content:usr}];
-  for(const id of gmOrder(c)){if(n>=4)break;if(mp.ok&&!mp.map[id])continue;n++;const g=/^gemma/i.test(id),gc={maxOutputTokens:opt?Math.min(+c.maxtok||8192,4096):(+c.maxtok||8192)};if(!g&&!opt)gc.responseMimeType='application/json';if(c.temp!=='')gc.temperature=+c.temp;
-   const gct=MS.map((m,i)=>({role:m.role==='assistant'?'model':'user',parts:[{text:(g&&i===0?SYS+'\n\n':'')+m.content}]})),body=g?{contents:gct,generationConfig:gc}:{systemInstruction:{parts:[{text:SYS}]},contents:gct,generationConfig:gc};
+  for(const id of gmOrder(c)){if(n>=4)break;if(mp.ok&&!mp.map[id])continue;if(opt&&(opt.files||opt.tools)&&/^gemma/i.test(id))continue;n++;const g=/^gemma/i.test(id),gc={maxOutputTokens:opt?Math.min(+c.maxtok||8192,4096):(+c.maxtok||8192)};if(!g&&!opt)gc.responseMimeType='application/json';if(c.temp!=='')gc.temperature=+c.temp;
+   const gct=MS.map((m,i)=>({role:m.role==='assistant'?'model':'user',parts:[{text:(g&&i===0?SYS+'\n\n':'')+m.content}].concat(opt&&opt.files&&i===MS.length-1?opt.files.map(f=>({inlineData:{mimeType:f.mime,data:f.data}})):[])})),body=g?{contents:gct,generationConfig:gc}:Object.assign({systemInstruction:{parts:[{text:SYS}]},contents:gct,generationConfig:gc},opt&&opt.tools?{tools:[{codeExecution:{}}]}:{});
    r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent((mp.map&&mp.map[id])||id)+':generateContent',{method:'POST',signal:ctl.signal,headers:{'content-type':'application/json','x-goog-api-key':c.key},body:JSON.stringify(body)});
    if(r.ok){bump(id);break}
    if([404,429,503].indexOf(r.status)<0)break}
@@ -43898,7 +43898,7 @@ Reply with ONLY a JSON object and no other text: {"parts":[{"evidence":[{"point"
   else if(hi-lo>=Math.max(2,Math.round(r.max*.15)))w.push('The '+n+' AI runs disagreed ('+lo+' to '+hi+'), so treat this mark with extra caution.');
   if(w.length)r.aiWarn=w.join(' ');return r}
  async function ping(){return call('Reply with {"ok":true}')}
- return{cfg:cfg,save:save,ready:ready,mark:mark,ping:ping,check:check,usage:usage,GM:GM,DM:DM,DEF:DEF,auto:()=>cfg().auto!=='0',chat:(system,msgs)=>call('',null,{system:system,msgs:msgs})}})();
+ return{cfg:cfg,save:save,ready:ready,mark:mark,ping:ping,check:check,usage:usage,GM:GM,DM:DM,DEF:DEF,auto:()=>cfg().auto!=='0',chat:(system,msgs,files,tools)=>call('',null,{system:system,msgs:msgs,files:files,tools:tools})}})();
 const XAIN='<p class="xc-sugn"><b>Marked by AI.</b> The AI marks your answer against the question\'s marking points and NESA-style criteria. It can be wrong or inconsistent, so treat it as a study guide, not a prediction of your real HSC mark. Your own mark below always counts.</p>';
 const XAI={msg:'',key:''};
 const xaiGoSet=()=>{if(typeof xo!=='undefined'&&xo)xclose(true);go('settings/ai')};
@@ -47192,10 +47192,10 @@ const TTD=(()=>{
 
  /* a safe reader for equations in x: numbers, x, + - * / ^, brackets, implicit multiplication (2x, 3(x+1)) and sqrt abs ln log exp.
     It builds a small function; nothing is ever passed to eval. Returns null if it cannot read the equation. */
- function parseEq(src){const t=String(src==null?'':src).toLowerCase().replace(/[\u2212\u2013]/g,'-').replace(/[\u00D7\u00B7]/g,'*').replace(/\u00F7/g,'/').replace(/\u00B2/g,'^2').replace(/\u00B3/g,'^3').replace(/\u03C0/g,'pi').replace(/^\s*y\s*=/,'').replace(/\s+/g,'');
+ function parseEq(src,rad){const t=String(src==null?'':src).toLowerCase().replace(/[\u2212\u2013]/g,'-').replace(/[\u00D7\u00B7]/g,'*').replace(/\u00F7/g,'/').replace(/\u00B2/g,'^2').replace(/\u00B3/g,'^3').replace(/\u03C0/g,'pi').replace(/^\s*y\s*=/,'').replace(/\s+/g,'');
   if(!t||t.length>80)return null;
   const tk=t.match(/\d+\.?\d*|\.\d+|[a-z]+|[-+*\/^()]/g);if(!tk||tk.join('')!==t)return null;
-  const FN={sqrt:Math.sqrt,abs:Math.abs,ln:Math.log,log:Math.log10,exp:Math.exp};let i=0,bad=false;
+  const dg=h=>rad?h:x=>h(x*Math.PI/180),FN={sqrt:Math.sqrt,abs:Math.abs,ln:Math.log,log:Math.log10,exp:Math.exp,sin:dg(Math.sin),cos:dg(Math.cos),tan:dg(Math.tan)};let i=0,bad=false;
   const peek=()=>tk[i],start=k=>k!==undefined&&(/^[\d.]/.test(k)||k==='x'||k==='pi'||k==='e'||k==='('||Object.prototype.hasOwnProperty.call(FN,k));
   function expr(){let f=term();while(peek()==='+'||peek()==='-'){const o=tk[i++],g=term(),a=f;f=o==='+'?x=>a(x)+g(x):x=>a(x)-g(x)}return f}
   function term(){let f=unary();for(;;){const k=peek();if(k==='*'||k==='/'){i++;const g=unary(),a=f;f=k==='*'?x=>a(x)*g(x):x=>a(x)/g(x)}else if(start(k)){const g=unary(),a=f;f=x=>a(x)*g(x)}else break}return f}
@@ -47223,8 +47223,8 @@ const TTD=(()=>{
  function graph(s){
   const pts=(Array.isArray(s.points)?s.points:[]).slice(0,40).map(p=>Array.isArray(p)?[parseFloat(p[0]),parseFloat(p[1])]:null).filter(p=>p&&ok(p[0])&&ok(p[1]));
   const cur=[];
-  for(const c of (Array.isArray(s.curves)?s.curves:Array.isArray(s.lines)?s.lines:[]).slice(0,3)){const o=typeof c==='string'?{y:c}:c;if(!o||typeof o!=='object')return null;
-   const eq=o.y!=null?o.y:o.fn!=null?o.fn:o.eq,f=parseEq(eq);if(!f)return null;
+  for(const c of (Array.isArray(s.curves)?s.curves:Array.isArray(s.lines)?s.lines:[]).slice(0,4)){const o=typeof c==='string'?{y:c}:c;if(!o||typeof o!=='object')return null;
+   const eq=o.y!=null?o.y:o.fn!=null?o.fn:o.eq,f=parseEq(eq,!!s.radians);if(!f)return null;
    cur.push({f,lab:o.label!=null&&o.label!==''?String(o.label):'y = '+String(eq).replace(/^\s*y\s*=\s*/i,'').replace(/\^2/g,'\u00B2').replace(/\^3/g,'\u00B3'),dash:!!o.dash})}
   const mk=(Array.isArray(s.marks)?s.marks:[]).slice(0,6).map(p=>Array.isArray(p)?[parseFloat(p[0]),parseFloat(p[1]),p[2]==null?'':String(p[2])]:null).filter(p=>p&&ok(p[0])&&ok(p[1]));
   if(!pts.length&&!cur.length)return null;
@@ -47232,23 +47232,50 @@ const TTD=(()=>{
   if(s.best&&pts.length>=2){const n=pts.length,mx=pts.reduce((a,p)=>a+p[0],0)/n,my=pts.reduce((a,p)=>a+p[1],0)/n;let sxx=0,sxy=0,syy=0;
    pts.forEach(p=>{sxx+=(p[0]-mx)*(p[0]-mx);sxy+=(p[0]-mx)*(p[1]-my);syy+=(p[1]-my)*(p[1]-my)});
    if(sxx>0){best=true;m=sxy/sxx;c=my-m*mx;r=syy>0?sxy/Math.sqrt(sxx*syy):NaN;bl='y = '+sg(m)+'x '+(c<0?'\u2212':'+')+' '+sg(Math.abs(c))}}
+  /* phase 4: predictions from the line of best fit. "predict":[x,...] marks the line at each x; the line is dashed outside the data (extrapolation); "extend":true runs the dashed line on past the data */
+  const pred=[];let dlo=NaN,dhi=NaN;
+  if(best){dlo=Math.min(...pts.map(p=>p[0]));dhi=Math.max(...pts.map(p=>p[0]));
+   [].concat(s.predict==null?[]:s.predict,s.extrapolate==null||typeof s.extrapolate==='boolean'?[]:s.extrapolate,s.interpolate==null||typeof s.interpolate==='boolean'?[]:s.interpolate).slice(0,4).forEach(v=>{const x=parseFloat(Array.isArray(v)?v[0]:v);
+    if(ok(x)){const y=m*x+c,inn=x>=dlo-1e-9&&x<=dhi+1e-9;pred.push({x,y,inn});mk.push([x,y,s.answer?'('+fv(x)+', '+fv(+y.toPrecision(4))+')':'x = '+fv(x)])}})}
+  const ext=pred.some(q=>!q.inn)||(best&&s.extend===true),spl=best&&(pred.length>0||s.extend===true);
   let xa=num(s.xmin,NaN),xb=num(s.xmax,NaN),xs,ys;
   if(ok(xa)&&ok(xb)&&xb>xa)xs=scale(xa,xb,6,true);
-  else if(pts.length||mk.length){const v=pts.concat(mk).map(p=>p[0]),lo=Math.min(...v),hi=Math.max(...v),pd=(hi-lo)*.05||1;xs=scale(lo-pd,hi+pd,6)}
+  else if(pts.length||mk.length){const v=pts.concat(mk).map(p=>p[0]),lo=Math.min(...v),hi=Math.max(...v),pd=(hi-lo)*.05||1,ex=best&&s.extend===true&&!pred.some(q=>!q.inn)?(hi-lo)*.6:0;xs=scale(lo-pd,hi+pd+ex,6)}
   else xs=scale(-5,5,6,true);
   let ya=num(s.ymin,NaN),yb=num(s.ymax,NaN);
   if(ok(ya)&&ok(yb)&&yb>ya)ys=scale(ya,yb,5,true);
   else{let v=pts.map(p=>p[1]).concat(mk.map(p=>p[1]));cur.forEach(o=>{v=v.concat(samp(o.f,xs.lo,xs.hi))});
-   if(best&&pts.length){const px=pts.map(p=>p[0]);v.push(m*Math.min(...px)+c,m*Math.max(...px)+c)}
+   if(best&&pts.length){const px=pts.map(p=>p[0]);v.push(m*Math.min(...px)+c,m*Math.max(...px)+c);if(spl)v.push(m*xs.lo+c,m*xs.hi+c)}
    if(!v.length)return null;const lo=Math.min(...v),hi=Math.max(...v),pd=(hi-lo)*.06||1;ys=scale(lo-pd,hi+pd,5)}
-  const leg=cur.map((o,i)=>({t:o.lab,i,d:o.dash})).concat(best?[{t:'Best fit: '+bl,i:cur.length||1,d:false}]:[]),top=10+leg.length*16,
+  const leg=cur.map((o,i)=>({t:o.lab,i,d:o.dash})).concat(best?[{t:'Best fit: '+bl,i:cur.length||1,d:false}]:[]).concat(ext?[{t:'Extrapolated (beyond the data)',i:cur.length||1,d:true}]:[]),top=10+leg.length*16,
    P={l:padL(ys,s.ylabel),r:326,t:top,b:top+170},F=frame(P,xs,ys,{xlabel:s.xlabel,ylabel:s.ylabel}),span=ys.hi-ys.lo,o=[F.svg],cid='tc'+(++CID);
   o.push(`<clipPath id="${cid}"><rect x="${f1(P.l)}" y="${f1(P.t)}" width="${f1(P.r-P.l)}" height="${f1(P.b-P.t)}"/></clipPath><g clip-path="url(#${cid})">`);
+  let capx=[];const xtra=[];
+  /* shaded regions: {"between":[a,b]} where a and b are curve numbers (0 is the first) or "axis", "top", "bottom"; also {"under":i} {"above":i} {"below":i}; "from" and "to" are x values or "cross" (where the two curves meet) */
+  const bnd=(b,x)=>{if(Number.isInteger(b)&&b>=0&&b<cur.length)return cur[b].f(x);if(b==='axis')return 0;if(b==='top')return ys.hi;if(b==='bottom')return ys.lo;return NaN};
+  const crossX=(A,B)=>{const fa=cur[A]&&cur[A].f,fb=cur[B]&&cur[B].f;if(!fa||!fb)return NaN;const st=(xs.hi-xs.lo)/400;let pd=null;for(let i=0;i<=400;i++){const x=xs.lo+st*i;let d;try{d=fa(x)-fb(x)}catch(e){d=NaN}if(!ok(d)){pd=null;continue}if(pd!==null&&pd*d<=0&&pd!==d)return x-st+st*pd/(pd-d);pd=d}return NaN};
+  const shl=[];
+  (Array.isArray(s.shade)?s.shade:[]).slice(0,3).forEach((sh,si)=>{if(!sh||typeof sh!=='object')return;let A,B;
+   if(Array.isArray(sh.between)&&sh.between.length>=2){A=sh.between[0];B=sh.between[1]}else if(sh.under!=null){A=sh.under;B='axis'}else if(sh.above!=null){A=sh.above;B='top'}else if(sh.below!=null){A='bottom';B=sh.below}else return;
+   const pt=v=>v==='cross'?crossX(A,B):num(v,NaN);let x0=sh.from==null?xs.lo:pt(sh.from),x1=sh.to==null?xs.hi:pt(sh.to);if(!ok(x0)||!ok(x1))return;x0=Math.max(xs.lo,x0);x1=Math.min(xs.hi,x1);if(!(x1>x0))return;
+   const up=[],dn=[],cl=y=>f1(Math.max(P.t-400,Math.min(P.b+400,F.sy(y))));
+   for(let i=0;i<=100;i++){const x=x0+(x1-x0)*i/100;let a,b;try{a=bnd(A,x);b=bnd(B,x)}catch(e){continue}if(!ok(a)||!ok(b))continue;up.push(f1(F.sx(x))+' '+cl(a));dn.unshift(f1(F.sx(x))+' '+cl(b))}
+   if(up.length<2)return;o.push(`<path class="sh${si%2?' c1':''}" d="M${up.join('L')}L${dn.join('L')}Z"/>`);
+   const xm=(x0+x1)/2;let ya=bnd(A,xm),yb=bnd(B,xm);if(ok(ya)&&ok(yb)){const ym=Math.max(ys.lo,Math.min(ys.hi,(Math.max(ys.lo,Math.min(ys.hi,ya))+Math.max(ys.lo,Math.min(ys.hi,yb)))/2));
+    const lt=String(sh.label==null?'':sh.label).trim();if(lt)shl.push([F.sx(xm),F.sy(ym)+4,lt]);xtra.push('A region is shaded'+(lt?' ('+lt+')':'')+' from x = '+fv(x0)+' to x = '+fv(x1))}});
+  if(shl.length)capx.push('The shaded region'+(shl.length>1?'s are':' is')+' labelled.');
   cur.forEach((q,i)=>o.push(`<path class="k s${i%4}${q.dash?' d':''}" d="${pathOf(q.f,xs,P,F.sx,F.sy,span)}"/>`));
-  if(best)o.push(`<line class="k s${(cur.length||1)%4}" x1="${f1(F.sx(xs.lo))}" y1="${f1(F.sy(m*xs.lo+c))}" x2="${f1(F.sx(xs.hi))}" y2="${f1(F.sy(m*xs.hi+c))}"/>`);
+  const bseg=(a,b,d)=>a<b?`<line class="k s${(cur.length||1)%4}${d?' d':''}" x1="${f1(F.sx(a))}" y1="${f1(F.sy(m*a+c))}" x2="${f1(F.sx(b))}" y2="${f1(F.sy(m*b+c))}"/>`:'';
+  if(best){if(spl)o.push(bseg(xs.lo,dlo,1),bseg(dlo,dhi,0),bseg(dhi,xs.hi,1));else o.push(bseg(xs.lo,xs.hi,0))}
   if(s.join&&pts.length>1)o.push(`<path class="k s0" d="M${pts.map(p=>f1(F.sx(p[0]))+' '+f1(F.sy(p[1]))).join('L')}"/>`);
   if(s.dots!==false)pts.forEach(p=>o.push(`<circle class="pt" cx="${f1(F.sx(p[0]))}" cy="${f1(F.sy(p[1]))}" r="4"/>`));
   o.push('</g>');
+  /* dashed vertical and horizontal lines: "vlines":[[3,"x = 3"]] (axis of symmetry, asymptote) and "hlines":[[0,"y = 0"]] */
+  const ln=(a,xv)=>(Array.isArray(a)?a:[]).slice(0,4).map(v=>{const q=Array.isArray(v)?v:[v];const c=parseFloat(q[0]);return ok(c)?[c,q[1]==null?'':String(q[1])]:null}).filter(Boolean);
+  ln(s.vlines).forEach(([c,t])=>{if(c<xs.lo||c>xs.hi)return;const x=F.sx(c);o.push(`<line class="k d s2" x1="${f1(x)}" y1="${f1(P.t)}" x2="${f1(x)}" y2="${f1(P.b)}"/>`);const r=x>P.l+(P.r-P.l)*.7;o.push(TL(x+(r?-4:4),P.t+12,t,'n',r?'end':'start'));xtra.push('Dashed vertical line'+(t?' '+t:' at x = '+fv(c)))});
+  ln(s.hlines).forEach(([c,t])=>{if(c<ys.lo||c>ys.hi)return;const y=F.sy(c);o.push(`<line class="k d s2" x1="${f1(P.l)}" y1="${f1(y)}" x2="${f1(P.r)}" y2="${f1(y)}"/>`);o.push(TL(P.r-3,y-5,t,'n','end'));xtra.push('Dashed horizontal line'+(t?' '+t:' at y = '+fv(c)))});
+  shl.forEach(([x,y,tx])=>o.push(TL(x,y,tx,'v g')));
+  if(ln(s.vlines).length||ln(s.hlines).length)capx.push('Dashed lines mark the lines given (such as an axis of symmetry, an asymptote or a target value).');
   const lb=[],dots=mk.map(q=>[F.sx(q[0])-7,F.sy(q[1])-7,F.sx(q[0])+7,F.sy(q[1])+7]),hit=(a,b)=>a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3];
   mk.forEach(p=>{const x=F.sx(p[0]),y=F.sy(p[1]);if(x<P.l-1||x>P.r+1||y<P.t-1||y>P.b+1)return;
    o.push(`<circle class="mk" cx="${f1(x)}" cy="${f1(y)}" r="4.5"/>`);const t=String(p[2]).replace(/\s+/g,' ').trim().slice(0,28);if(!t)return;
@@ -47259,9 +47286,11 @@ const TTD=(()=>{
    lb.push(box(pick));o.push(TL(x+pick[0],y+pick[1],t,'v',pick[2]))});
   leg.forEach((q,k)=>{const y=14+k*16;o.push(`<line class="k s${q.i%4}${q.d?' d':''}" x1="${f1(P.l)}" y1="${y-4}" x2="${f1(P.l+20)}" y2="${y-4}"/>`+TL(P.l+26,y,q.t,'n','start'))});
   const ap=pts.slice(0,12).map(p=>'('+fv(p[0])+', '+fv(p[1])+')').join(', ');
+  const prAlt=pred.length?'Predictions at x = '+pred.map(q=>fv(q.x)+(s.answer?' (y = '+fv(+q.y.toPrecision(4))+', ':' (')+(q.inn?'interpolation':'extrapolation')+')').join('; '):'',
+   prCap=(pred.length&&s.answer?pred.map(q=>' At x = '+fv(q.x)+' the line gives y \u2248 '+fv(+q.y.toPrecision(4))+(q.inn?' (interpolation: inside the data).':' (extrapolation: outside the data).')).join(''):'')+(ext?' The dashed part of the line is extrapolation: it goes beyond the data, so predictions there are less reliable.':'');
   return{h:P.b+(s.xlabel?42:24),svg:o.join(''),
-   alt:'Graph. '+join([cur.length&&'Drawn: '+cur.map(q=>q.lab).join('; '),pts.length&&'Points '+ap,best&&'Line of best fit '+bl])+'.',
-   cap:best?'Least-squares line of best fit: '+bl+(ok(r)?', r = '+sg(r):'')+'.':cur.length?'Drawn from the equation'+(cur.length>1?'s':'')+' given.':s.join?'Line graph through the points given.':'Scatterplot of the data given.'}}
+   alt:'Graph. '+join([cur.length&&'Drawn: '+cur.map(q=>q.lab).join('; '),pts.length&&'Points '+ap,best&&'Line of best fit '+bl,prAlt,xtra.length&&xtra.join('; ')])+'.',
+   cap:(capx.length?capx.join(' ')+' ':'')+(best?'Least-squares line of best fit: '+bl+(ok(r)?', r = '+sg(r):'')+'.'+prCap:cur.length?'Drawn from the equation'+(cur.length>1?'s':'')+' given.':s.join?'Line graph through the points given.':'Scatterplot of the data given.')}}
 
  /* 6. normal distribution with a shaded area; the area is worked out here from the cut points */
  const erf=x=>{const t=1/(1+.3275911*Math.abs(x)),y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x);return x>=0?y:-y};
@@ -47796,11 +47825,337 @@ const TTD=(()=>{
   if(fi>=0&&ti>=0&&fi!==ti){let f=1;for(let i=Math.min(fi,ti);i<Math.max(fi,ti);i++)f*=Fc[i];cap='From '+U[fi]+' to '+U[ti]+': '+(ti<fi?'multiply':'divide')+' by '+fm(f)+'. '+cap}
   return{h:166,svg:o.join(''),alt:'Unit conversion ladder for '+kd+': '+U.map((u,i)=>i?'\u00D7'+Fc[i-1]+' down, \u00F7'+Fc[i-1]+' up, '+u:u).join(', ')+'.',cap}}
 
- const fig=r=>`<figure class="tt-dg"><svg viewBox="0 0 340 ${r.h}" role="img" aria-label="${X(r.alt)}">${r.svg}</svg><figcaption>${X(r.cap)}</figcaption></figure>`;
+ /* ===== phase 1: network flow (maximum flow, minimum cut) and critical path (activity on node: EST, LST, float) =====
+    The Tutor only lists the edges (with capacities) or the activities (with durations and predecessors).
+    This code works out the maximum flow, the minimum cut, every EST, LST and float time and the critical path(s), so the picture cannot disagree with the maths. */
+ /* lays a directed network out from left to right: a node sits one step to the right of its furthest predecessor */
+ const layer=(N,E,fixed)=>{const dp={};N.forEach(v=>dp[v]=0);for(let it=0;it<N.length&&!fixed;it++){let ch=false;E.forEach(([a,b])=>{if(dp[b]<dp[a]+1&&dp[a]+1<N.length){dp[b]=dp[a]+1;ch=true}});if(!ch)break}
+  if(fixed)N.forEach(v=>dp[v]=fixed[v]);const LY=[],yy={};N.forEach(v=>{(LY[dp[v]]=LY[dp[v]]||[]).push(v)});const ly=LY.filter(Boolean);
+  ly.forEach((g,d)=>{if(d>0)g.sort((p,q)=>{const k=v=>{const pr=E.filter(e=>e[1]===v&&yy[e[0]]!=null).map(e=>yy[e[0]]);return pr.length?pr.reduce((a,b)=>a+b,0)/pr.length:.5};return k(p)-k(q)||N.indexOf(p)-N.indexOf(q)});
+   g.forEach((v,i)=>{yy[v]=(i+1)/(g.length+1)})});
+  return{ly,yy}};
+ const arrow=(B2,u,h)=>{const nx=-u[1],ny=u[0],bb=[B2[0]-u[0]*11,B2[1]-u[1]*11];return `<polygon class="ah${h?' h':''}" points="${f1(B2[0])},${f1(B2[1])} ${f1(bb[0]+nx*5)},${f1(bb[1]+ny*5)} ${f1(bb[0]-nx*5)},${f1(bb[1]-ny*5)}"/>`};
+ const elab=(A2,B2,u)=>{let nx=-u[1],ny=u[0];if(ny>0||(Math.abs(ny)<.2&&nx<0)){nx=-nx;ny=-ny}return{p:[(A2[0]+B2[0])/2+nx*12,(A2[1]+B2[1])/2+ny*12+5],a:nx>.3?'start':nx<-.3?'end':'middle'}};
+
+ /* 27. flow network: edges are [from, to, capacity]. "flow":true prints flow/capacity on every edge, "cut":true draws the minimum cut,
+    or "cut":["S","A"] draws the cut that separates those nodes (and the source) from the rest and prints its capacity */
+ function flowNet(s){
+  const E=(Array.isArray(s.edges)?s.edges:[]).slice(0,20).map(e=>Array.isArray(e)&&e.length>=3?[lab(e[0]),lab(e[1]),Math.abs(parseFloat(e[2]))]:null).filter(e=>e&&e[0]&&e[1]&&e[0]!==e[1]&&ok(e[2]));
+  const N=[];E.forEach(e=>{if(!N.includes(e[0]))N.push(e[0]);if(!N.includes(e[1]))N.push(e[1])});
+  if(N.length<2||N.length>10)return null;
+  const seen=new Set();for(const e of E){if(seen.has(e[0]+'\u0001'+e[1])||seen.has(e[1]+'\u0001'+e[0]))return null;seen.add(e[0]+'\u0001'+e[1])}
+  const sq0=lab(s.source),sk0=lab(s.sink),src=N.includes(sq0)?sq0:(N.find(v=>!E.some(e=>e[1]===v))||N[0]),snk=N.includes(sk0)?sk0:(N.slice().reverse().find(v=>!E.some(e=>e[0]===v))||N[N.length-1]);
+  if(src===snk)return null;
+  const n=N.length,ix={};N.forEach((v,i)=>ix[v]=i);const c=[...Array(n)].map(()=>Array(n).fill(0)),f=[...Array(n)].map(()=>Array(n).fill(0));
+  E.forEach(e=>{c[ix[e[0]]][ix[e[1]]]=e[2]});
+  /* Edmonds-Karp: keep adding the shortest path that still has room until none is left */
+  let mf=0;const S0=ix[src],T0=ix[snk];
+  for(let guard=0;guard<500;guard++){const par=Array(n).fill(-1);par[S0]=S0;const q=[S0];
+   while(q.length&&par[T0]<0){const u=q.shift();for(let v=0;v<n;v++)if(par[v]<0&&c[u][v]-f[u][v]>1e-12){par[v]=u;q.push(v)}}
+   if(par[T0]<0)break;let b=Infinity;for(let v=T0;v!==S0;v=par[v])b=Math.min(b,c[par[v]][v]-f[par[v]][v]);
+   for(let v=T0;v!==S0;v=par[v]){f[par[v]][v]+=b;f[v][par[v]]-=b}mf+=b}
+  /* nodes still reachable from the source once the flow is maximal: this is the source side of the minimum cut */
+  const reach=new Set([S0]),q2=[S0];while(q2.length){const u=q2.shift();for(let v=0;v<n;v++)if(!reach.has(v)&&c[u][v]-f[u][v]>1e-12){reach.add(v);q2.push(v)}}
+  let inS=null,minCut=false;
+  if(s.cut===true||/^min/i.test(String(s.cut||''))){inS=reach;minCut=true}
+  else if(Array.isArray(s.cut)){inS=new Set([S0]);s.cut.map(lab).forEach(v=>{if(ix[v]!=null&&v!==snk)inS.add(ix[v])})}
+  const cutE=inS?E.filter(e=>inS.has(ix[e[0]])&&!inS.has(ix[e[1]])):[],cutCap=cutE.reduce((a,e)=>a+e[2],0);
+  const dd={};N.forEach(v=>dd[v]=-1);dd[src]=0;{const qq=[src];while(qq.length){const u=qq.shift();E.forEach(e=>{if(e[0]===u&&dd[e[1]]<0){dd[e[1]]=dd[u]+1;qq.push(e[1])}})}}
+  let mx=0;N.forEach(v=>{if(v!==snk){if(dd[v]<0)dd[v]=0;mx=Math.max(mx,dd[v])}});dd[snk]=Math.max(mx+1,1);
+  const showF=!!s.flow,{ly,yy}=layer(N,E.map(e=>[e[0],e[1]]),dd),W=ly.length>3?400:340,top=inS?26:0,H=Math.max(190,Math.min(360,60+Math.max(...ly.map(g=>g.length))*92))+top,pos={};
+  ly.forEach((g,d)=>g.forEach(v=>{pos[v]=[40+(ly.length>1?d/(ly.length-1):.5)*(W-80),top+30+yy[v]*(H-top-60)]}));
+  const rad={};N.forEach(v=>{rad[v]=Math.min(30,Math.max(15,v.length*5.4+9))});
+  const o=[];
+  const geo={};
+  E.forEach(e=>{const A=pos[e[0]],B=pos[e[1]],skip=Math.abs(dd[e[1]]-dd[e[0]])>1;let g;
+   if(skip){const mid=[(A[0]+B[0])/2,(A[1]+B[1])/2],ch=unit(A,B);let nx=-ch[1],ny=ch[0];if((ny>0)===(mid[1]<(H+top)/2)){nx=-nx;ny=-ny}
+    const ct=[mid[0]+nx*34,mid[1]+ny*34],u0=unit(A,ct),u1=unit(ct,B),A2=[A[0]+u0[0]*rad[e[0]],A[1]+u0[1]*rad[e[0]]],B2=[B[0]-u1[0]*rad[e[1]],B[1]-u1[1]*rad[e[1]]],Bl=[B2[0]-u1[0]*6,B2[1]-u1[1]*6],
+     mp=[.25*A2[0]+.5*ct[0]+.25*B2[0],.25*A2[1]+.5*ct[1]+.25*B2[1]],on=unit(mid,ct),at=t=>[(1-t)*(1-t)*A2[0]+2*t*(1-t)*ct[0]+t*t*B2[0],(1-t)*(1-t)*A2[1]+2*t*(1-t)*ct[1]+t*t*B2[1]];
+    g={d:`M${f1(A2[0])} ${f1(A2[1])}Q${f1(ct[0])} ${f1(ct[1])} ${f1(Bl[0])} ${f1(Bl[1])}`,tip:B2,u:u1,lp:[mp[0]+on[0]*11,mp[1]+on[1]*11+5],an:on[0]>.4?'start':on[0]<-.4?'end':'middle',at}}
+   else{const u=unit(A,B),A2=[A[0]+u[0]*rad[e[0]],A[1]+u[1]*rad[e[0]]],B2=[B[0]-u[0]*rad[e[1]],B[1]-u[1]*rad[e[1]]],Bl=[B2[0]-u[0]*6,B2[1]-u[1]*6],w=elab(A2,B2,u);
+    g={d:`M${f1(A2[0])} ${f1(A2[1])}L${f1(Bl[0])} ${f1(Bl[1])}`,tip:B2,u,lp:w.p,an:w.a,at:t=>[A2[0]+(B2[0]-A2[0])*t,A2[1]+(B2[1]-A2[1])*t]}}
+   geo[e[0]+'\u0001'+e[1]]=g;
+   const fl=Math.max(0,f[ix[e[0]]][ix[e[1]]]),tx=showF?fv(fl)+'/'+fv(e[2]):fv(e[2]);
+   o.push(`<path class="k" d="${g.d}"/>`,arrow(g.tip,g.u,0),TX(g.lp,tx,'v',g.an))});
+  N.forEach(v=>{const p=pos[v];o.push(`<circle class="nd${v===src||v===snk?' h':''}" cx="${f1(p[0])}" cy="${f1(p[1])}" r="${f1(rad[v])}"/>`+TX([p[0],p[1]+5],v,'v p'));
+   if(v===src||v===snk)o.push(TX([p[0],p[1]+rad[v]+13],v===src?'source':'sink','n'))});
+  if(inS&&cutE.length){const M=cutE.map(e=>geo[e[0]+'\u0001'+e[1]].at(.3)).sort((p,q)=>p[1]-q[1]),P=[[M[0][0],top+6],...M,[M[M.length-1][0],H-6]];
+   o.push(`<path class="k d a" d="M${P.map(p=>f1(p[0])+' '+f1(p[1])).join('L')}"/>`,TX([Math.min(300,Math.max(40,M[0][0])),14],'Cut = '+fv(cutCap),'v g'))}
+  const flowIn=E.filter(e=>e[1]===snk).reduce((a,e)=>a+Math.max(0,f[ix[e[0]]][ix[e[1]]]),0);
+  return{w:W,h:H,svg:o.join(''),
+   alt:'Flow network from source '+src+' to sink '+snk+'. Edges (capacity): '+E.map(e=>e[0]+' to '+e[1]+' ('+fv(e[2])+')').join('; ')+'.'+(showF?' Maximum flow '+fv(mf)+'.':'')+(inS?' A cut is drawn with capacity '+fv(cutCap)+', crossing '+cutE.map(e=>e[0]+'-'+e[1]).join(', ')+'.':''),
+   cap:(showF?'Each edge shows flow / capacity. ':'The numbers on the edges are capacities. ')+((showF||minCut)?'Maximum flow = '+fv(mf)+'. ':'')+(inS?(minCut?'The dashed line is the minimum cut; its capacity equals the maximum flow (max-flow min-cut theorem). ':'The dashed line is a cut: it adds up the capacities of the edges going from the source side to the sink side. '):'')+'Not drawn to scale.'}}
+
+ /* 28. critical path analysis, activity on node: activities are [name, duration, predecessors]; predecessors is a list, a "A,B" string or left out for none.
+    The Hub works out EST (forward scan), LST (backward scan), float, the minimum completion time and the critical path(s). "times":false draws only the boxes. */
+ function cpm(s){
+  const A=(Array.isArray(s.activities)?s.activities:[]).slice(0,10).map(a=>{if(!Array.isArray(a)||a.length<2)return null;let p=a[2];if(typeof p==='string')p=p.split(/[,\s]+/);
+   p=(Array.isArray(p)?p:[]).map(lab).filter(x=>x&&x!=='-'&&x!=='–'&&x.toLowerCase()!=='none');return{n:lab(a[0]),d:parseFloat(a[1]),p}}).filter(a=>a&&a.n&&ok(a.d)&&a.d>=0);
+  if(A.length<2)return null;
+  const names=A.map(a=>a.n);if(new Set(names).size!==names.length)return null;
+  if(A.some(a=>a.p.some(p=>!names.includes(p)||p===a.n)))return null;
+  const by={},order=[],st={};A.forEach(a=>by[a.n]=a);let cyc=false;
+  const visit=m=>{if(st[m]===2)return;if(st[m]===1){cyc=true;return}st[m]=1;by[m].p.forEach(visit);st[m]=2;order.push(m)};names.forEach(visit);if(cyc)return null;
+  order.forEach(m=>{const a=by[m];a.est=a.p.length?Math.max(...a.p.map(p=>by[p].est+by[p].d)):0});
+  const T=Math.max(...A.map(a=>a.est+a.d)),succ={};names.forEach(m=>succ[m]=[]);A.forEach(a=>a.p.forEach(p=>succ[p].push(a.n)));
+  order.slice().reverse().forEach(m=>{const a=by[m];a.lst=(succ[m].length?Math.min(...succ[m].map(k=>by[k].lst)):T)-a.d;a.fl=a.lst-a.est});
+  const eq=(x,y)=>Math.abs(x-y)<1e-9,crit=m=>eq(by[m].fl,0),E=[];A.forEach(a=>a.p.forEach(p=>E.push([p,a.n])));
+  const ce=E.filter(([p,m])=>crit(p)&&crit(m)&&eq(by[p].est+by[p].d,by[m].est));
+  const paths=[];const walk=(m,pa)=>{if(paths.length>=4)return;const nx=ce.filter(e=>e[0]===m);if(!nx.length){if(eq(by[m].est+by[m].d,T))paths.push(pa.concat(m));return}nx.forEach(e=>walk(e[1],pa.concat(m)))};
+  names.filter(m=>crit(m)&&!by[m].p.length).forEach(m=>walk(m,[]));
+  const times=s.times!==false,{ly,yy}=layer(names,E),nl=ly.length,bw=56,bh=times?52:36,gap=26,mg=Math.max(...ly.map(g=>g.length)),
+   Wd=Math.max(340,nl*bw+(nl-1)*gap+24),H=Math.max(130,24+(mg+1)*(bh+16)),x0=(Wd-(nl*bw+(nl-1)*gap))/2+bw/2,pos={};
+  ly.forEach((g,d)=>g.forEach(m=>{pos[m]=[x0+d*(bw+gap),12+yy[m]*(H-24)]}));
+  const clip=(c,u,sg)=>{const t=Math.min((bw/2)/(Math.abs(u[0])||1e-9),(bh/2)/(Math.abs(u[1])||1e-9));return[c[0]+sg*u[0]*(t+(sg<0?0:0)),c[1]+sg*u[1]*t]};
+  const o=[],isC=(p,m)=>times&&ce.some(e=>e[0]===p&&e[1]===m);
+  E.slice().sort((p,q)=>isC(p[0],p[1])-isC(q[0],q[1])).forEach(([p,m])=>{const P=pos[p],Q=pos[m],u=unit(P,Q),a=clip(P,u,1),b=clip(Q,u,-1),h=isC(p,m),bl=[b[0]-u[0]*6,b[1]-u[1]*6];
+   o.push(`<line class="k${h?' a':''}" x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(bl[0])}" y2="${f1(bl[1])}"/>`,arrow(b,u,h))});
+  names.forEach(m=>{const a=by[m],c=pos[m],x=c[0]-bw/2,y=c[1]-bh/2,hl=times&&crit(m);
+   o.push(`<rect class="k f${hl?' a':''}" x="${f1(x)}" y="${f1(y)}" width="${bw}" height="${bh}" rx="6"/>`);
+   if(times)o.push(`<line class="gr" x1="${f1(x)}" y1="${f1(y+bh/2-1)}" x2="${f1(x+bw)}" y2="${f1(y+bh/2-1)}"/>`,TX([c[0],y+bh-8],fv(a.est)+' | '+fv(a.lst),'n'));
+   o.push(TX([x+8,y+(times?bh/2-9:bh/2+5)],m,'v p','start'),TX([x+bw-8,y+(times?bh/2-9:bh/2+5)],fv(a.d),'v','end'))});
+  const fl=names.filter(m=>!crit(m)).map(m=>m+' '+fv(by[m].fl));
+  return{w:Wd,h:H,svg:o.join(''),
+   alt:'Activity network. '+A.map(a=>'Activity '+a.n+' takes '+fv(a.d)+(a.p.length?', after '+a.p.join(' and '):', no predecessors')+(times?'; EST '+fv(a.est)+', LST '+fv(a.lst)+', float '+fv(a.fl):'')).join('. ')+'.'+(times?' Minimum completion time '+fv(T)+'. Critical path '+paths.map(p=>p.join(' to ')).join(' and ')+'.':''),
+   cap:times?'Each box shows the activity (left) and its duration (right); the bottom row is EST | LST. Minimum completion time = '+fv(T)+'. Critical path'+(paths.length>1?'s':'')+': '+paths.map(p=>p.join(' → ')).join(' and ')+'.'+(fl.length?' Float: '+fl.join(', ')+'.':''):'Each box shows the activity (left) and its duration (right); arrows run from an activity to the ones that depend on it. Not drawn to scale.'}}
+
+ /* ===== phase 2: compass bearings (compass rose), compass radial surveys, scale drawings and maps =====
+    Same rule as above: the Tutor names the shape and gives the numbers; this code converts the bearings, scales the lengths and works out the areas. */
+ const p3=b=>{const r=Math.round(b*10)/10,q=String(r).split('.');return q[0].padStart(3,'0')+(q[1]?'.'+q[1]:'')+'°'};
+ /* a bearing as a number (true bearing) from a number, "150", "N60°E", "S25W" or a compass point such as "NE"; null if it makes no sense */
+ const cbr=v=>{if(typeof v==='number')return ok(v)?((v%360)+360)%360:null;
+  const t=String(v==null?'':v).replace(/[\s°º]/g,'').toUpperCase();let m;
+  if(/^\d+(\.\d+)?$/.test(t))return((parseFloat(t)%360)+360)%360;
+  if(m=/^([NS])(\d+(?:\.\d+)?)([EW])$/.exec(t)){const a=parseFloat(m[2]);if(a>90)return null;return m[1]==='N'?(m[3]==='E'?a:360-a):(m[3]==='E'?180-a:180+a)}
+  const D={N:0,NNE:22.5,NE:45,ENE:67.5,E:90,ESE:112.5,SE:135,SSE:157.5,S:180,SSW:202.5,SW:225,WSW:247.5,W:270,WNW:292.5,NW:315,NNW:337.5};return D[t]!=null?D[t]:null};
+ /* a true bearing written as a compass bearing, e.g. 150 -> S30°E */
+ const cbs=b=>{const r=Math.round(b*10)/10,q={0:'N',90:'E',180:'S',270:'W'};if(q[r])return q[r];const g=v=>fv(Math.round(v*10)/10)+'°';
+  return r<90?'N'+g(r)+'E':r<180?'S'+g(180-r)+'E':r<270?'S'+g(r-180)+'W':'N'+g(360-r)+'W'};
+
+ /* 29. compass rose: marks are [letter, bearing]; the bearing can be true (60, "150") or compass ("N60°E", "S25°W") and is shown both ways with the acute angle from north or south marked */
+ function compass(s){
+  const M=(Array.isArray(s.marks)?s.marks:[]).slice(0,6).map((m,i)=>{const a=Array.isArray(m)?m:[m&&m.label,m&&(m.bearing!=null?m.bearing:m.compass)],b=cbr(a[1]);return b==null?null:{n:lab(a[0])||'ABCDEF'[i],b}}).filter(Boolean);
+  const C=[170,132],R=84,o=[],H=270+(M.length?M.length*19+8:0);
+  o.push(`<circle class="gr" cx="${C[0]}" cy="${C[1]}" r="${R}"/>`,L([C[0],C[1]-R-6],[C[0],C[1]+R+6]).replace('class="k"','class="gr"'),L([C[0]-R-6,C[1]],[C[0]+R+6,C[1]]).replace('class="k"','class="gr"'));
+  [['N',0],['E',90],['S',180],['W',270]].forEach(([t,b])=>{const p=pol(C,90-b,R+15);o.push(TX([p[0],p[1]+5],t,'v p'))});
+  [['NE',45],['SE',135],['SW',225],['NW',315]].forEach(([t,b])=>{const a=pol(C,90-b,R-6),c=pol(C,90-b,R+4),p=pol(C,90-b,R+17);o.push(L(a,c).replace('class="k"','class="gr"'),TX([p[0],p[1]+4],t,'n'))});
+  M.forEach((m,i)=>{const e=pol(C,90-m.b,R),l=pol(C,90-m.b,R+38);o.push(L(C,e).replace('class="k"','class="k a"'),DT(e),TX([l[0],l[1]+5],m.n,'v g'));
+   const ref=(m.b<=90||m.b>=270)?0:180,m1=90-ref,m2=90-m.b,d=(((m2-m1)%360)+360)%360,st=d<=180?m1:m2,sp=d<=180?d:360-d,r=26+(i%3)*10;
+   if(sp>0.5&&sp<179.5){o.push(arc(C,st,sp,r));const mp=pol(C,st+sp/2,r+14);o.push(TX([mp[0],mp[1]+4],fv(Math.round(sp*10)/10)+'°','n'))}});
+  o.push(DT(C));
+  M.forEach((m,i)=>o.push(TX([36,C[1]+R+48+i*19],m.n+':  '+cbs(m.b)+'  =  '+p3(m.b)+' true','v','start')));
+  return{h:H,svg:o.join(''),
+   alt:'Compass rose. '+M.map(m=>'Point '+m.n+' has compass bearing '+cbs(m.b)+' and true bearing '+p3(m.b)).join('; ')+'.',
+   cap:'True bearings are measured clockwise from north. A compass bearing gives the acute angle from north or south towards east or west. Not drawn to scale.'}}
+
+ /* 30. compass radial survey: legs are [bearing, distance, optional label] measured from the centre point to each corner, in order round the boundary.
+    The boundary is closed back to the first corner and the area is worked out as the sum of the triangles ½ab sin C. */
+ function radial(s){
+  const Lg=(Array.isArray(s.legs)?s.legs:[]).slice(0,8).map((l,i)=>{if(!Array.isArray(l))return null;const b=cbr(l[0]),d=Math.abs(parseFloat(l[1]));return b==null||!ok(d)||d<=0?null:{b,d,t:lab(l[2])}}).filter(Boolean);
+  if(Lg.length<3)return null;
+  const P=Lg.map(l=>[l.d*Math.sin(l.b*Math.PI/180),-l.d*Math.cos(l.b*Math.PI/180)]),xs=P.map(p=>p[0]).concat(0),ys=P.map(p=>p[1]).concat(0),x0=Math.min(...xs),y0=Math.min(...ys),w=Math.max(...xs)-x0,h=Math.max(...ys)-y0,
+   k=Math.min(220/Math.max(w,1e-6),170/Math.max(h,1e-6)),ox=(340-w*k)/2-x0*k,oy=44-y0*k,Q=P.map(p=>[ox+p[0]*k,oy+p[1]*k]),O=[ox,oy],names=Array.isArray(s.points)&&s.points.length?s.points.map(lab):'ABCDEFGH'.split(''),cn=lab(s.centre||s.center)||'O',
+   Hh=Math.round(h*k)+44+46+Math.ceil(Lg.length/2)*19+10,o=[],u=lab(s.unit)||'m';
+  o.push(L(O,[O[0],O[1]-26],1),TX([O[0]+4,O[1]-28],'N','n','start'));
+  Q.forEach((q,i)=>o.push(L(O,q,1)));
+  Q.forEach((q,i)=>o.push(L(q,Q[(i+1)%Q.length]).replace('class="k"','class="k a"')));
+  const lbl=(a,b,f,off,t,cls)=>{if(!t)return;const m=[a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f],uu=unit(a,b);let n=[-uu[1],uu[0]];if(n[1]>0||(Math.abs(n[1])<.2&&n[0]<0))n=[-n[0],-n[1]];o.push(TX([m[0]+n[0]*off,m[1]+n[1]*off+5],t,cls,n[0]>.3?'start':n[0]<-.3?'end':'middle'))};
+  Lg.forEach((l,i)=>{lbl(O,Q[i],i%2?.72:.48,14,l.t||(fv(l.d)+' '+u),'v')});
+  Q.forEach((q,i)=>{const v=unit(O,q);o.push(DT(q),TX([q[0]+v[0]*14,q[1]+v[1]*14+5],names[i]||'','v p'))});
+  o.push(DT(O),TX([O[0]-9,O[1]+19],cn,'v p','end'));
+  {const y0=Math.round(h*k)+44+50;Lg.forEach((l,i)=>o.push(TX([i%2?190:30,y0+Math.floor(i/2)*19],(names[i]||'')+':  '+p3(l.b)+'  '+fv(l.d)+' '+u,'v','start')))}
+  const tri=Lg.map((l,i)=>{const m=Lg[(i+1)%Lg.length];let d=((m.b-l.b)%360+360)%360;if(d>180)d=360-d;return .5*l.d*m.d*Math.sin(d*Math.PI/180)}),tot=tri.reduce((a,b)=>a+b,0),r1=v=>fv(Math.round(v*10)/10);
+  const ans=!!s.area;
+  return{h:Hh,svg:o.join(''),
+   alt:'Compass radial survey from centre '+cn+'. '+Lg.map((l,i)=>(names[i]||'')+': bearing '+p3(l.b)+', distance '+fv(l.d)+' '+u).join('; ')+'.'+(ans?' Total area '+r1(tot)+' square '+u+'.':''),
+   cap:'Bearings are true bearings from the centre point, and the boundary joins the corners in order. '+(ans?'Area = '+tri.map((t,i)=>'½×'+fv(Lg[i].d)+'×'+fv(Lg[(i+1)%Lg.length].d)+'×sin '+fv(Math.round((()=>{let d=((Lg[(i+1)%Lg.length].b-Lg[i].b)%360+360)%360;return d>180?360-d:d})()*10)/10)+'°').join(' + ')+' = '+r1(tot)+' '+u+'². ':'')+'Not drawn to scale.'}}
+
+ /* 31. scale drawing or map: "ratio":"1:500". Line mode: "plan" is the length on the drawing and "actual" the real length (use "x" for the one to find).
+    Rectangle mode: "width" and "height" are the lengths on the plan. "answer":true prints the calculated value instead of x. The Hub does the conversion. */
+ const lenCm=v=>{const m=/^\s*([\d.]+)\s*(mm|cm|m|km)?\s*$/i.exec(String(v==null?'':v));if(!m)return null;const n=parseFloat(m[1]),u=(m[2]||'cm').toLowerCase();return ok(n)?n*({mm:.1,cm:1,m:100,km:100000}[u]):null};
+ const lenS=cm=>{const a=Math.abs(cm);return a>=100000?sg(cm/100000)+' km':a>=100?sg(cm/100)+' m':sg(cm)+' cm'};
+ const areaS=cm2=>{const m2=cm2/10000;return m2>=10000?sg(m2/10000)+' ha':sg(m2)+' m²'};
+ function scaled(s){
+  const rm=/^\s*1\s*[:/]\s*([\d.]+)\s*$/.exec(String(s.ratio||s.scale||'').replace(/[\s,]/g,''));if(!rm)return null;const r=parseFloat(rm[1]);if(!(r>0))return null;
+  const o=[],ans=!!s.answer,bar=[];let h,alt,cap;
+  const segs=4,sw=34,bx=(340-segs*sw)/2,seg=r,fmt=i=>{const cm=seg*i;return i===0?'0':sg(cm>=100000?cm/100000:cm>=100?cm/100:cm)},unitT=r>=100000?'km':r>=100?'m':'cm';
+  if(s.width!=null||s.height!=null||s.w!=null){
+   const wp=lenCm(s.width!=null?s.width:s.w),hp=lenCm(s.height!=null?s.height:s.h);if(wp==null||hp==null)return null;
+   const rw=150,rh=Math.max(40,Math.min(110,150*hp/wp)),x=(340-rw)/2,y=16;h=y+rh+84;
+   o.push(`<rect class="k f" x="${f1(x)}" y="${y}" width="${rw}" height="${f1(rh)}"/>`,TX([170,y-3],lab(s.width!=null?s.width:s.w),'v'),TX([x-8,y+rh/2+5],lab(s.height!=null?s.height:s.h),'v','end'));
+   if(ans)o.push(TX([170,y+rh/2+5],'Actual area '+areaS(wp*hp*r*r),'v g'));
+   alt='Plan drawn to scale 1:'+fv(r)+', '+lab(s.width!=null?s.width:s.w)+' by '+lab(s.height!=null?s.height:s.h)+' on the plan.'+(ans?' Actual size '+lenS(wp*r)+' by '+lenS(hp*r)+', area '+areaS(wp*hp*r*r)+'.':'');
+   cap='Scale 1:'+fv(r)+' means 1 cm on the plan is '+lenS(r)+' in real life. Areas scale by the square of the ratio.'+(ans?' Actual size '+lenS(wp*r)+' × '+lenS(hp*r)+'.':'')+' Not drawn to scale.'}
+  else{
+   let pl=lenCm(s.plan),ac=lenCm(s.actual);if(pl==null&&ac==null)return null;if(pl==null)pl=ac/r;if(ac==null)ac=pl*r;
+   const pk=lenCm(s.plan)!=null,ak=lenCm(s.actual)!=null,y=58;h=y+120;
+   o.push(L([50,y],[290,y]),DT([50,y]),DT([290,y]),TX([50,y-12],lab(s.from)||'A','v p'),TX([290,y-12],lab(s.to)||'B','v p'),
+    TX([170,y-12],pk?lab(s.plan):(ans?lenS(pl):'x'),'v g'),TX([170,y+24],ak?lab(s.actual):(ans?lenS(ac):'x'),'v'),TX([170,y+42],'(real distance)','n'),TX([170,y-30],'(on the drawing)','n'));
+   alt='Scale drawing 1:'+fv(r)+'. On the drawing the length is '+(pk?lab(s.plan):ans?lenS(pl):'unknown')+'; in real life it is '+(ak?lab(s.actual):ans?lenS(ac):'unknown')+'.';
+   cap='Scale 1:'+fv(r)+' means 1 cm on the drawing is '+lenS(r)+' in real life.'+(ans?' '+lenS(pl)+' on the drawing = '+lenS(ac)+' in real life.':'')+' Not drawn to scale.'}
+  const by=h-48;
+  o.push(TX([170,by-10],'Scale 1:'+fv(r),'v p'));
+  for(let i=0;i<segs;i++)o.push(`<rect class="k${i%2?' f':''}" x="${f1(bx+i*sw)}" y="${by}" width="${sw}" height="8"/>`);
+  for(let i=0;i<=segs;i++)o.push(TX([bx+i*sw,by+26],fmt(i),'n'));
+  o.push(TX([bx+segs*sw+8,by+26],unitT,'n','start'));
+  return{h,svg:o.join(''),alt,cap}}
+
+ /* ===== phase 3: Pareto chart (graph extras are inside graph() above: vlines, hlines, shade, sin / cos / tan) ===== */
+ /* 33. Pareto chart: labels and counts; the Hub sorts the bars from largest to smallest ("Other" stays last) and draws the cumulative percentage line on a right-hand axis */
+ function pareto(s){
+  const lb=(Array.isArray(s.labels)?s.labels:[]).slice(0,10).map(l=>String(l==null?'':l).replace(/\s+/g,' ').trim().slice(0,24)),vs=(Array.isArray(s.values)?s.values:[]).slice(0,10).map(parseFloat),n=vs.length;
+  if(n<2||lb.length!==n||vs.some(v=>!ok(v)||v<0))return null;
+  let it=lb.map((t,i)=>({t,v:vs[i]}));const keep=it.filter(a=>/^others?$/i.test(a.t));it=it.filter(a=>!keep.includes(a)).sort((a,b)=>b.v-a.v).concat(keep);
+  const tot=it.reduce((a,b)=>a+b.v,0);if(!(tot>0))return null;
+  let cu=0;it.forEach(a=>{cu+=a.v;a.c=cu/tot*100});
+  const ys=scale(0,tot,5,true),yl=s.ylabel||'Frequency',gwMin=(296-padL(ys,yl))/n,rot=lb.some(t=>t.length>Math.floor(gwMin/6.3)),P={l:padL(ys,yl),r:296,t:22,b:190},o=[],F=frame(P,{lo:0,hi:1,t:[]},ys,{nogx:1,noxl:1,noz:1,xlabel:s.xlabel,ylabel:yl,xt:rot?64:32}),gw=(P.r-P.l)/n,cy=p=>P.b-p/100*(P.b-P.t);
+  o.push(F.svg,`<path class="ax" d="M${P.r} ${P.t}V${P.b}"/>`);
+  [0,20,40,60,80,100].forEach(p=>o.push(`<line class="ax" x1="${P.r}" y1="${f1(cy(p))}" x2="${P.r+4}" y2="${f1(cy(p))}"/>`,TL(P.r+7,cy(p)+4,p+'%','n','start')));
+  it.forEach((a,i)=>{const x=P.l+i*gw+gw*.06,y=F.sy(a.v);o.push(`<rect class="bar b0" x="${f1(x)}" y="${f1(y)}" width="${f1(gw*.88)}" height="${f1(P.b-y)}"/>`);
+   if(n<=8)o.push(TL(x+gw*.44,P.b-y>=18?P.b-5:y-4,fv(a.v),'n'));
+   const cx=P.l+(i+.5)*gw,t=cutS(a.t,rot?12:Math.max(3,Math.floor(gw/6.3)));
+   o.push(rot?`<text class="n" transform="rotate(-40 ${f1(cx)} ${f1(P.b+14)})" x="${f1(cx)}" y="${f1(P.b+14)}" text-anchor="end">${X(t)}</text>`:TL(cx,P.b+15,t,'n'))});
+  if(s.line80)o.push(`<line class="k d s3" x1="${P.l}" y1="${f1(cy(80))}" x2="${P.r}" y2="${f1(cy(80))}"/>`);
+  o.push(`<path class="k s2" d="M${it.map((a,i)=>f1(P.l+(i+.5)*gw)+' '+f1(cy(a.c))).join('L')}"/>`);
+  it.forEach((a,i)=>{const cx=P.l+(i+.5)*gw;o.push(`<circle class="pt" cx="${f1(cx)}" cy="${f1(cy(a.c))}" r="3.5"/>`);if(n<=8)o.push(TL(cx,cy(a.c)-7,Math.round(a.c)+'%','n'))});
+  const k=it.findIndex(a=>a.c>=80-1e-9)+1,ans=!!s.answer;
+  return{h:P.b+(rot?(s.xlabel?86:62):(s.xlabel?42:24)),svg:o.join(''),
+   alt:'Pareto chart. Categories from largest to smallest: '+it.map(a=>a.t+' '+fv(a.v)+' (cumulative '+Math.round(a.c)+'%)').join(', ')+'.'+(ans?' The first '+k+' categor'+(k===1?'y make':'ies make')+' up '+Math.round(it[k-1].c)+'% of the total.':''),
+   cap:'Pareto chart: the bars are sorted from largest to smallest and the line shows the cumulative percentage on the right-hand axis.'+(ans?' The first '+k+' categor'+(k===1?'y make':'ies make')+' up '+Math.round(it[k-1].c)+'% of the total.':'')+(s.line80?' The dashed line marks 80%.':'')}}
+
+ /* ===== phase 4: globe positions, two normal curves, sampling methods (scatterplot extrapolation is inside graph() above: predict, extend) ===== */
+ /* 35. globe: places are [name, latitude, longitude] (south and west negative, or text such as "34\u00B0S"). The Hub draws an orthographic globe centred between the places,
+    with the equator, the prime meridian and lines every 30 degrees, and the great-circle arc between the first two places. "answer":true prints the longitude / time difference and the great-circle distance. */
+ const dgs=v=>{if(typeof v==='number')return v;const t=String(v==null?'':v).toUpperCase().replace(/\u2212/g,'-'),m=/(-?\d+(?:\.\d+)?)\s*(?:\u00B0|DEG\w*)?\s*([NSEW])?/.exec(t);if(!m)return NaN;let x=parseFloat(m[1]);if(m[2]==='S'||m[2]==='W')x=-Math.abs(x);return x};
+ const fdg=(v,p,n)=>fv(+Math.abs(v).toFixed(2))+'\u00B0'+(Math.abs(v)<1e-9?'':v>0?p:n);
+ const nsp=n=>String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,'\u2009');
+ function globe(s){
+  const R0=Math.PI/180,PL=(Array.isArray(s.places)?s.places:[]).slice(0,4).map(p=>{let q=Array.isArray(p)?{n:lab(p[0]),a:dgs(p[1]),o:dgs(p[2])}:p&&typeof p==='object'?{n:lab(p.name||p.place||p.city),a:dgs(p.lat!=null?p.lat:p.latitude),o:dgs(p.lon!=null?p.lon:p.lng!=null?p.lng:p.longitude)}:null;
+   if(q&&ok(q.o)){q.o=((q.o+180)%360+360)%360-180}return q}).filter(q=>q&&q.n&&ok(q.a)&&ok(q.o)&&Math.abs(q.a)<=90);
+  if(!PL.length)return null;
+  const vec=(a,o)=>[Math.cos(a*R0)*Math.cos(o*R0),Math.cos(a*R0)*Math.sin(o*R0),Math.sin(a*R0)];
+  let c0,c1;const cc=Array.isArray(s.centre)?s.centre:Array.isArray(s.center)?s.center:null;
+  if(cc&&ok(dgs(cc[0]))&&ok(dgs(cc[1]))){c0=dgs(cc[0]);c1=dgs(cc[1])}
+  else{const V=PL.map(q=>vec(q.a,q.o)),mx=V.reduce((a,v)=>a+v[0],0),my=V.reduce((a,v)=>a+v[1],0),mz=V.reduce((a,v)=>a+v[2],0),ml=Math.hypot(mx,my,mz);
+   if(ml<1e-6){c0=PL[0].a;c1=PL[0].o}else{c0=Math.asin(mz/ml)/R0;c1=Math.atan2(my,mx)/R0}}
+  c0=Math.max(-80,Math.min(80,c0));
+  const CX=170,CY=122,R=100,sp0=Math.sin(c0*R0),cp0=Math.cos(c0*R0);
+  const cosc=(a,o)=>sp0*Math.sin(a*R0)+cp0*Math.cos(a*R0)*Math.cos((o-c1)*R0);
+  const pr=(a,o)=>{const d=(o-c1)*R0,ca=Math.cos(a*R0),sa=Math.sin(a*R0);return[CX+R*ca*Math.sin(d),CY-R*(cp0*sa-sp0*ca*Math.cos(d))]};
+  if(PL.some(q=>cosc(q.a,q.o)<.02))return null;
+  const o=[`<circle class="k f" cx="${CX}" cy="${CY}" r="${R}"/>`];
+  /* a line on the globe from a function of one parameter; the pen lifts where it goes round the back */
+  const trace=(fn,t0,t1,st,cls)=>{let d='',pen=false;for(let t=t0;t<=t1+1e-9;t+=st){const q=fn(t);if(cosc(q[0],q[1])<=0){pen=false;continue}const p=pr(q[0],q[1]);d+=(pen?'L':'M')+f1(p[0])+' '+f1(p[1]);pen=true}return d?`<path class="${cls}" d="${d}"/>`:''};
+  for(let a=-60;a<=60;a+=30)if(a!==0)o.push(trace(t=>[a,t],-180,180,4,'ax z'));
+  for(let l=-180;l<180;l+=30)if(l!==0)o.push(trace(t=>[t,l],-90,90,3,'ax z'));
+  o.push(trace(t=>[0,t],-180,180,3,'ax'),trace(t=>[t,0],-90,90,3,'ax'));
+  o.push(`<circle class="k" cx="${CX}" cy="${CY}" r="${R}"/>`);
+  const boxes=[],hit=(a,b)=>a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3];
+  const gl=[],note=(p,t,cls,anc)=>gl.push([p,t,cls,anc]);
+  /* latitude labels up the middle meridian, longitude labels along the equator, N at the pole */
+  [-60,-30,0,30,60].forEach(a=>{if(cosc(a,c1)<.35)return;const p=pr(a,c1);note([p[0]+4,p[1]-3],a===0?'Equator':fdg(a,'N','S'),'n','start')});
+  for(let l=-180;l<180;l+=30){if(cosc(0,l)<.35)continue;const p=pr(0,l);if(Math.abs(l-c1)<14||Math.abs(Math.abs(l-c1)-360)<14)continue;note([p[0],p[1]+14],l===0?'0\u00B0':fdg(l,'E','W'),'n','middle')}
+  if(cosc(90,0)>.15){const p=pr(90,0);note([p[0],p[1]-5],'N','n','middle')}
+  /* the great-circle arc between the first two places */
+  const A=PL[0],B=PL[1],dl0=B?((B.o-A.o+540)%360)-180:0;
+  let ang=NaN;
+  if(B){const va=vec(A.a,A.o),vb=vec(B.a,B.o),dt=Math.max(-1,Math.min(1,va[0]*vb[0]+va[1]*vb[1]+va[2]*vb[2]));ang=Math.acos(dt)/R0;
+   if(s.arc!==false&&ang>.5&&ang<179.5){const sn=Math.sin(ang*R0);let d='',pen=false;
+    for(let i=0;i<=60;i++){const t=i/60,k0=Math.sin((1-t)*ang*R0)/sn,k1=Math.sin(t*ang*R0)/sn,x=k0*va[0]+k1*vb[0],y=k0*va[1]+k1*vb[1],z=k0*va[2]+k1*vb[2],a=Math.asin(Math.max(-1,Math.min(1,z)))/R0,l=Math.atan2(y,x)/R0;
+     if(cosc(a,l)<=0){pen=false;continue}const p=pr(a,l);d+=(pen?'L':'M')+f1(p[0])+' '+f1(p[1]);pen=true}
+    if(d)o.push(`<path class="k a d" d="${d}"/>`)}}
+  const pp=PL.map(q=>pr(q.a,q.o));pp.forEach(p=>boxes.push([p[0]-6,p[1]-6,p[0]+6,p[1]+6]));
+  PL.forEach((q,i)=>{const p=pp[i];o.push(`<circle class="pt" cx="${f1(p[0])}" cy="${f1(p[1])}" r="4.5"/>`);
+   const cd=fdg(q.a,'N','S')+' '+fdg(q.o,'E','W'),w=Math.max(q.n.length*9.5,cd.length*7.2)+10;
+   const cand=[[8,-4,'start'],[-8,-4,'end'],[8,24,'start'],[-8,24,'end'],[0,-18,'middle'],[0,34,'middle']];
+   const bx=c=>{const x=c[2]==='start'?p[0]+c[0]:c[2]==='end'?p[0]+c[0]-w:p[0]+c[0]-w/2;return[x,p[1]+c[1]-15,x+w,p[1]+c[1]+17]};
+   const pick=cand.find(c=>{const b=bx(c);return b[0]>=2&&b[2]<=338&&!boxes.some(z=>hit(z,b))})||cand[0];
+   boxes.push(bx(pick));o.push(TL(p[0]+pick[0],p[1]+pick[1],q.n,'v p',pick[2]),TL(p[0]+pick[0],p[1]+pick[1]+13,cd,'n',pick[2]))});
+  /* grid labels go in last and are dropped if they would sit on a place or its label */
+  gl.forEach(([p,t,cls,anc])=>{const w=String(t).length*7+8,x=anc==='start'?p[0]:anc==='end'?p[0]-w:p[0]-w/2,b=[x-2,p[1]-13,x+w+2,p[1]+6];if(boxes.some(z=>hit(z,b)))return;boxes.push(b);o.push(TL(p[0],p[1],t,cls,anc))});
+  const ans=!!s.answer,RE=Math.abs(num(s.radius,6400))||6400;let cap='Latitude is measured north or south of the equator and longitude east or west of the prime meridian (0\u00B0). Not drawn to scale.',wk='';
+  if(B){const ad=Math.abs(dl0),dist=ang*R0*RE;
+   if(s.arc!==false&&ang>.5&&ang<179.5)cap+=' The dashed arc is the shortest path between '+A.n+' and '+B.n+' (part of a great circle).';
+   if(ans){wk=' '+A.n+' and '+B.n+' are '+fv(+ad.toFixed(2))+'\u00B0 of longitude apart, so the time difference is '+fv(+(ad/15).toFixed(2))+' hours (15\u00B0 = 1 hour). The angle at the centre of the Earth is '+fv(+ang.toFixed(1))+'\u00B0 and the distance along the great circle is about '+nsp(Math.round(dist/10)*10)+' km (radius '+nsp(RE)+' km).';cap+=wk}}
+  return{h:CY+R+16,svg:o.join(''),
+   alt:'Globe centred near '+fdg(c0,'N','S')+' '+fdg(c1,'E','W')+'. '+PL.map(q=>q.n+' at '+fdg(q.a,'N','S')+' '+fdg(q.o,'E','W')).join('; ')+'.'+wk,cap}}
+
+ /* 36. two normal curves on one axis: curves are {"mean","sd","label"} or [mean, sd, label]; "shade" and the cut points "a", "b" (scores) shade both curves and work out each area and z-score */
+ function normal2(s){
+  const C=(Array.isArray(s.curves)?s.curves:[]).slice(0,2).map(c=>{const mu=parseFloat(Array.isArray(c)?c[0]:c&&(c.mean!=null?c.mean:c.mu)),sd=Math.abs(parseFloat(Array.isArray(c)?c[1]:c&&(c.sd!=null?c.sd:c.sigma))),t=Array.isArray(c)?c[2]:c&&c.label;return{mu,sd,t:lab(t)}}).filter(c=>ok(c.mu)&&ok(c.sd)&&c.sd>0);
+  if(C.length!==2)return null;
+  C.forEach((c,i)=>{if(!c.t)c.t='Curve '+(i+1)});
+  const sh=String(s.shade||'').toLowerCase();let mode=/^(bel|less|left|low|<)/.test(sh)?'below':/^(abo|more|great|right|upp|>)/.test(sh)?'above':/^(bet|mid|with)/.test(sh)?'between':/^(out|tail)/.test(sh)?'outside':'',a=num(s.a,NaN),b=num(s.b,NaN);
+  if((mode==='below'||mode==='above')&&!ok(a)&&ok(b))a=b;
+  if(mode==='between'||mode==='outside'){if(!ok(a)||!ok(b))mode='';else if(a>b){const t=a;a=b;b=t}}
+  if((mode==='below'||mode==='above')&&!ok(a))mode='';
+  const cuts=mode?((mode==='below'||mode==='above')?[a]:[a,b]):(ok(a)?[a]:[]),msd=Math.max(C[0].sd,C[1].sd);
+  let lo=Math.min(C[0].mu-3.6*C[0].sd,C[1].mu-3.6*C[1].sd),hi=Math.max(C[0].mu+3.6*C[0].sd,C[1].mu+3.6*C[1].sd);cuts.forEach(v=>{lo=Math.min(lo,v-.4*msd);hi=Math.max(hi,v+.4*msd)});
+  const pdf=(c,x)=>Math.exp(-.5*((x-c.mu)/c.sd)*((x-c.mu)/c.sd))/(c.sd*Math.sqrt(2*Math.PI)),P={l:16,r:324,t:50,b:196},ym=Math.max(pdf(C[0],C[0].mu),pdf(C[1],C[1].mu))*1.12,
+   sx=v=>P.l+(v-lo)/(hi-lo)*(P.r-P.l),sy=y=>P.b-y/ym*(P.b-P.t),dr=v=>Math.min(hi,Math.max(lo,v)),o=[],xs=scale(lo,hi,6,true);
+  const reg=(c,u,v,cls)=>{u=dr(u);v=dr(v);if(!(v>u))return '';const n=Math.max(8,Math.round(120*(v-u)/(hi-lo))),p=[[sx(u),P.b]];for(let i=0;i<=n;i++){const x=u+(v-u)*i/n;p.push([sx(x),sy(pdf(c,x))])}p.push([sx(v),P.b]);
+   return `<polygon class="sh${cls}" points="${p.map(q=>f1(q[0])+','+f1(q[1])).join(' ')}"/>`};
+  const area=c=>{const F=x=>Phi((x-c.mu)/c.sd);return mode==='below'?F(a):mode==='above'?1-F(a):mode==='between'?F(b)-F(a):mode==='outside'?1-(F(b)-F(a)):NaN};
+  C.forEach((c,i)=>{const cl=i?' c1':'';if(mode==='below')o.push(reg(c,lo,a,cl));else if(mode==='above')o.push(reg(c,a,hi,cl));else if(mode==='between')o.push(reg(c,a,b,cl));else if(mode==='outside')o.push(reg(c,lo,a,cl),reg(c,b,hi,cl));c.pr=area(c)});
+  const CL=['k a','k s2'],ML=['k d s0','k d s2'];
+  C.forEach((c,i)=>{let d='';for(let k=0;k<=160;k++){const x=lo+(hi-lo)*k/160;d+=(k?'L':'M')+f1(sx(x))+' '+f1(sy(pdf(c,x)))}o.push(`<path class="${CL[i]}" d="${d}"/>`)});
+  o.push(`<line class="ax" x1="${P.l}" y1="${P.b}" x2="${P.r}" y2="${P.b}"/>`);
+  C.forEach((c,i)=>o.push(`<line class="${ML[i]}" x1="${f1(sx(c.mu))}" y1="${P.b}" x2="${f1(sx(c.mu))}" y2="${f1(sy(pdf(c,c.mu)))}"/>`));
+  xs.t.forEach(v=>o.push(`<line class="ax" x1="${f1(sx(v))}" y1="${P.b}" x2="${f1(sx(v))}" y2="${P.b+4}"/>`,TL(sx(v),P.b+18,MN(v),'n')));
+  cuts.forEach(v=>{const x=sx(dr(v));o.push(`<line class="k d" x1="${f1(x)}" y1="${P.b}" x2="${f1(x)}" y2="${P.t-4}"/>`,TL(x,P.b+34,'x = '+MN(v),'v g'))});
+  C.forEach((c,i)=>{const y=14+i*18,t=cutS(c.t,13)+': mean '+MN(c.mu)+', SD '+MN(c.sd)+(mode&&ok(c.pr)?', area '+(c.pr<5e-5?'0.0000':c.pr.toFixed(4)):'');
+   o.push(`<line class="${CL[i]}" x1="${P.l}" y1="${y-4}" x2="${P.l+20}" y2="${y-4}"/>`+TL(P.l+26,y,t,'n','start'))});
+  const an=mode==='below'?'below '+MN(a):mode==='above'?'above '+MN(a):mode==='between'?'between '+MN(a)+' and '+MN(b):mode==='outside'?'below '+MN(a)+' and above '+MN(b):'';
+  let cap='Two normal distributions on the same scale: a different mean moves the curve left or right, and a larger standard deviation makes it wider and lower.';
+  if(cuts.length){cap+=' z = (x \u2212 mean) \u00F7 SD: '+C.map(c=>cuts.map(v=>'x = '+MN(v)+' gives z = '+sg((v-c.mu)/c.sd)).join(', ')+' for '+c.t).join('; ')+'.'}
+  if(mode)cap+=' Shaded areas: '+C.map(c=>c.t+' '+(c.pr<5e-5?'0.0000':c.pr.toFixed(4))).join(', ')+'.';
+  return{h:P.b+(cuts.length?44:28),svg:o.join(''),
+   alt:'Two normal distribution curves on one axis. '+C.map(c=>c.t+': mean '+MN(c.mu)+', standard deviation '+MN(c.sd)).join('; ')+'.'+(an?' Shaded '+an+': '+C.map(c=>c.t+' area '+c.pr.toFixed(4)).join(', ')+'.':''),cap}}
+
+ /* 37. sampling methods: random, systematic (population up to 60 shown as numbered dots) and stratified (groups drawn as bars, any size).
+    The Hub works out the interval, the start, the allocation and the rounding; "answer":true shows the sample, otherwise the student finds it. */
+ function sampling(s){
+  const md=[s.method,s.kind,s.type].map(v=>String(v==null?'':v).toLowerCase()).join(' '),kind=/strat/.test(md)||Array.isArray(s.strata)?'strat':/syst/.test(md)?'syst':'rand',ans=!!s.answer,o=[];
+  const n=Math.round(num(s.size!=null?s.size:s.n!=null?s.n:s.sample,NaN));
+  if(!(n>=1))return null;
+  if(kind==='strat'){
+   const G0=(Array.isArray(s.strata)?s.strata:[]).slice(0,5).map(g=>Array.isArray(g)?{t:String(g[0]==null?'':g[0]).replace(/\s+/g,' ').trim(),c:parseFloat(g[1])}:g&&typeof g==='object'?{t:String(g.name||g.label||'').trim(),c:parseFloat(g.count!=null?g.count:g.size)}:null).filter(g=>g&&g.t&&ok(g.c)&&g.c>0&&g.c===Math.round(g.c));
+   if(G0.length<2)return null;
+   const N=G0.reduce((a,g)=>a+g.c,0);if(!(n<N))return null;
+   G0.forEach(g=>{g.e=n*g.c/N;g.k=Math.floor(g.e)});let left=n-G0.reduce((a,g)=>a+g.k,0);
+   G0.slice().sort((p,q)=>(q.e-q.k)-(p.e-p.k)).forEach(g=>{if(left>0){g.k++;left--}});
+   const mx=Math.max(...G0.map(g=>g.c)),top=36,rh=46,bx=104,bw=150,bh=18;
+   o.push(TL(170,16,'Population N = '+nsp(N)+', sample size n = '+nsp(n),'v g'));
+   G0.forEach((g,i)=>{const y=top+i*rh,w=Math.max(8,bw*g.c/mx);
+    o.push(TL(bx-8,y+bh/2+5,cutS(g.t,13),'v','end'),RC(bx,y,w,bh),TL(bx+w+8,y+bh/2+5,nsp(g.c),'n','start'));
+    if(ans){const sw=Math.max(3,w*g.k/g.c);o.push(`<rect class="sh" x="${bx}" y="${y}" width="${f1(sw)}" height="${bh}"/>`,RC(bx,y,w,bh),TL(bx,y+bh+14,n+' \u00D7 '+nsp(g.c)+' \u00F7 '+nsp(N)+' = '+fv(+g.e.toFixed(2))+(Math.abs(g.e-g.k)>1e-9?' \u2192 '+g.k:''),'n','start'),TL(332,y+bh/2+5,'n = '+g.k,'v g','end'))}});
+   const adj=ans&&G0.some(g=>Math.abs(g.e-Math.round(g.e))>1e-9);
+   return{h:top+G0.length*rh+4,svg:o.join(''),
+    alt:'Stratified sample. Population '+N+' in '+G0.length+' groups: '+G0.map(g=>g.t+' '+g.c).join(', ')+'. Sample size '+n+'.'+(ans?' Sample from each group: '+G0.map(g=>g.t+' '+g.k).join(', ')+'.':''),
+    cap:'Stratified sample: each group is sampled in proportion to its size, so sample size for a group = n \u00D7 (group size \u00F7 N).'+(ans?' The same fraction, '+n+' out of '+nsp(N)+', is taken from every group'+(adj?', rounded so the group samples add up to '+n+'.':'.'):'')}}
+  const N=Math.round(num(s.population!=null?s.population:s.N,NaN));
+  if(!(N>=2&&N<=60&&n<N))return null;
+  let ch=[],cap='',wk='';
+  if(kind==='syst'){
+   const k=Math.max(1,Math.round(num(s.interval,Math.floor(N/n)))||Math.floor(N/n));let st=Math.round(num(s.start,NaN));if(!(st>=1&&st<=k))st=1+((N*7+n*13)%k);
+   if(ans||s.start!=null){for(let v=st;v<=N;v+=k)ch.push(v)}
+   cap='Systematic sample: pick a starting member at random, then take every k-th member after it, where k = N \u00F7 n.';
+   if(ans){wk=' Here k = '+N+' \u00F7 '+n+(N%n?' \u2248 ':' = ')+fv(+(N/n).toFixed(2))+', so every '+k+(k===1?'st':k===2?'nd':k===3?'rd':'th')+' member is taken from the random start '+st+': '+ch.join(', ')+'.';cap+=wk}}
+  else{
+   let r=(Array.isArray(s.chosen)?s.chosen:[]).map(v=>Math.round(parseFloat(v))).filter(v=>v>=1&&v<=N);r=r.filter((v,i)=>r.indexOf(v)===i);
+   if(r.length)ch=r;else if(ans){let sd0=(N*2654435761+n*40503)>>>0;const rnd=()=>{sd0=(sd0*1664525+1013904223)%4294967296;return sd0/4294967296},pool=[...Array(N)].map((_,i)=>i+1);for(let i=0;i<n;i++){const j=i+Math.floor(rnd()*(N-i)),t=pool[i];pool[i]=pool[j];pool[j]=t;ch.push(pool[i])}ch.sort((p,q)=>p-q)}
+   cap='Simple random sample: every member of the population has an equal chance of being chosen'+(ch.length?', and the chosen members are highlighted (one possible sample).':'.')}
+  const cs=new Set(ch),cols=10,gp=30,x0=(340-(cols-1)*gp)/2,y0=44,rows=Math.ceil(N/cols);
+  o.push(TL(170,16,'Population N = '+N+', sample size n = '+n,'v g'));
+  for(let i=0;i<N;i++){const x=x0+(i%cols)*gp,y=y0+Math.floor(i/cols)*gp,sel=cs.has(i+1);o.push(`<circle class="sd${sel?' s':''}" cx="${f1(x)}" cy="${f1(y)}" r="12"/>`+TL(x,y+4,i+1,sel?'q g':'q','middle'))}
+  return{h:y0+(rows-1)*gp+22,svg:o.join(''),
+   alt:(kind==='syst'?'Systematic':'Random')+' sample. Population of '+N+' numbered 1 to '+N+', sample size '+n+'.'+(ch.length?' Chosen: '+ch.join(', ')+'.':''),cap}}
+
+ const fig=r=>`<figure class="tt-dg"><svg viewBox="0 0 ${r.w||340} ${r.h}" role="img" aria-label="${X(r.alt)}">${r.svg}</svg><figcaption>${X(r.cap)}</figcaption></figure>`;
  const bad='<p class="tt-dgx">I tried to draw a diagram here but it did not come out right. Ask me to draw it again.</p>';
  function draw(j){try{const s=parse(j);if(!s||typeof s!=='object')return bad;
    const ty=String(s.type||'').toLowerCase().replace(/[^a-z]/g,'');let r=null;
-   if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
+   if(/^(globe|earth|latlong|latitudelongitude|latitude|longitude)/.test(ty))r=globe(s);else if(/^(twonormal|normals|comparenormal|normalcompare|normalcurves)/.test(ty)||(/^(normal|bell|zscore)/.test(ty)&&Array.isArray(s.curves)&&s.curves.length>=2))r=normal2(s);else if(/^(sampling|systematic|stratified|randomsample|simplerandom)/.test(ty)||(ty==='sample'&&(s.method||s.population||s.strata)))r=sampling(s);else if(/^pareto/.test(ty))r=pareto(s);else if(/^compass/.test(ty))r=compass(s);else if(/^(radial|survey)/.test(ty))r=radial(s);else if(/^(scale|scaledrawing|mapscale|map|plan|siteplan)$/.test(ty))r=scaled(s);else if(/^(flow|maxflow|mincut|networkflow|flownetwork)/.test(ty))r=flowNet(s);else if(/^(cpm|critical|activitynetwork|activity)/.test(ty))r=cpm(s);else if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
    if(!r)return bad;if(s.caption){const c=String(s.caption).replace(/\s+/g,' ').trim().slice(0,160);if(c)r.cap=c}return fig(r)}catch(e){return bad}}
  /* cuts a reply into plain-text pieces and diagram pieces: [{t:'text'|'dg', v}] (code fences round a tag are ignored; a half-written tag is dropped) */
  function split(txt){let s=String(txt).replace(/`+\s*(\[\[\s*DIAGRAM[\s\S]*?\]\])\s*`+/gi,'$1'),out=[],last=0,m;RE.lastIndex=0;
@@ -47810,12 +48165,12 @@ const TTD=(()=>{
 
 /* the instruction that teaches the Tutor to ask for a diagram (maths and General tabs only) */
 const diagRule=()=>(T.subj==='maths'||T.subj==='all')?`
-DIAGRAMS (maths questions only): The student cannot practise maths without seeing the picture, so whenever a question involves a triangle, a bearing, an angle of elevation or depression, or a graph, normal distribution, network or statistics chart, a 3D solid, a plane shape (area or perimeter), an irregular area measured with offsets, similar figures, a Venn diagram, a probability tree, a time-zone problem, a two-way table, a sample space grid, a gradient (rise and run), the net of a solid, a number line (inequalities or limits of accuracy), an annuity, loan or investment timeline, a unit conversion, or a pie chart, dot plot, stem-and-leaf plot or cumulative frequency graph, that the student asks about or that you need to explain, put a diagram in your reply BEFORE the working. You do not draw it; the Hub draws it from one line you write. Put exactly one line on its own, in this form, with valid JSON and double quotes, and nothing else on that line (no code fences): [[DIAGRAM {json}]]. Never use text characters, ASCII art, SVG or code to draw. Take every number from the question, keep labels short (like "7 cm" or "35°"), use "x" for the unknown, and use "" for anything not given. Shapes:
+DIAGRAMS (maths questions only): The student cannot practise maths without seeing the picture, so whenever a question involves a triangle, a bearing, an angle of elevation or depression, or a graph, normal distribution, network or statistics chart, a 3D solid, a plane shape (area or perimeter), an irregular area measured with offsets, similar figures, a Venn diagram, a probability tree, a time-zone problem, a two-way table, a sample space grid, a gradient (rise and run), the net of a solid, a number line (inequalities or limits of accuracy), an annuity, loan or investment timeline, a unit conversion, a critical path (activity) network, a maximum-flow or minimum-cut network, a compass bearing, a compass radial survey, a map scale or scale drawing, a Pareto chart, a graph with a shaded region, a position on the globe (latitude and longitude), a scatterplot prediction (interpolation or extrapolation), two normal curves compared, a sampling method (random, systematic or stratified), or a pie chart, dot plot, stem-and-leaf plot or cumulative frequency graph, that the student asks about or that you need to explain, put a diagram in your reply BEFORE the working. You do not draw it; the Hub draws it from one line you write. Put exactly one line on its own, in this form, with valid JSON and double quotes, and nothing else on that line (no code fences): [[DIAGRAM {json}]]. Never use text characters, ASCII art, SVG or code to draw. Take every number from the question, keep labels short (like "7 cm" or "35°"), use "x" for the unknown, and use "" for anything not given. Shapes:
 1. Right-angled triangle (SOH CAH TOA): [[DIAGRAM {"type":"right","angle":"35°","opp":"x","adj":"12 m","hyp":""}]]  "angle" is the marked acute angle. opp, adj and hyp are the side opposite that angle, the side next to it, and the side across from the right angle. Add "at":"top" only if the marked angle is at the top corner (then the opposite side is the bottom one).
 2. Any triangle (sine rule, cosine rule, area): [[DIAGRAM {"type":"triangle","A":"40°","B":"65°","C":"","a":"x","b":"9 cm","c":""}]]  Capital letters are the angles at corners A, B, C. Small letters are the sides opposite them (a is opposite A, b opposite B, c opposite C). Add "shape":"obtuse" when the angle at A is obtuse.
 3. Bearings: [[DIAGRAM {"type":"bearing","points":["A","B","C"],"legs":[[60,10,"10 km"],[150,8,"8 km"]]}]]  Each leg is [true bearing in degrees, distance as a plain number, label]. Add "close":true to dash the straight line from the start to the end, "fan":true if every leg starts from the first point, "last":true to also draw north at the final point (for return bearings).
 4. Elevation or depression: [[DIAGRAM {"type":"elevation","angle":"28°","height":"45 m","distance":"x","line":"","observer":"Observer","target":"Tower"}]]  Use "type":"depression" when looking down from a cliff or tower.
-5. Graph or scatterplot: [[DIAGRAM {"type":"graph","xmin":-2,"xmax":6,"ymin":-5,"ymax":10,"xlabel":"x","ylabel":"y","curves":[{"y":"x^2-4x+3"}],"marks":[[1,0,"(1, 0)"],[3,0,"(3, 0)"]]}]]  "curves" holds up to three equations in x, written plainly, like "2x+1", "x^2-4x+3", "100*0.8^x" or "sqrt(x)" (straight lines too). Add "label" to name a curve in the key, or "dash":true to dash it. "marks" are points to label, such as intercepts, a turning point, or where two lines meet, as [x, y, "label"]. For a scatterplot use "points":[[1,3],[2,5],[3,4],[4,8]] with "xlabel" and "ylabel", and add "best":true to have the Hub draw the least-squares line of best fit through the points. Add "join":true to join the points in order with straight lines (a line graph, time series or distance-time graph) and "dots":false to hide the point markers. Set xmin, xmax, ymin and ymax yourself when you can; the Hub picks sensible ones if you leave them out.
+5. Graph or scatterplot: [[DIAGRAM {"type":"graph","xmin":-2,"xmax":6,"ymin":-5,"ymax":10,"xlabel":"x","ylabel":"y","curves":[{"y":"x^2-4x+3"}],"marks":[[1,0,"(1, 0)"],[3,0,"(3, 0)"]]}]]  "curves" holds up to four equations in x, written plainly, like "2x+1", "x^2-4x+3", "100*0.8^x" or "sqrt(x)" (straight lines too). Add "label" to name a curve in the key, or "dash":true to dash it. "marks" are points to label, such as intercepts, a turning point, or where two lines meet, as [x, y, "label"]. For a scatterplot use "points":[[1,3],[2,5],[3,4],[4,8]] with "xlabel" and "ylabel", and add "best":true to have the Hub draw the least-squares line of best fit through the points. Add "join":true to join the points in order with straight lines (a line graph, time series or distance-time graph) and "dots":false to hide the point markers. Set xmin, xmax, ymin and ymax yourself when you can; the Hub picks sensible ones if you leave them out.
 6. Normal distribution: [[DIAGRAM {"type":"normal","mean":70,"sd":10,"shade":"below","a":85}]]  "shade" is "below", "above", "between" (give a and b) or "outside" (both tails, give a and b). Give the cut points as scores ("a", "b") or as z-scores ("za", "zb"). For a standard normal curve leave out mean and sd. The Hub works out and prints the shaded area.
 7. Network (minimum spanning tree, shortest path, critical path): [[DIAGRAM {"type":"network","edges":[["A","B",4],["A","C",2],["B","D",5],["C","D",8]],"highlight":["A","B","D"]}]]  Each edge is [from, to, weight]. "highlight" marks the answer: either a path (the nodes in order) or a list of edges such as [["A","B"],["B","D"]] (use that for a minimum spanning tree). Add "directed":true for an activity network (critical path) so the arrows run left to right, and put a 1 as a fourth item in an edge to dash it (a dummy activity). "sub":{"A":"0"} writes a small label under a node, such as a distance so far or an earliest start time. List "nodes" only if one has no edges. Use at most 10 nodes.
 8. Bar chart: [[DIAGRAM {"type":"bar","labels":["Mon","Tue","Wed"],"values":[12,18,9],"xlabel":"Day","ylabel":"Sales"}]]  For side-by-side bars give "values":[[3,5,4],[6,2,7]] and "series":["2023","2024"]. Histogram: [[DIAGRAM {"type":"histogram","edges":[0,10,20,30,40],"freq":[3,9,14,4],"xlabel":"Time (min)"}]]  There is one more edge than there are frequencies; add "density":true if the heights are frequency densities.
@@ -47838,6 +48193,17 @@ DIAGRAMS (maths questions only): The student cannot practise maths without seein
 25. Cash-flow timeline (annuities, loans, investments): [[DIAGRAM {"type":"cashflow","periods":4,"unit":"years","flows":[[1,"$2000"],[2,"$2000"],[3,"$2000"],[4,"$2000"]],"rate":"6% p.a. compounded annually","result":"FV = ?"}]]  Period 0 is the start. Each flow is [period, amount]; an amount starting with "-" is drawn as money going out (a withdrawal or a repayment). Up to 12 periods.
 26. Unit ladder (unit conversion): [[DIAGRAM {"type":"units","kind":"length","from":"km","to":"cm"}]]  "kind" is length, area, volume, capacity, mass, time or energy. It shows every step with its multiply or divide factor; "from" and "to" are optional and highlight the units being converted.
 27. For the normal distribution, add "rule":true to draw the 68%, 95% and 99.7% bands (the empirical rule). For compound interest growth, depreciation or a loan balance over time, use a graph: an equation such as "5000*1.04^x" or "20000*0.85^x", or points with "join":true.
+28. Flow network (maximum flow, minimum cut): [[DIAGRAM {"type":"flow","source":"S","sink":"T","edges":[["S","A",10],["S","B",8],["A","B",3],["A","T",7],["B","T",11]],"flow":true,"cut":true}]]  Each edge is [from, to, capacity] and runs from the first node to the second (no edge may run both ways between the same two nodes; at most 10 nodes). The Hub works out the maximum flow itself. Leave out "flow" and "cut" to draw only the capacities for the student to work on. "flow":true prints flow/capacity on every edge. "cut":true draws the minimum cut and its capacity (which equals the maximum flow), or give "cut":["S","A"] to draw the cut that puts those nodes, with the source, on one side and every other node on the other, and print its capacity. "source" and "sink" are optional (the Hub finds them), so make your working agree with the printed numbers.
+29. Critical path analysis (activity network with EST, LST and float): [[DIAGRAM {"type":"cpm","activities":[["A",3],["B",4,["A"]],["C",2,["A"]],["D",5,["B","C"]]]}]]  Each activity is [name, duration, predecessors]; predecessors is a list of the activities that must finish first (leave it out for an activity that can start straight away). Up to 10 activities. The Hub works out every EST (forward scan), LST (backward scan), float, the minimum completion time and the critical path(s) and prints them in the boxes and caption. Use this instead of the network shape for any critical path, EST, LST or float question. Add "times":false to draw only the activities and arrows when the student has to find the times themselves, and make your working agree with the printed numbers.
+30. Compass rose (true and compass bearings): [[DIAGRAM {"type":"compass","marks":[["A","N60\u00B0E"],["B",150],["C","S25\u00B0W"]]}]]  Each mark is [letter, bearing] with the bearing written either way: a true bearing (60 or "150") or a compass bearing ("N60\u00B0E", "S25\u00B0W", or a point like "NE"). The Hub shows every mark as both a compass bearing and a true bearing and marks the acute angle from north or south. Up to 6 marks. Use it for converting between the two kinds of bearing.
+31. Compass radial survey (area of a block of land from a centre point): [[DIAGRAM {"type":"radial","centre":"O","legs":[[20,35,"35 m"],[95,42,"42 m"],[170,30,"30 m"],[250,38,"38 m"],[320,28,"28 m"]],"area":true}]]  Each leg is [true bearing, distance, optional label] from the centre to one corner, in order round the boundary (3 to 8 legs). The boundary is closed for you. Add "area":true to print the area, worked out as the sum of the triangles (1/2) a b sin C, and add "unit" if it is not metres.
+32. Scale drawing or map: [[DIAGRAM {"type":"scale","ratio":"1:500","plan":"4.2 cm","actual":"x"}]]  "ratio" is written 1:n. "plan" is the length on the drawing or map and "actual" is the real length: give the one you know and "x" for the one to find (the Hub converts the units). For an area, give the plan lengths instead: [[DIAGRAM {"type":"scale","ratio":"1:200","width":"6 cm","height":"4 cm"}]]. Add "answer":true to print the calculated value instead of x. It draws a scale bar. For maps, building plans and site plans.
+33. Graph extras (add these to a graph from item 5): "vlines":[[3,"x = 3"]] draws dashed vertical lines (an axis of symmetry, or an asymptote such as x = 0), "hlines":[[0,"y = 0"]] draws dashed horizontal lines (an asymptote, a target level), each as [value, label], up to 4 of each. "shade" colours regions, up to 3: {"between":[0,1],"from":"cross","label":"Profit"} shades between curve 0 and curve 1 (curves are numbered from 0 in the order you list them), starting where the two curves meet ("from":"cross" or "to":"cross"; or give x values; leave both out to cover the whole graph). Also {"under":0} (between curve 0 and the x-axis), {"above":0} and {"below":0}, each with optional "from", "to" and "label". For a break-even graph draw cost and revenue as two lines, mark the meeting point in "marks", then shade profit with {"between":[1,0],"from":"cross","label":"Profit"} and loss with {"between":[1,0],"to":"cross","label":"Loss"}. Trigonometric graphs work in degrees: use "sin(x)", "cos(x)", "tan(x)" with brackets and a scale such as xmin 0, xmax 180 (add "radians":true to use radians). Reciprocal graphs (y = k/x) are written "k/x"; add "vlines":[[0,"x = 0"]] and "hlines":[[0,"y = 0"]] for the asymptotes.
+34. Pareto chart: [[DIAGRAM {"type":"pareto","labels":["Speeding","Fatigue","Alcohol","Phone","Other"],"values":[45,30,15,6,4],"xlabel":"Cause of crash","ylabel":"Number of crashes"}]]  Give the categories and their counts in any order: the Hub sorts the bars from largest to smallest (a category called "Other" stays last) and draws the cumulative percentage line on a right-hand axis. Add "line80":true to draw the 80% line and "answer":true to print how many categories make up 80% of the total. Up to 10 categories.
+35. Position on the globe (latitude and longitude): [[DIAGRAM {"type":"globe","places":[["Sydney",-34,151],["Singapore",1.3,103.8]],"answer":true}]]  Each place is [name, latitude, longitude] in degrees, with south and west written as negative numbers (or as text such as "34°S"); up to 4 places. The Hub draws a globe centred between the places, with the equator, the prime meridian and lines every 30°, marks each place with its latitude and longitude, and draws the great-circle arc between the first two places. All places must be on the same side of the globe (within about 80° of the middle). Add "answer":true to print the longitude difference and time difference (15° of longitude = 1 hour) and the angle at the centre and great-circle distance (Earth's radius taken as 6400 km; add "radius" for another value). Leave "answer" out when the student has to work these out. Add "centre":[lat,lon] to choose the middle of the view and "arc":false to leave the arc out.
+36. Scatterplot predictions (interpolation and extrapolation): add these to a scatterplot from item 5 that has "points" and "best":true. "predict":[2030] marks the point on the line of best fit at each x value (up to 4). The line is drawn solid across the data (interpolation) and dashed beyond the first and last data points (extrapolation), and the legend says so. Add "answer":true to print the predicted y values and say whether each is interpolation or extrapolation; leave it out when the student has to read the value. "extend":true runs the dashed line on past the data without marking a point. Give "xmin" and "xmax" if you want to choose the scale.
+37. Two normal curves compared: [[DIAGRAM {"type":"twonormal","curves":[{"mean":70,"sd":10,"label":"Class A"},{"mean":60,"sd":15,"label":"Class B"}],"shade":"above","a":85}]]  Draws exactly 2 normal distributions on the same axis so the centres and spreads can be compared (a larger standard deviation gives a wider, flatter curve). Each curve is {"mean","sd","label"} or [mean, sd, label]. Optional "shade" is "below" or "above" (give "a"), or "between" or "outside" (give "a" and "b"), with the cut points as scores. The Hub shades both curves, works out each area and each z-score, and prints them, so make your working agree. Leave "shade" out to draw the curves only. Use the single normal shape (item 6) for one curve.
+38. Sampling methods: [[DIAGRAM {"type":"sampling","method":"systematic","population":40,"size":8,"answer":true}]]  "method" is "random", "systematic" or "stratified". For random and systematic give "population" (2 to 60, drawn as numbered dots) and "size" (the sample size). Random: give "chosen":[3,9,14] for the members the question says were picked, or add "answer":true for one possible sample. Systematic: the Hub works out the interval k = N ÷ n and the sample from a random start (give "start" if the question does); add "answer":true to highlight the sample. Stratified: [[DIAGRAM {"type":"sampling","method":"stratified","strata":[["Year 10",120],["Year 11",100],["Year 12",80]],"size":30,"answer":true}]]  Each group is [name, count] (2 to 5 groups); the Hub works out each group's share of the sample, rounded so they add up to the sample size. Leave "answer" out when the student has to find the sample themselves.
 For graphs, statistics, probability and measurement, only draw what the question gives you: never invent data points, counts or measurements, and make the picture match your working.
 Draw at most two diagrams in a reply, only when a picture helps, and make sure it matches the numbers in your working. After it, refer to the picture in words ("the side opposite the 35° angle is x"). If a question needs a shape these cannot show, describe it in words instead.`:'';
 
@@ -47874,7 +48240,7 @@ const srcHtml=a=>{const L=(a.src||[]);if(!L.length)return `<div class="tt-nosrc"
  return `<details class="tt-src"><summary>Notes used (${L.length} excerpt${L.length>1?'s':''})</summary><ol>${L.map(x=>`<li><b>${esc(snm(x.s))}</b> ${esc(plain(x.x))}${x.x.length>=240?'…':''}</li>`).join('')}</ol></details>`};
 const boxHtml=()=>{if(T.view==='quiz')return quizHtml();let h='';
  if(!T.msgs.length)h=`<div class="tt-empty">${openerHtml()}<div class="chips tt-starts"><button type="button" class="chip" data-tt="ask:q">Quiz me</button>${topicList().slice(0,3).map((t,i)=>`<button type="button" class="chip" data-tt="ask:${i}">Explain ${esc(t)}</button>`).join('')}</div></div>`;
- else h=T.msgs.map((m,i)=>m.r==='u'?`<div class="tt-m u"><div class="tt-b">${esc(m.t).replace(/\n/g,'<br>')}</div></div>`:`<div class="tt-m a"><div class="tt-b">${md(m.t)}</div><div class="tt-meta">${m.sw?`<button type="button" class="chip on" data-tt="sw:${i}">This looks like ${esc(snm(m.sw))}, switch tab</button>`:actHtml(m,i)+srcHtml(m)}</div></div>`).join('');
+ else h=T.msgs.map((m,i)=>m.r==='u'?`<div class="tt-m u"><div class="tt-b">${esc(m.t).replace(/\n/g,'<br>')}</div></div>`:`<div class="tt-m a"><div class="tt-b">${md(m.t)}</div><div class="tt-meta">${m.sw?`<button type="button" class="chip on" data-tt="sw:${i}">This looks like ${esc(snm(m.sw))}, switch tab</button>`:actHtml(m,i)+srcHtml(m)+tpHtml(m,i)}</div></div>`).join('');
  if(T.msgs.length&&T.msgs[T.msgs.length-1].r==='a'&&!T.msgs[T.msgs.length-1].sw&&!T.busy&&!T.err)h+=`<div class="tt-fu" role="group" aria-label="Follow-ups">${FU[T.mode].map((f,i)=>`<button type="button" class="chip" data-tt="fu:${i}">${esc(f[0])}</button>`).join('')}</div>`;
  if(T.busy)h+=`<div class="tt-m a"><div class="tt-b tt-think" role="status" aria-label="${CORP?pn()+' is typing':'Reading your Hub notes'}"><i></i><i></i><i></i></div></div>`;
  if(T.err)h+=`<div class="tt-err" role="alert">${esc(T.err)} <button type="button" class="lnk" data-tt="retry">Try again</button></div>`;
@@ -48020,10 +48386,11 @@ main:has(#tt){max-width:none!important}.tt{max-width:none;width:100%}.tt-box.emp
 .tt-b .tt-dgx{font-size:13px;color:var(--mu);font-style:italic}
 .tt-dg .gr{fill:none;stroke:var(--ln);stroke-width:1}.tt-dg .ax{fill:none;stroke:currentColor;stroke-width:1.5;opacity:.8}.tt-dg .ax.z{stroke-width:1;opacity:.45}
 .tt-dg .k.s0{stroke:var(--br)}.tt-dg .k.s1{stroke:currentColor}.tt-dg .k.s2{stroke:#e8a020}.tt-dg .k.s3{stroke:#2f9e8a}
-.tt-dg .pt{fill:var(--br);stroke:var(--sf);stroke-width:1.5}.tt-dg .mk{fill:var(--sf);stroke:currentColor;stroke-width:2}.tt-dg .sh{fill:color-mix(in srgb,var(--br) 30%,transparent);stroke:none}
+.tt-dg .pt{fill:var(--br);stroke:var(--sf);stroke-width:1.5}.tt-dg .mk{fill:var(--sf);stroke:currentColor;stroke-width:2}.tt-dg .sh{fill:color-mix(in srgb,var(--br) 30%,transparent);stroke:none}.tt-dg .sh.c1{fill:color-mix(in srgb,#e8a020 32%,transparent)}
 .tt-dg .bar{stroke:var(--br);stroke-width:1.6;fill:color-mix(in srgb,var(--br) 45%,transparent)}.tt-dg .bar.b1{stroke:#e8a020;fill:color-mix(in srgb,#e8a020 45%,transparent)}.tt-dg .bar.b2{stroke:currentColor;fill:color-mix(in srgb,currentColor 25%,transparent)}
 .tt-dg .nd{fill:var(--sf);stroke:currentColor;stroke-width:2}.tt-dg .nd.h{stroke:var(--br);stroke-width:2.8}.tt-dg .ah{fill:currentColor;stroke:none}.tt-dg .ah.h{fill:var(--br)}
 .tt-dg .pie{stroke:var(--sf);stroke-width:2}.tt-dg .pie.p0{fill:color-mix(in srgb,var(--br) 62%,transparent)}.tt-dg .pie.p1{fill:color-mix(in srgb,#e8a020 62%,transparent)}.tt-dg .pie.p2{fill:color-mix(in srgb,#2f9e8a 62%,transparent)}.tt-dg .pie.p3{fill:color-mix(in srgb,currentColor 30%,transparent)}.tt-dg .pie.p4{fill:color-mix(in srgb,#c2569a 60%,transparent)}.tt-dg .pie.p5{fill:color-mix(in srgb,#4c8bd9 60%,transparent)}.tt-dg .pie.p6{fill:color-mix(in srgb,#8a8f98 60%,transparent)}.tt-dg .pie.p7{fill:color-mix(in srgb,#8cb83a 60%,transparent)}
+.tt-dg .sd{fill:var(--sf);stroke:currentColor;stroke-width:1.3;opacity:.85}.tt-dg .sd.s{fill:color-mix(in srgb,var(--br) 38%,transparent);stroke:var(--br);stroke-width:2.6;opacity:1}.tt-dg text.q{font-size:12px;font-weight:600}.tt-dg text.q.g{font-weight:800}
 .tt-b p{margin:0 0 8px}.tt-b p:last-child,.tt-b ul:last-child,.tt-b ol:last-child{margin-bottom:0}.tt-b ul,.tt-b ol{margin:0 0 8px;padding-left:22px}.tt-b li{margin:0 0 4px}.tt-b code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:var(--bg);padding:1px 5px;border-radius:5px}
 .tt-src{margin:6px 4px 0;font-size:calc(13px*var(--fs,1));color:var(--mu)}.tt-src summary{cursor:pointer;font-weight:600}.tt-src ol{margin:6px 0 0;padding-left:20px}.tt-src li{margin:0 0 6px;line-height:1.45}.tt-src b{color:var(--ink)}.tt-nosrc{margin:6px 4px 0;font-size:calc(13px*var(--fs,1));color:var(--mu)}
 .tt-m.a .tt-b.tt-think{display:inline-flex;align-items:center;gap:5px;padding:14px 16px;line-height:1}.tt-think i{width:8px;height:8px;border-radius:50%;background:var(--mu);opacity:.45;animation:ttd 1.3s infinite ease-in-out both}.tt-think i:nth-child(2){animation-delay:.18s}.tt-think i:nth-child(3){animation-delay:.36s}@keyframes ttd{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
@@ -48145,7 +48512,7 @@ const Q=s=>document.querySelector(s);
 function ttReveal(c,old){try{[['.tt-subj','s'],['.tt-pin','p']].forEach(k=>{const r=c.querySelector(k[0]);if(!r)return;if(old&&old[k[1]]!=null)r.scrollLeft=old[k[1]];const on=r.querySelector('.chip.on');if(!on)return;const a=r.getBoundingClientRect(),b=on.getBoundingClientRect();if(k[0]==='.tt-subj'||b.left<a.left+8||b.right>a.right-8)r.scrollLeft+=b.left-a.left-(r.clientWidth-b.width)/2})}catch(e){}}
 function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();
  const atEnd=b.scrollHeight-b.scrollTop-b.clientHeight<90,y=b.scrollTop;
- const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';const o0={},sj0=c.querySelector('.tt-subj'),pn0=c.querySelector('.tt-pin');if(sj0)o0.s=sj0.scrollLeft;if(pn0)o0.p=pn0.scrollLeft;c.innerHTML=ctlHtml();ttReveal(c,o0);b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();
+ const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';const o0={},sj0=c.querySelector('.tt-subj'),pn0=c.querySelector('.tt-pin');if(sj0)o0.s=sj0.scrollLeft;if(pn0)o0.p=pn0.scrollLeft;c.innerHTML=ctlHtml();ttReveal(c,o0);b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();{const tfe=Q('#ttFiles');if(tfe)tfe.innerHTML=tfHtml()}
  b.scrollTop=qz?(scroll?0:y):!T.msgs.length?0:(scroll||atEnd?b.scrollHeight:y);
  if(s){s.disabled=T.busy;s.textContent=T.busy?'Sending…':'Send'}}
 const EXEMPT=/\b(?:study|studying|revise|revising|revision|plan|planning|timetable|schedule|routine|motivat\w*|stress\w*|anxious|anxiety|nervous|overwhelm\w*|relax\w*|calm\w*|burn(?:ed|t)? ?out|tired|sleep\w*|wellbeing|procrastinat\w*|focus\w*|concentrat\w*|after (?:my|the|an) exams?|tips?|advice|what should i|where (?:do|should) i (?:start|begin)|how (?:do|should|can) i (?:remember|memori[sz]e|prepare|answer|write|structure|approach|manage)|exam (?:technique|strategy)|time management|feedback|my (?:weak|progress|results))\b/i;
@@ -48168,18 +48535,55 @@ async function run(){if(T.busy||!T.msgs.length||T.msgs[T.msgs.length-1].r!=='u')
   try{const hs=as(()=>ttsubOfHits(hits));if(hs){LASTSUB=hs;window.__ttEng=effSub()}}catch(e){}
    const hist=merge(ch.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t.slice(0,m.r==='a'?1800:3000)})));
   while(hist.length&&hist[0].role!=='user')hist.shift();
-  const out=wrong?'':await HubAI.chat(as(()=>system(hits,last,gate)),hist);
+  const calc=!wrong&&needsCalc(last,sj),sysP=wrong?'':as(()=>system(hits,last,gate))+(calc?'\nThis question needs a calculation. Use the code tool to compute it so the numbers are right, then show the working in short plain steps and state the final answer. Do not show the code itself.':''),
+   out=wrong?'':await HubAI.chat(sysP,hist,undefined,calc).catch(e=>{if(!calc||/rejected|limit|quota/i.test((e&&e.message)||''))throw e;return HubAI.chat(sysP.split('\nThis question needs a calculation.')[0],hist)});
   if(wrong)ch.push({r:'a',id:ttid(),q:last,q0:last,sub:sj,sw:wrong,t:'That one is outside '+snm(sj)+'. It looks like '+snm(wrong)+', where your notes cover it, so it is better asked in that tab.',src:[]});
   else{ch.push({r:'a',id:ttid(),q:q,sub:as(()=>ttsubOfHits(hits)),gate:gate,t:nameCheck(String(out).trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)}))});try{const sid=as(()=>ttsubOfHits(hits));if(sid)logChat(sid,as(()=>tttopic(sid,q)))}catch(e){}}if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info((PERS[sj]||PERS.all)[0]+' replied in '+snm(sj))}}
  catch(e){as(()=>{T.err=(e&&e.message)||'Something went wrong.'});if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info('Something went wrong in '+snm(sj)+'. Open it to try again.')}}
  as(()=>{T.busy=false});persist();paint(here())}
+/* ---- Trial paper upload: attach photos or a PDF of a trial paper and the Tutor reads it and says what to fix (Google Gemini only) ---- */
+let TF=[],TM=false;const TFMAX=6,TFLIM=14e6;
+{const st=document.createElement('style');st.textContent='.tt-clip{flex:none;min-height:var(--tth,50px);padding:0 14px;font-size:1.1rem;box-sizing:border-box}.tt-files{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0}.tt-fc{display:inline-flex;gap:6px;align-items:center}';document.head.appendChild(st)}
+const tfHtml=()=>(TM?`<div class="tt-files" id="ttAttMenu"><button type="button" class="chip" data-tt="att:cam">\ud83d\udcf7 Take a photo</button><button type="button" class="chip" data-tt="att:lib">\ud83d\uddbc\ufe0f Upload a photo</button><button type="button" class="chip" data-tt="att:pdf">\ud83d\udcc4 PDF or file</button></div>`:'')+(TF.length?`<div class="tt-files">${TF.map((f,i)=>`<span class="chip on tt-fc">${f.mime==='application/pdf'?'PDF':'Photo'} \u00b7 ${esc(f.name.slice(0,22))} <button type="button" class="lnk" data-tt="unf:${i}" aria-label="Remove ${esc(f.name)}">\u2715</button></span>`).join('')}<span class="mu sm">Press Send to analyse.</span></div>`:'');
+const tpHtml=(m,i)=>{if(!m.tp||!m.tp.length)return'';const sid=ttsub(m);return `<div class="chips" style="margin-top:8px">${m.tp.map((t,j)=>`<button type="button" class="chip${weakIn(sid,t)?' on':''}" data-tt="tp:${i}:${j}">${weakIn(sid,t)?'\u2713 In weak areas: ':'Add to weak areas: '}${esc(t)}</button>`).join('')}<button type="button" class="chip" data-tt="tpq:${i}">Quiz me on these</button></div>`};
+const b64=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(b)});
+async function shrink(f){if(f.type==='application/pdf')return{name:f.name,mime:f.type,data:await b64(f)};
+ const u=URL.createObjectURL(f);try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=u}),s=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return{name:f.name,mime:'image/jpeg',data:c.toDataURL('image/jpeg',.82).split(',')[1]}}finally{URL.revokeObjectURL(u)}}
+async function addFiles(list){const i=Q('#ttIn');if(i)T.draft=i.value;let bad=0;
+ for(const f of list.slice(0,Math.max(0,TFMAX-TF.length))){if(!/^image\/|^application\/pdf$/.test(f.type)){bad++;continue}try{TF.push(await shrink(f))}catch(e){bad++}}
+ bad+=Math.max(0,list.length-Math.max(0,TFMAX-(TF.length)))*0;let tot=TF.reduce((a,f)=>a+f.data.length,0);while(tot>TFLIM&&TF.length){tot-=TF.pop().data.length;bad++}
+ T.err=bad?bad+' file'+(bad>1?'s were':' was')+' skipped. Use photos or PDFs, up to '+TFMAX+' files and about 10 MB in total.':'';paint()}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='ttFile'){const l=[...(t.files||[])];t.value='';if(l.length)addFiles(l)}});
+async function analyse(v){if(T.busy)return;
+ if(!HubAI.ready()||HubAI.cfg().provider!=='gemini'){T.err='Trial paper upload needs your Google (Gemini) key. Set it in Settings > AI Setup.';paint();return}
+ const sj=T.subj,files=TF.slice(),as=fn=>{const k=T.subj;T.subj=sj;try{return fn()}finally{T.subj=k}},here=()=>T.subj===sj;
+ T.msgs.push({r:'u',t:'\ud83d\udcce '+files.map(f=>f.name).join(', ')+(v?'\n'+v:'')});TF=[];T.draft='';T.busy=true;T.err='';persist();paint(true);
+ try{await corpus();const map=as(()=>mapText()),
+  sys=`You are an HSC tutor. The student has uploaded their own trial or practice paper (photos or a PDF), possibly with teacher marks and comments. Work only from what is actually visible. Never invent questions, answers or marks, and say so if something is unreadable.
+Do this:
+1. One line on what the paper is (subject and rough total marks).
+2. Find where marks were lost or are likely to be lost. For each weak area give the topic, the question number, what went wrong (content gap, missed the command word, calculation slip, no evaluation or judgement, weak use of data or examples, ran out of time or left blank) and a short quote or description as evidence.
+3. If the paper is unmarked, say clearly that any marks you give are estimates.
+4. Rank the 3 to 5 most important things to fix, then give a short plan for the next week.
+Be kind, specific and short. Use short paragraphs and a numbered list for the ranking.
+Finish with one last line in exactly this form, using topic names from the list below where one fits: TOPICS: topic one | topic two | topic three
+Topic names in the student's notes: ${map||'none loaded'}`+toneLine()+(sj!=='all'?'\nSubject: '+snm(sj):''),
+  out=String(await HubAI.chat(sys,[{role:'user',content:v||'Please analyse my trial paper and tell me what I need to improve.'}],files)),
+  mt=/^\s*TOPICS:\s*(.+)$/im.exec(out),tp=mt?mt[1].split('|').map(s=>s.trim().replace(/[.*]+$/,'')).filter(Boolean).slice(0,5):[];
+  (CH[sj]||T.msgs).push({r:'a',id:ttid(),q:'trial paper',sub:sj==='all'?undefined:sj,gate:'covered',t:out.replace(/^\s*TOPICS:.*$/im,'').trim(),src:[],tp:tp});
+  if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info('Your trial paper analysis is ready in '+snm(sj))}}
+ catch(e){as(()=>{T.err=(e&&e.message)||'Something went wrong.'})}
+ as(()=>{T.busy=false});persist();paint(here())}
+/* code execution is only switched on when the message has a number in it AND looks like a calculation, in a subject where that matters */
+const CALCW=/\b(calculat\w*|work out|solve|evaluate|simplify|expand|factori[sz]e|differentiate|derivative|integrate|integral|percentage change|percent change|multiplier|gini|cpi|inflation rate|growth rate|unemployment rate|participation rate|terms of trade|elasticity|ped|yed|xed|mps|mpc|real gdp|real wage|exchange rate|budget (?:balance|deficit|surplus)|current account|how much|standard deviation|mean|median|probability|compound|interest|profit|margin|break[- ]?even|roi|ratio)\b/i;
+const needsCalc=(t,sj)=>['maths','economics','business','all'].includes(sj)&&/\d/.test(t)&&CALCW.test(t);
 function send(txt){if(T.busy)return;if(!HubAI.ready()){T.err='Add your API key in Settings > AI Setup first.';paint();return}
  learn(txt);T.msgs.push({r:'u',t:String(txt).slice(0,3000)});T.draft='';const i=Q('#ttIn');if(i){i.value='';i.style.height=''}T.err='';persist();run()}
-const submit=()=>{const i=Q('#ttIn'),v=(i?i.value:T.draft).trim(),m=/\[(?:topic|this|that)\]/.exec(v);if(m&&i){i.focus();i.setSelectionRange(m.index,m.index+m[0].length);return}if(v)send(v)};
+const submit=()=>{const i=Q('#ttIn'),v=(i?i.value:T.draft).trim(),m=/\[(?:topic|this|that)\]/.exec(v);if(m&&i){i.focus();i.setSelectionRange(m.index,m.index+m[0].length);return}if(TF.length){analyse(v);return}if(v)send(v)};
 V.tutor=()=>{readNow();setTimeout(()=>{ttReveal(Q('#ttCtl'));const b=Q('#ttBox');if(b)b.scrollTop=(T.msgs.length&&T.view!=='quiz')?b.scrollHeight:0;if(!CORP&&!CORPP)setTimeout(()=>{if(Q('#tt'))corpus().then(()=>paint(false))},500)},0);
  window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}
  const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const s=SUBS.find(x=>x[0]===T.subj);return s?s[2]:''}}catch(e){}return ''})();
- return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div class="tt-comp"><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
+ return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div id="ttFiles">${tfHtml()}</div><div class="tt-comp"><input type="file" id="ttFile" accept="image/*,application/pdf" multiple hidden><button type="button" class="btn tt-clip" data-tt="attach" aria-label="Attach a trial paper (photo or PDF)" title="Attach a trial paper (photo or PDF)">\ud83d\udcce</button><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-tt]');if(!t||t.type==='checkbox')return;const v=t.dataset.tt;
  if(v.indexOf('subj:')===0){T.subj=v.slice(5);persist();paint(true)}
  else if(v.indexOf('sw:')===0){const m=T.msgs[+v.slice(3)];if(m&&m.sw){const q=String(m.q0||m.q||'');T.subj=m.sw;T.view='chat';T.draft=q;persist();paint(true);const i=Q('#ttIn');if(i){i.value=q;i.style.height='auto';i.style.height=Math.min(180,i.scrollHeight)+'px';try{i.focus({preventScroll:true})}catch(_){}}}}
@@ -48187,6 +48591,11 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(v.indexOf('mode:')===0){T.mode=v.slice(5);persist();paint()}
  else if(v==='new'){if(T.busy)return;T.msgs=[];T.err='';persist();paint()}
  else if(v==='opts'){OPT=!OPT;paint()}
+ else if(v==='attach'){const i=Q('#ttIn');if(i)T.draft=i.value;TM=!TM;paint()}
+ else if(v.indexOf('att:')===0){const f=Q('#ttFile'),k=v.slice(4);if(f){f.accept=k==='pdf'?'application/pdf,image/*':'image/*';if(k==='cam')f.setAttribute('capture','environment');else f.removeAttribute('capture');f.click()}TM=false;const mn=Q('#ttAttMenu');if(mn)mn.remove()}
+ else if(v.indexOf('unf:')===0){const i=Q('#ttIn');if(i)T.draft=i.value;TF.splice(+v.slice(4),1);paint()}
+ else if(v.indexOf('tpq:')===0){const m=T.msgs[+v.slice(4)];if(m&&m.tp&&m.tp.length){const sid=ttsub(m),w=m.tp.join(' '),qs=ttPick(sid,5,'query',w,w);if(qs.length){ttStart(qs,'on your trial paper weak spots');T.view='quiz';persist();paint(true);ttFocusQ()}else{T.view='chat';persist();send('Quiz me on '+m.tp[0]+'.')}}}
+ else if(v.indexOf('tp:')===0){const p=v.slice(3).split(':'),m=T.msgs[+p[0]],lab=m&&m.tp&&m.tp[+p[1]];if(lab){const sid=ttsub(m);if(weakIn(sid,lab)){weakDel(sid,lab);info('Removed \u201c'+lab+'\u201d from your weak areas')}else{weakAdd(sid,lab,'Tutor trial paper');info('Added \u201c'+lab+'\u201d to your '+snm(sid)+' weak areas')}paint()}}
  else if(v==='send')submit();else if(v==='retry')run();
  else if(v.indexOf('fill:')===0){const i=Q('#ttIn'),x=FILL[+v.slice(5)]||'';if(i){i.value=x;T.draft=x;i.focus();selPh(i,0)}}
  else if(v==='ask:q')openQuiz();
