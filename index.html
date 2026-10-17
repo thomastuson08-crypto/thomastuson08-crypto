@@ -49404,6 +49404,8 @@ window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
    R.style.setProperty('--vvh',Math.round(h)+'px');R.style.setProperty('--vvt',Math.round(vv?vv.offsetTop:0)+'px');if(scrollY||scrollX)scrollTo(0,0);var mm=document.querySelector('main:has(#tt)');if(mm&&mm.scrollTop)mm.scrollTop=0}
   else if(R.classList.contains('tt-kb')){R.classList.remove('tt-kb');kbSync();R.style.removeProperty('--vvh');R.style.removeProperty('--vvt');scrollTo(0,0)}}
  function sched(){if(!raf)raf=requestAnimationFrame(fit)}
+ /* safety net: if the Tutor box disappears while the keyboard is open (switching subject/tab), focusout never fires, so re-check */
+ setInterval(function(){if(R.classList.contains('tt-kb')&&!typing())sched()},400);
  if(vv){vv.addEventListener('resize',sched);vv.addEventListener('scroll',sched)}
  addEventListener('resize',sched);addEventListener('orientationchange',sched);addEventListener('scroll',function(){if(R.classList.contains('tt-kb'))sched()},{passive:true});
  /* keyboard open in the Tutor: only the chat list (and the text box itself) may scroll; a drag anywhere else must not move the page */
@@ -49514,8 +49516,8 @@ gListen(ed,true);
 /* sidebar/rail background always runs to the very bottom (and top) of the screen, whatever the browser reports for the viewport height */
 html[data-nav=rail] body:not(.insub)::after,html[data-nav=sidebar] body:not(.insub)::after{content:"";position:fixed;left:0;top:0;bottom:0;width:var(--railw,0px);background:color-mix(in srgb,var(--sf) 78%,transparent);border-right:1px solid var(--ln);z-index:-1;pointer-events:none}
 html{background:var(--bg)}
-/* keyboard open in the Tutor: stop the animated background and blur layers so iPadOS does not flicker */
-html.tt-kb #fx,html.tt-kb #tod,html.tt-kb #hx-tint,html.tt-kb #amb,html.tt-kb #atm,html.tt-kb #imo,html.tt-kb #sw,html.tt-kb body::before{display:none!important}
+/* keyboard open in the Tutor: stop the ANIMATED layers and blur so iPadOS does not flicker, but keep the static background (body::before, #tod, #hx-tint) visible */
+html.tt-kb #fx,html.tt-kb #amb,html.tt-kb #atm,html.tt-kb #imo,html.tt-kb #sw{display:none!important}
 html.tt-kb *,html.tt-kb *::before,html.tt-kb *::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;animation:none!important;transition:none!important}
 html.tt-kb aside{overflow:hidden}
 </style>
