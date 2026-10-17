@@ -46849,12 +46849,12 @@ function formatSubjects(last){if(T.subj!=="all")return FORMATS[T.subj]?[T.subj]:
  for(const t of us){if(t===last)continue;const k=fmtSubj(t);if(k.length)return k.length===1?k:[]}return[]}
 function formatText(k,last){const f=FORMATS[k];if(typeof f==="string")return f;
  /* the paper the student is asking about wins over the pin; with neither, both papers are given */
- const pp=String(paperFrom(last||"")||T.paper||"").slice(0,2);return f.intro+"\n"+(pp==="p1"?f.p1:pp==="p2"?f.p2:f.p1+"\n"+f.p2)}
+ const pp=String(paperFrom(last||"")||(T.subj==="english"?T.paper:"")||"").slice(0,2);return f.intro+"\n"+(pp==="p1"?f.p1:pp==="p2"?f.p2:f.p1+"\n"+f.p2)}
 function formatLines(last){try{const ks=formatSubjects(last);if(!ks.length)return"";return ks.map(k=>"["+NAMES[k]+"]\n"+formatText(k,last)).join("\n\n")}catch(e){return""}}
 /* General tab, asking about an exam layout without saying which subject: do not let the AI guess */
 const fmtAsk=last=>{try{return T.subj==="all"&&FMTINT.test(last||"")&&EXAMW.test(last||"")&&!formatSubjects(last).length}catch(e){return false}};
 /* English-only context (the "studying now" paper pin): English tab, or General when the message is not clearly about another subject */
-const engNow=last=>{if(T.subj==="english")return true;if(T.subj!=="all")return false;const k=fmtSubj(last);return !k.length||k.includes("english")};
+const engNow=last=>T.subj==="english";   /* the "Studying now" paper pin belongs to the English tab only */
 /* things the student told the tutor are only passed on in a tab they belong to ("Paper 2 is today" stays out of the Business tab) */
 const noteFits=x=>{if(T.subj==="all")return true;const k=fmtSubj(x&&x.t);return !(k.length&&k.indexOf(T.subj)<0)};
 function sessionBlock(last){const n=new Date();let o='\nTODAY: '+n.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+', '+pad2(n.getHours())+':'+pad2(n.getMinutes())+' student time.';
@@ -46875,7 +46875,7 @@ function nameCheck(txt,C){try{if(!CORPLOW)CORPLOW=C.chunks.map(c=>c.text).join('
   bad.add(nm)}
  if(!bad.size)return txt;
  return txt+'\n\n(Check the name'+(bad.size>1?'s':'')+' '+[...bad].map(x=>'"'+x+'"').join(', ')+': not found in your Hub notes. Composers in the Hub: Ouyang Yu (New Accents), Miriam Wei Wei Lo (Home), Mark Haddon (The Curious Incident), Judith Wright (The Surfer), Stephen Daldry and Lee Hall (Billy Elliot), Bradbury (The Pedestrian).)'}catch(e){return txt}}
-function pinHtml(){if(T.subj!=='english'&&T.subj!=='all')return'';
+function pinHtml(){if(T.subj!=='english')return'';
  const o=[['','Not set'],['p1','Paper 1'],['p2','Paper 2 (all)'],['p2a','Mod A'],['p2b','Mod B'],['p2c','Mod C']];
  return '<div class="tt-pin" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 2px"><span class="tt-ol" style="font-size:12px;opacity:.75">Studying now</span><div class="chips" role="group" aria-label="Paper or module you are studying now">'+o.map(a=>{const on=(T.paper||'')===a[0];return '<button type="button" class="chip '+(on?'on':'')+'" data-tt="paper:'+a[0]+'" aria-pressed="'+on+'">'+a[1]+'</button>'}).join('')+'</div></div>'}
 /* progress: the Hub counts Tutor time and activity towards the subject being studied (in "All subjects", the subject of the latest question) */
@@ -46889,6 +46889,8 @@ let T={subj:'all',mode:'explain',strict:true,gs:false,gm:'balanced',rw:true,tone
 const CH={};Object.defineProperty(T,'msgs',{get:()=>CH[T.subj]||(CH[T.subj]=[]),set:v=>{CH[T.subj]=v},enumerable:true});
 /* 'waiting for a reply' and 'error' belong to a subject as well, so you can switch tabs while a reply loads and find it there when you return */
 const BUSY={},ERR={};Object.defineProperty(T,'busy',{get:()=>!!BUSY[T.subj],set:v=>{BUSY[T.subj]=!!v},enumerable:true});Object.defineProperty(T,'err',{get:()=>ERR[T.subj]||'',set:v=>{ERR[T.subj]=v},enumerable:true});
+/* the text in the message box belongs to a subject as well, so what you type in one tab does not follow you into another */
+const DR={};Object.defineProperty(T,'draft',{get:()=>DR[T.subj]||'',set:v=>{DR[T.subj]=v},enumerable:true});
 /* unread: a reply (or error) that arrived in a subject you were not looking at. Shows a dot on that subject's tab, a dot on the Tutor item in the menu, and a short message. */
 const UNREAD={};
 const tickNav=()=>{try{document.body.toggleAttribute('data-tt-unread',Object.keys(UNREAD).length>0)}catch(e){}};
@@ -48512,7 +48514,7 @@ const Q=s=>document.querySelector(s);
 function ttReveal(c,old){try{[['.tt-subj','s'],['.tt-pin','p']].forEach(k=>{const r=c.querySelector(k[0]);if(!r)return;if(old&&old[k[1]]!=null)r.scrollLeft=old[k[1]];const on=r.querySelector('.chip.on');if(!on)return;const a=r.getBoundingClientRect(),b=on.getBoundingClientRect();if(k[0]==='.tt-subj'||b.left<a.left+8||b.right>a.right-8)r.scrollLeft+=b.left-a.left-(r.clientWidth-b.width)/2})}catch(e){}}
 function paint(scroll){const c=Q('#ttCtl'),b=Q('#ttBox'),f=Q('#ttFoot'),s=Q('#ttSend');if(!c||!b)return;readNow();zsave();
  const atEnd=b.scrollHeight-b.scrollTop-b.clientHeight<90,y=b.scrollTop;
- const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';const o0={},sj0=c.querySelector('.tt-subj'),pn0=c.querySelector('.tt-pin');if(sj0)o0.s=sj0.scrollLeft;if(pn0)o0.p=pn0.scrollLeft;c.innerHTML=ctlHtml();ttReveal(c,o0);b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();{const tfe=Q('#ttFiles');if(tfe)tfe.innerHTML=tfHtml()}
+ const R=Q('#tt');if(R)R.dataset.view=T.view;window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}if(R){const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const x=SUBS.find(y=>y[0]===T.subj);return x?x[2]:''}}catch(e){}return ''})();if(tc)R.style.setProperty('--tc',tc);else R.style.removeProperty('--tc')}const qz=T.view==='quiz';const o0={},sj0=c.querySelector('.tt-subj'),pn0=c.querySelector('.tt-pin');if(sj0)o0.s=sj0.scrollLeft;if(pn0)o0.p=pn0.scrollLeft;c.innerHTML=ctlHtml();ttReveal(c,o0);b.innerHTML=boxHtml();b.classList.toggle('empty',!qz&&!T.msgs.length);if(f)f.innerHTML=footHtml();{const tfe=Q('#ttFiles');if(tfe)tfe.innerHTML=tfHtml()}{const ti=Q('#ttIn');if(ti&&ti.value!==T.draft){ti.value=T.draft;ti.style.height='auto';if(T.draft)ti.style.height=Math.min(180,ti.scrollHeight)+'px';else ti.style.height=''}}
  b.scrollTop=qz?(scroll?0:y):!T.msgs.length?0:(scroll||atEnd?b.scrollHeight:y);
  if(s){s.disabled=T.busy;s.textContent=T.busy?'Sending…':'Send'}}
 const EXEMPT=/\b(?:study|studying|revise|revising|revision|plan|planning|timetable|schedule|routine|motivat\w*|stress\w*|anxious|anxiety|nervous|overwhelm\w*|relax\w*|calm\w*|burn(?:ed|t)? ?out|tired|sleep\w*|wellbeing|procrastinat\w*|focus\w*|concentrat\w*|after (?:my|the|an) exams?|tips?|advice|what should i|where (?:do|should) i (?:start|begin)|how (?:do|should|can) i (?:remember|memori[sz]e|prepare|answer|write|structure|approach|manage)|exam (?:technique|strategy)|time management|feedback|my (?:weak|progress|results))\b/i;
@@ -48521,24 +48523,24 @@ async function run(){if(T.busy||!T.msgs.length||T.msgs[T.msgs.length-1].r!=='u')
  const sj=T.subj,ch=T.msgs,as=fn=>{const k=T.subj;T.subj=sj;try{return fn()}finally{T.subj=k}},here=()=>T.subj===sj;   /* as(): run something as the subject this question was asked in, even if you have switched tabs since */
  T.busy=true;T.err='';paint(true);
  try{const C=await corpus();if(here())paint(true);
-  const last=ch[ch.length-1].t,us=ch.slice(0,-1).filter(m=>m.r==='u'),QZ=/\b(?:quiz|test) me\b|\bask me (?:a |some )?(?:few )?questions?\b/i;let hits,q=last,cfv=1,gate='covered',wrong='';
+  const KF=keepFor(sj),last=ch[ch.length-1].t,us=ch.slice(0,-1).filter(m=>m.r==='u'),QZ=/\b(?:quiz|test) me\b|\bask me (?:a |some )?(?:few )?questions?\b/i;let hits,q=last,cfv=1,gate='covered',wrong='';
   const rest=last.replace(new RegExp(QZ.source,'gi'),' ').replace(/\b\d+\b|short|few|more|questions?|this|that|it/gi,' '),prior=()=>{for(let i=us.length-1;i>=0;i--)if(tok(us[i].t).length>=1&&!QZ.test(us[i].t))return us[i].t;return''};
   if(QZ.test(last)&&tok(rest).length<1){const p=prior();hits=p?await hsearch(C,p,sj,10):sample(C,sj,6)}
-  else{if(tok(last).length<3){const p=prior();if(p)q=p+' '+last;if(T.paper&&PAPERS[T.paper]&&(sj==='english'||(sj==='all'&&(()=>{const pk=fmtSubj((p||'')+' '+last);return !pk.length||pk.includes('english')})())))q+=' '+PAPERS[T.paper][2]}hits=await hsearch(C,q,sj,10);cfv=hits.conf;
+  else{if(tok(last).length<3){const p=prior();if(p)q=p+' '+last;if(T.paper&&PAPERS[T.paper]&&sj==='english')q+=' '+PAPERS[T.paper][2]}if(KF&&KF.kw)q+=' '+KF.kw;hits=await hsearch(C,q,sj,10);cfv=hits.conf;
    if(T.rw!==false&&!hits.sem&&(!hits.length||hits[0].cov<.6||hits.length<4)){const kw=await as(()=>expand(q));if(kw){const r2=search(C,q+' '+kw,sj,10);if(r2.conf>=.6)cfv=Math.max(cfv,Math.min(r2.conf,GATES[T.gm][1]-.01));const mm=new Map();[...hits,...r2].forEach(h=>{const o=mm.get(h.c.id);if(!o||h.s>o.s)mm.set(h.c.id,h)});hits=[...mm.values()].sort((x,y)=>y.s-x.s).slice(0,10)}}}
   /* three-way gate: covered -> send notes; weak -> send notes + warn the AI; not covered -> send no notes. Quiz, study-skills and planning messages, and pure chat, are never gated. */
   const FMTQ=FMTINT.test(last)&&EXAMW.test(last+' '+(us.length?us[us.length-1].t:''))&&as(()=>formatSubjects(last)).length>0;
-   if(!QZ.test(last)&&!EXEMPT.test(last)&&!FMTQ&&tok(q).length>0){const GL=GATES[T.gm][0],GH=GATES[T.gm][1];gate=cfv>=GH?'covered':cfv>=GL?'weak':'none';
+   if(!QZ.test(last)&&!EXEMPT.test(last)&&!FMTQ&&tok(q).length>0){const GL=GATES[T.gm][0],GH=GATES[T.gm][1];gate=cfv>=GH?'covered':cfv>=GL?'weak':'none';if(KF&&gate==='none')gate='weak';   /* with the picture attached, a vague follow-up is not refused for missing notes */
    if(sj!=='all'){const ra=search(C,q,'all',9),cnt={};ra.slice(0,3).forEach(h=>{if(SUBIDS.includes(h.c.subj))cnt[h.c.subj]=(cnt[h.c.subj]||0)+1});const o=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
     if(o&&o!==sj&&ra.conf>=.9&&ra.conf-cfv>=.3)wrong=o}
    if(gate==='none'||wrong)hits=[]}
   try{const hs=as(()=>ttsubOfHits(hits));if(hs){LASTSUB=hs;window.__ttEng=effSub()}}catch(e){}
    const hist=merge(ch.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t.slice(0,m.r==='a'?1800:3000)})));
   while(hist.length&&hist[0].role!=='user')hist.shift();
-  const calc=!wrong&&needsCalc(last,sj),sysP=wrong?'':as(()=>system(hits,last,gate))+memCtx(sj)+(calc?'\nThis question needs a calculation. Use the code tool to compute it so the numbers are right, then show the working in short plain steps and state the final answer. Do not show the code itself.':''),
-   out=wrong?'':await HubAI.chat(sysP,hist,undefined,calc).catch(e=>{if(!calc||/rejected|limit|quota/i.test((e&&e.message)||''))throw e;return HubAI.chat(sysP.split('\nThis question needs a calculation.')[0],hist)});
+  const calc=!wrong&&needsCalc(last,sj),sysP=wrong?'':as(()=>system(hits,last,gate))+memCtx(sj)+(KF?'\nATTACHED UPLOAD: the files from the student\'s earlier upload are attached to this message again, because they may be asking about them. Use them only if this message refers to them; otherwise ignore them. Never invent anything that is not visible.':'')+(calc?'\nThis question needs a calculation. Use the code tool to compute it so the numbers are right, then show the working in short plain steps and state the final answer. Do not show the code itself.':''),
+   out=wrong?'':await HubAI.chat(sysP,hist,KF?KF.files:undefined,calc).catch(e=>{if(!calc||/rejected|limit|quota/i.test((e&&e.message)||''))throw e;return HubAI.chat(sysP.split('\nThis question needs a calculation.')[0],hist,KF?KF.files:undefined)});
   if(wrong)ch.push({r:'a',id:ttid(),q:last,q0:last,sub:sj,sw:wrong,t:'That one is outside '+snm(sj)+'. It looks like '+snm(wrong)+', where your notes cover it, so it is better asked in that tab.',src:[]});
-  else{ch.push({r:'a',id:ttid(),q:q,sub:as(()=>ttsubOfHits(hits)),gate:gate,t:nameCheck(String(out).trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)}))});try{const sid=as(()=>ttsubOfHits(hits));if(sid)logChat(sid,as(()=>tttopic(sid,q)))}catch(e){}}if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info((PERS[sj]||PERS.all)[0]+' replied in '+snm(sj))}}
+  else{if(KF)useKeep(sj);ch.push({r:'a',id:ttid(),q:q,sub:as(()=>ttsubOfHits(hits)),gate:gate,t:nameCheck(String(out).trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)}))});try{const sid=as(()=>ttsubOfHits(hits));if(sid)logChat(sid,as(()=>tttopic(sid,q)))}catch(e){}}if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info((PERS[sj]||PERS.all)[0]+' replied in '+snm(sj))}}
  catch(e){as(()=>{T.err=(e&&e.message)||'Something went wrong.'});if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info('Something went wrong in '+snm(sj)+'. Open it to try again.')}}
  as(()=>{T.busy=false});persist();paint(here());try{memFold(sj)}catch(e){}}
 /* ---- Tutor memory: a rolling chat summary plus a saved record of each trial paper (text only, no images) ---- */
@@ -48555,18 +48557,20 @@ async function memFold(sj){if(FOLDING||!HubAI.ready())return;const ms=CH[sj]||[]
  try{const txt=await HubAI.chat('You keep a short running summary of a chat between an HSC student and their tutor, for the tutor to remember later. Update the summary using the new messages. Keep: topics covered, what the student found hard or got wrong, goals, exam dates and decisions made. Maximum 120 words, plain text, no preamble.',[{role:'user',content:'CURRENT SUMMARY:\n'+(old.t||'(none yet)')+'\n\nNEW MESSAGES:\n'+part.map(m=>(m.r==='u'?'Student: ':'Tutor: ')+String(m.t||'').slice(0,500)).join('\n')}],undefined,undefined,true);
   const t=String(txt).trim().slice(0,900);if(t){MEM.sum[sj]={t:t,fp:fp(part[part.length-1])};memSave()}}
  catch(e){}finally{FOLDING=0}}
-/* ---- Trial paper upload: attach photos or a PDF of a trial paper and the Tutor reads it and says what to fix (Google Gemini only) ---- */
-let TF=[],TM=false;const TFMAX=6,TFLIM=14e6;
-{const st=document.createElement('style');st.textContent='.tt-clip{flex:none;min-height:var(--tth,50px);padding:0 14px;font-size:1.1rem;box-sizing:border-box}.tt-files{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0}.tt-fc{display:inline-flex;gap:6px;align-items:center}#tt.tt-drop{outline:2px dashed var(--br,#8b7cff);outline-offset:-4px;border-radius:12px}';document.head.appendChild(st)}
-const tfHtml=()=>(TF.length?`<div class="tt-files">${TF.map((f,i)=>`<span class="chip on tt-fc">${f.mime==='application/pdf'?'PDF':'Photo'} \u00b7 ${esc(f.name.slice(0,22))} <button type="button" class="lnk" data-tt="unf:${i}" aria-label="Remove ${esc(f.name)}">\u2715</button></span>`).join('')}<span class="mu sm">Press Send to analyse.</span></div>`:'');
+/* ---- Uploads: attach photos or a PDF of anything (a question, a graph, your working, notes, a trial paper) and the Tutor reads it and helps with what you ask (Google Gemini only) ---- */
+const FIL={};const tfl=s=>FIL[s||T.subj]||(FIL[s||T.subj]=[]);let TM=false;const TFMAX=6,TFLIM=14e6;   /* attached files belong to a subject too */
+{const st=document.createElement('style');st.textContent='.tt-clip{flex:none;min-height:var(--tth,50px);padding:0 14px;font-size:1.1rem;box-sizing:border-box}.tt-files{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 0}.tt-fc{display:inline-flex;gap:8px;align-items:center;max-width:100%;padding:4px 5px 4px 5px;border-radius:99px;border:1px solid var(--ln);background:var(--sf2);color:var(--ink);font-weight:600;font-size:.85rem}.tt-th,.tt-pdf{width:30px;height:30px;border-radius:50%;flex:none}.tt-th{object-fit:cover}.tt-pdf{display:inline-flex;align-items:center;justify-content:center;background:var(--br);color:#fff;font-size:.62rem;font-weight:800}.tt-fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}.tt-x{flex:none;width:28px;height:28px;min-height:0;border-radius:50%;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;font-weight:700;color:var(--ink);background:var(--ln);border:1px solid var(--mu)}.tt-x:hover,.tt-x:focus-visible{background:#e5484d;border-color:#e5484d;color:#fff}#tt.tt-drop{outline:2px dashed var(--br,#8b7cff);outline-offset:-4px;border-radius:12px}';document.head.appendChild(st)}
+const tfHtml=()=>{const F=tfl();return !F.length?keepChip():`<div class="tt-files">${F.map((f,i)=>`<span class="tt-fc">${f.th?`<img class="tt-th" alt="" src="${f.th}">`:`<span class="tt-pdf" aria-hidden="true">PDF</span>`}<span class="tt-fn">${esc(f.name.slice(0,40))}</span><button type="button" class="tt-x" data-tt="unf:${i}" aria-label="Remove ${esc(f.name)}" title="Remove">\u2715</button></span>`).join('')}<span class="mu sm">Add a question if you like, then press Send.</span></div>`};
 const tpHtml=(m,i)=>{if(!m.tp||!m.tp.length)return'';const sid=ttsub(m);return `<div class="chips" style="margin-top:8px">${m.tp.map((t,j)=>`<button type="button" class="chip${weakIn(sid,t)?' on':''}" data-tt="tp:${i}:${j}">${weakIn(sid,t)?'\u2713 In weak areas: ':'Add to weak areas: '}${esc(t)}</button>`).join('')}<button type="button" class="chip" data-tt="tpq:${i}">Quiz me on these</button></div>`};
 const b64=b=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(b)});
 async function shrink(f){if(f.type==='application/pdf')return{name:f.name,mime:f.type,data:await b64(f)};
- const u=URL.createObjectURL(f);try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=u}),s=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return{name:f.name,mime:'image/jpeg',data:c.toDataURL('image/jpeg',.82).split(',')[1]}}finally{URL.revokeObjectURL(u)}}
-async function addFiles(list){const i=Q('#ttIn');if(i)T.draft=i.value;let bad=0;
- for(const f of list.slice(0,Math.max(0,TFMAX-TF.length))){if(!/^image\/|^application\/pdf$/.test(f.type)){bad++;continue}try{TF.push(await shrink(f))}catch(e){bad++}}
- bad+=Math.max(0,list.length-Math.max(0,TFMAX-(TF.length)))*0;let tot=TF.reduce((a,f)=>a+f.data.length,0);while(tot>TFLIM&&TF.length){tot-=TF.pop().data.length;bad++}
- T.err=bad?bad+' file'+(bad>1?'s were':' was')+' skipped. Use photos or PDFs, up to '+TFMAX+' files and about 10 MB in total.':'';paint()}
+ const u=URL.createObjectURL(f);try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=u}),s=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  const ts=Math.min(1,96/Math.max(im.width,im.height)),tc=document.createElement('canvas');tc.width=Math.max(1,Math.round(im.width*ts));tc.height=Math.max(1,Math.round(im.height*ts));tc.getContext('2d').drawImage(im,0,0,tc.width,tc.height);
+  return{name:f.name,mime:'image/jpeg',data:c.toDataURL('image/jpeg',.82).split(',')[1],th:tc.toDataURL('image/jpeg',.6)}}finally{URL.revokeObjectURL(u)}}
+async function addFiles(list){const sj=T.subj,i=Q('#ttIn');if(i)T.draft=i.value;const F=tfl(sj),room=Math.max(0,TFMAX-F.length);let bad=Math.max(0,list.length-room);
+ for(const f of list.slice(0,room)){if(!/^image\/|^application\/pdf$/.test(f.type)){bad++;continue}try{F.push(await shrink(f))}catch(e){bad++}}
+ let tot=F.reduce((a,x)=>a+x.data.length,0);while(tot>TFLIM&&F.length){tot-=F.pop().data.length;bad++}
+ ERR[sj]=bad?bad+' file'+(bad>1?'s were':' was')+' skipped. Use photos or PDFs, up to '+TFMAX+' files and about 10 MB in total.':'';paint()}
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='ttFile'){const l=[...(t.files||[])];t.value='';if(l.length)addFiles(l)}});
 /* laptop extras: drag a PDF or image onto the Tutor, or paste a screenshot into the text box */
 {let dc=0;const R=()=>Q('#tt'),has=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files'),inT=e=>{const r=R();return !!(r&&r.contains(e.target))},ok=f=>/^image\/|^application\/pdf$/.test(f.type);
@@ -48575,46 +48579,67 @@ document.addEventListener('change',e=>{const t=e.target;if(t&&t.id==='ttFile'){c
  document.addEventListener('dragleave',e=>{if(has(e)&&inT(e)){dc=Math.max(0,dc-1);if(!dc&&R())R().classList.remove('tt-drop')}});
  document.addEventListener('drop',e=>{const r=R();dc=0;if(r)r.classList.remove('tt-drop');if(!has(e)||!inT(e))return;e.preventDefault();const l=[...e.dataTransfer.files].filter(ok);if(l.length)addFiles(l)});
  document.addEventListener('paste',e=>{if(!inT(e))return;const l=[...((e.clipboardData&&e.clipboardData.files)||[])].filter(ok);if(l.length){e.preventDefault();addFiles(l)}})}
+/* the last upload of each subject is kept in memory (never saved) and re-attached for the next few replies, so follow-ups like "what about part b?" can still see it */
+const KEEP={},KEEPN=3;
+const keepFor=sj=>{const k=KEEP[sj];try{return k&&k.on&&k.left>0&&HubAI.ready()&&HubAI.cfg().provider==='gemini'?k:null}catch(e){return null}};
+/* the button under the chat: send the last upload again with the next messages (off unless you tap it) */
+const keepChip=()=>{try{const k=KEEP[T.subj];if(!k||k.left<=0||!HubAI.ready()||HubAI.cfg().provider!=='gemini'||tfl().length)return'';return `<div class="tt-files"><button type="button" class="chip tt-keep${k.on?' on':''}" data-tt="keep" aria-pressed="${!!k.on}">${k.on?'\ud83d\udcce Sending your last upload with each message ('+k.left+' left). Tap to stop':'\ud83d\udcce Send my last upload with my next message'}</button></div>`}catch(e){return''}};
+const useKeep=sj=>{const k=KEEP[sj];if(k&&--k.left<=0)delete KEEP[sj]};
+/* one short look at the attachment (what it is, which topics), so the notes search can work from what is in the picture and not only from what was typed */
+async function peek(files,v){try{return String(await HubAI.chat('You look at photos or PDFs that a student attached. Reply in plain text, under 60 words, no preamble: what it is (for example a textbook question, a graph, a source, the student\'s own working, a trial paper), the question or subject matter it covers, then 5 to 8 topic keywords. Never invent anything that is not visible.',[{role:'user',content:(v?'The student asked: '+v+'\n':'')+'Describe the attachment.'}],files,undefined,true)).trim().slice(0,500)}catch(e){return''}}
+const upBlock=(hasNotes,map)=>`
+UPLOAD: The student attached photos or PDFs to their last message. They could be anything: a textbook, worksheet or past-paper question, a graph, table or diagram, a source or extract, the student's own working or essay, handwritten notes, a marked paper or a screenshot. Do not assume it is a trial paper. Work out what it is and do what the student asked. Work only from what is visible: never invent questions, text, numbers or marks, and say plainly if something is unreadable or cut off. Reading, describing and checking the student's own work needs no notes, but any facts, definitions, formulas or syllabus claims you add must follow the SOURCE RULE above.${hasNotes?'':' No Hub notes matched this upload, so say briefly if a fact you would need is not in the notes.'}
+- If they asked a question or gave an instruction, do exactly that. Do not do a paper review unless they ask for one.
+- If they wrote nothing, say in one line what you can see, then do the most useful thing for that material (work through or explain a question, explain a graph or source, or give feedback on their own work). Ask one short question only if you cannot tell what help they want.
+- Only if it is the student's own completed trial or practice paper AND they did not ask for anything more specific, do a paper review instead. For a paper review ONLY, the 250 word limit and the no-numeric-mark rule above do not apply: keep it under about 400 words, and clearly label any mark you give as an estimate if the paper is unmarked. Find where marks were lost or are likely to be lost (for each: the topic, the question number, what went wrong, and a short quote or description as evidence), rank the 3 to 5 most important things to fix, then give a short plan for the next week. Finish the review with one last line in exactly this form, using topic names from the list below where one fits: TOPICS: topic one | topic two | topic three
+  After that, add a final block that starts with a line containing only DIGEST: and then a plain-text digest under 300 words for your own later reference (each question number, what the student wrote in brief, marks lost and why, any teacher comments, no formatting). If a MEMORY record of an earlier trial paper is given below, say what has improved and what has not.
+- For anything that is NOT a trial paper, never write a TOPICS: line or a DIGEST: block.
+Topic names in the student's notes: ${map||'none loaded'}`;
 async function analyse(v){if(T.busy)return;
- if(!HubAI.ready()||HubAI.cfg().provider!=='gemini'){T.err='Trial paper upload needs your Google (Gemini) key. Set it in Settings > AI Setup.';paint();return}
- const sj=T.subj,files=TF.slice(),as=fn=>{const k=T.subj;T.subj=sj;try{return fn()}finally{T.subj=k}},here=()=>T.subj===sj;
- T.msgs.push({r:'u',t:'\ud83d\udcce '+files.map(f=>f.name).join(', ')+(v?'\n'+v:'')});TF=[];T.draft='';T.busy=true;T.err='';persist();paint(true);
- try{await corpus();const map=as(()=>mapText()),
-  sys=`You are an HSC tutor. The student has uploaded their own trial or practice paper (photos or a PDF), possibly with teacher marks and comments. Work only from what is actually visible. Never invent questions, answers or marks, and say so if something is unreadable.
-Do this:
-1. One line on what the paper is (subject and rough total marks).
-2. Find where marks were lost or are likely to be lost. For each weak area give the topic, the question number, what went wrong (content gap, missed the command word, calculation slip, no evaluation or judgement, weak use of data or examples, ran out of time or left blank) and a short quote or description as evidence.
-3. If the paper is unmarked, say clearly that any marks you give are estimates.
-4. Rank the 3 to 5 most important things to fix, then give a short plan for the next week.
-Be kind, specific and short. Use short paragraphs and a numbered list for the ranking.
-Finish with one last line in exactly this form, using topic names from the list below where one fits: TOPICS: topic one | topic two | topic three
-After that, add a final block that starts with a line containing only DIGEST: and then a plain-text digest under 300 words for your own later reference (each question number, what the student wrote in brief, marks lost and why, any teacher comments, no formatting). If a MEMORY record of an earlier trial paper is given below, say what has improved and what has not.
-Topic names in the student's notes: ${map||'none loaded'}`+memCtx(sj)+toneLine()+(sj!=='all'?'\nSubject: '+snm(sj):''),
-  out=String(await HubAI.chat(sys,[{role:'user',content:v||'Please analyse my trial paper and tell me what I need to improve.'}],files)),
-  dm=/^\s*DIGEST:\s*([\s\S]*)$/im.exec(out),rp=dm?out.slice(0,dm.index):out,mt=/^\s*TOPICS:\s*(.+)$/im.exec(rp),tp=mt?mt[1].split('|').map(s=>s.trim().replace(/[.*]+$/,'')).filter(Boolean).slice(0,5):[];
-  (CH[sj]||T.msgs).push({r:'a',id:ttid(),q:'trial paper',sub:sj==='all'?undefined:sj,gate:'covered',t:rp.replace(/^\s*TOPICS:.*$/im,'').trim(),src:[],tp:tp});(MEM.rec[sj]=MEM.rec[sj]||[]).unshift({d:new Date().toLocaleDateString('en-AU'),tp:tp,dg:((dm?dm[1]:rp).trim()).slice(0,1800)});MEM.rec[sj]=MEM.rec[sj].slice(0,3);memSave();
-  if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info('Your trial paper analysis is ready in '+snm(sj))}}
- catch(e){as(()=>{T.err=(e&&e.message)||'Something went wrong.'})}
+ if(!HubAI.ready()||HubAI.cfg().provider!=='gemini'){T.err='Uploading photos and PDFs needs your Google (Gemini) key. Set it in Settings > AI Setup.';paint();return}
+ const sj=T.subj,files=tfl().slice(),as=fn=>{const k=T.subj;T.subj=sj;try{return fn()}finally{T.subj=k}},here=()=>T.subj===sj,
+  ask=v||'Please look at what I have attached and help me with it.',
+  hist=merge(T.msgs.slice(-12).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t.slice(0,m.r==='a'?1800:3000)})).concat([{role:'user',content:ask}]));
+ while(hist.length&&hist[0].role!=='user')hist.shift();
+ const um={r:'u',t:'\ud83d\udcce '+files.map(f=>f.name).join(', ')+(v?'\n'+v:'')};
+ T.msgs.push(um);FIL[sj]=[];T.draft='';T.busy=true;T.err='';persist();paint(true);
+ try{const C=await corpus();let pk='',q=(v||'').trim(),hits=tok(q).length?search(C,q,sj,10):[];
+  if(!hits.length||hits.conf<GATES[T.gm][1]){pk=await peek(files,v);if(pk){q=(q+' '+pk).trim();hits=tok(q).length?search(C,q,sj,10):[]}}   /* the extra look at the picture is only made when the typed question alone does not find the right notes */
+  const cfv=hits.length?hits.conf:0,
+  gate=hits.length&&cfv<GATES[T.gm][1]?'weak':'covered',     /* an upload is never refused for missing notes: reading the picture needs none, and the SOURCE RULE still covers any facts added */
+  map=as(()=>mapText()),
+  sys=as(()=>system(hits,ask,gate))+upBlock(hits.length>0,map)+memCtx(sj),
+  out=String(await HubAI.chat(sys,hist,files)),
+  dm=/^\s*DIGEST:\s*([\s\S]*)$/im.exec(out),rp=dm?out.slice(0,dm.index):out,mt=/^\s*TOPICS:\s*(.+)$/im.exec(rp),tp=mt?mt[1].split('|').map(s=>s.trim().replace(/[.*]+$/,'')).filter(Boolean).slice(0,5):[],
+  sid=as(()=>ttsubOfHits(hits));
+  try{if(sid){LASTSUB=sid;window.__ttEng=effSub()}}catch(e){}
+  (CH[sj]||T.msgs).push({r:'a',id:ttid(),q:v||'uploaded file',sub:sj==='all'?(sid||undefined):sj,gate:gate,t:nameCheck(rp.replace(/^\s*TOPICS:.*$/im,'').trim(),C),src:hits.map(h=>({s:h.c.subj,x:h.c.text.slice(0,240)})),tp:tp});
+  if(dm){(MEM.rec[sj]=MEM.rec[sj]||[]).unshift({d:new Date().toLocaleDateString('en-AU'),tp:tp,dg:dm[1].trim().slice(0,1800)});MEM.rec[sj]=MEM.rec[sj].slice(0,3);memSave()}
+  KEEP[sj]={files:files,left:KEEPN,kw:pk,on:false};
+  try{const s2=sid||(sj!=='all'?sj:'');if(s2)logChat(s2,as(()=>tttopic(s2,q)))}catch(e){}
+  if(!seenNow(sj)){UNREAD[sj]=1;tickNav();info('Your upload analysis is ready in '+snm(sj))}}
+ catch(e){/* put the message and files back so nothing is lost and you can press Send again */const ch=CH[sj]||[],k=ch.indexOf(um);if(k>=0)ch.splice(k,1);FIL[sj]=files;DR[sj]=v||'';as(()=>{T.err=(e&&e.message)||'Something went wrong.'})}
  as(()=>{T.busy=false});persist();paint(here())}
 /* code execution is only switched on when the message has a number in it AND looks like a calculation, in a subject where that matters */
 const CALCW=/\b(calculat\w*|work out|solve|evaluate|simplify|expand|factori[sz]e|differentiate|derivative|integrate|integral|percentage change|percent change|multiplier|gini|cpi|inflation rate|growth rate|unemployment rate|participation rate|terms of trade|elasticity|ped|yed|xed|mps|mpc|real gdp|real wage|exchange rate|budget (?:balance|deficit|surplus)|current account|how much|standard deviation|mean|median|probability|compound|interest|profit|margin|break[- ]?even|roi|ratio)\b/i;
 const needsCalc=(t,sj)=>['maths','economics','business','all'].includes(sj)&&/\d/.test(t)&&CALCW.test(t);
 function send(txt){if(T.busy)return;if(!HubAI.ready()){T.err='Add your API key in Settings > AI Setup first.';paint();return}
  learn(txt);T.msgs.push({r:'u',t:String(txt).slice(0,3000)});T.draft='';const i=Q('#ttIn');if(i){i.value='';i.style.height=''}T.err='';persist();run()}
-const submit=()=>{const i=Q('#ttIn'),v=(i?i.value:T.draft).trim(),m=/\[(?:topic|this|that)\]/.exec(v);if(m&&i){i.focus();i.setSelectionRange(m.index,m.index+m[0].length);return}if(TF.length){analyse(v);return}if(v)send(v)};
+const submit=()=>{const i=Q('#ttIn'),v=(i?i.value:T.draft).trim(),m=/\[(?:topic|this|that)\]/.exec(v);if(m&&i){i.focus();i.setSelectionRange(m.index,m.index+m[0].length);return}if(tfl().length){analyse(v);return}if(v)send(v)};
 V.tutor=()=>{readNow();setTimeout(()=>{ttReveal(Q('#ttCtl'));const b=Q('#ttBox');if(b)b.scrollTop=(T.msgs.length&&T.view!=='quiz')?b.scrollHeight:0;if(!CORP&&!CORPP)setTimeout(()=>{if(Q('#tt'))corpus().then(()=>paint(false))},500)},0);
  window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}
  const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const s=SUBS.find(x=>x[0]===T.subj);return s?s[2]:''}}catch(e){}return ''})();
- return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div id="ttFiles">${tfHtml()}</div><div class="tt-comp"><input type="file" id="ttFile" accept="image/*,application/pdf" multiple hidden><button type="button" class="btn tt-clip" data-tt="attach" aria-label="Attach a trial paper (photo or PDF)" title="Attach a trial paper (photo or PDF)">\ud83d\udcce</button><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
+ return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div id="ttFiles">${tfHtml()}</div><div class="tt-comp"><input type="file" id="ttFile" accept="image/*,application/pdf" multiple hidden><button type="button" class="btn tt-clip" data-tt="attach" aria-label="Attach a photo or PDF" title="Attach a photo or PDF">\ud83d\udcce</button><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-tt]');if(!t||t.type==='checkbox')return;const v=t.dataset.tt;
  if(v.indexOf('subj:')===0){T.subj=v.slice(5);persist();paint(true)}
  else if(v.indexOf('sw:')===0){const m=T.msgs[+v.slice(3)];if(m&&m.sw){const q=String(m.q0||m.q||'');T.subj=m.sw;T.view='chat';T.draft=q;persist();paint(true);const i=Q('#ttIn');if(i){i.value=q;i.style.height='auto';i.style.height=Math.min(180,i.scrollHeight)+'px';try{i.focus({preventScroll:true})}catch(_){}}}}
  else if(v.indexOf('paper:')===0){const k=v.slice(6);T.paper=PAPERS[k]&&T.paper!==k?k:'';T.paperDay=T.paper?dayKey(new Date()):'';persist();paint()}
  else if(v.indexOf('mode:')===0){T.mode=v.slice(5);persist();paint()}
- else if(v==='new'){if(T.busy)return;delete MEM.sum[T.subj];memSave();T.msgs=[];T.err='';persist();paint()}
+ else if(v==='new'){if(T.busy)return;delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();T.msgs=[];T.err='';persist();paint()}
  else if(v==='opts'){OPT=!OPT;paint()}
  else if(v==='attach'){const f=Q('#ttFile');if(f)f.click()}
- else if(v.indexOf('unf:')===0){const i=Q('#ttIn');if(i)T.draft=i.value;TF.splice(+v.slice(4),1);paint()}
+ else if(v==='keep'){const k=KEEP[T.subj];if(k){k.on=!k.on;paint()}}
+ else if(v.indexOf('unf:')===0){const i=Q('#ttIn');if(i)T.draft=i.value;tfl().splice(+v.slice(4),1);paint()}
  else if(v.indexOf('tpq:')===0){const m=T.msgs[+v.slice(4)];if(m&&m.tp&&m.tp.length){const sid=ttsub(m),w=m.tp.join(' '),qs=ttPick(sid,5,'query',w,w);if(qs.length){ttStart(qs,'on your trial paper weak spots');T.view='quiz';persist();paint(true);ttFocusQ()}else{T.view='chat';persist();send('Quiz me on '+m.tp[0]+'.')}}}
  else if(v.indexOf('tp:')===0){const p=v.slice(3).split(':'),m=T.msgs[+p[0]],lab=m&&m.tp&&m.tp[+p[1]];if(lab){const sid=ttsub(m);if(weakIn(sid,lab)){weakDel(sid,lab);info('Removed \u201c'+lab+'\u201d from your weak areas')}else{weakAdd(sid,lab,'Tutor trial paper');info('Added \u201c'+lab+'\u201d to your '+snm(sid)+' weak areas')}paint()}}
  else if(v==='send')submit();else if(v==='retry')run();
@@ -48661,7 +48686,7 @@ try{const sw=(a,on,l)=>`<button type="button" class="sw" role="switch" aria-chec
  const _ai=SETV.ai,_bk=SETV.data;SETV.ai=()=>_ai()+tutorCard();SETV.data=()=>_bk()+chatCard();
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-tts]');if(!b)return;const a=b.dataset.tts;
   if(a==='rw')T.rw=!(T.rw!==false);else if(a==='gs')T.gs=!T.gs;else if(a==='st')T.strict=!T.strict;
-  else if(a==='clr'){if(!confirm('Clear all Tutor chats on this device? This cannot be undone.'))return;Object.keys(CH).forEach(k=>delete CH[k]);NOTES=[]}
+  else if(a==='clr'){if(!confirm('Clear all Tutor chats on this device? This cannot be undone.'))return;Object.keys(CH).forEach(k=>delete CH[k]);Object.keys(KEEP).forEach(k=>delete KEEP[k]);NOTES=[]}
   else return;persist();try{paint()}catch(_){}try{rerender()}catch(_){}});
  document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.ttsSel)return;const a=t.dataset.ttsSel,v=t.value;
   if(a==='tone'&&TONES[v])T.tone=v;else if(a==='mode')T.mode=v==='guide'?'guide':'explain';else if(a==='gm'&&GATES[v])T.gm=v;else return;persist();try{paint()}catch(_){}try{rerender()}catch(_){}})}catch(e){}
