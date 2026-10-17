@@ -228,9 +228,9 @@ body.calm .rv,body.calm .rv *{opacity:1!important;transform:none!important;filte
 .set-nav .chip.on,.set-nav .nv.on,.set-nav button[aria-pressed=true]{box-shadow:none}
 :root[data-look=terminal] :is(h1,h2,.brand,.hud span){font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 #tod{position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:0;transition:opacity 1.8s ease}
-html[data-tod=morning] #tod{opacity:1;background:linear-gradient(180deg,rgba(255,226,160,.20),transparent 55%)}
-html[data-tod=evening] #tod{opacity:1;background:linear-gradient(0deg,rgba(255,130,60,.17),transparent 62%)}
-html[data-tod=night] #tod{opacity:1;background:linear-gradient(180deg,rgba(50,70,190,.18),transparent 65%)}
+html[data-tod=morning] #tod{opacity:1;background:linear-gradient(180deg,color-mix(in srgb,var(--br) 16%,transparent),transparent 55%)}
+html[data-tod=evening] #tod{opacity:1;background:linear-gradient(0deg,color-mix(in srgb,var(--br) 18%,transparent),transparent 62%)}
+html[data-tod=night] #tod{opacity:1;background:linear-gradient(180deg,rgba(0,0,0,.2),transparent 65%)}
 :root[data-theme=dark][data-tod] #tod{filter:opacity(.7)}
 body.min #tod,body.xc-on #tod,:root[data-contrast=high] #tod{display:none}
 body.calm #tod{transition:none}
@@ -689,7 +689,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #amb.on{opacity:var(--ambo)}#amb i{position:absolute;display:block}
 #amb[data-s=aurora] i{width:62vmax;height:62vmax;border-radius:50%;will-change:transform}
 #amb[data-s=aurora] .a1{left:-18vmax;top:-26vmax;background:radial-gradient(circle,color-mix(in srgb,var(--br) 50%,transparent),transparent 66%);animation:imd1 40s ease-in-out infinite alternate}
-#amb[data-s=aurora] .a2{right:-24vmax;bottom:-30vmax;background:radial-gradient(circle,color-mix(in srgb,var(--br) 30%,#22d3ee),transparent 66%);animation:imd2 48s ease-in-out infinite alternate}
+#amb[data-s=aurora] .a2{right:-24vmax;bottom:-30vmax;background:radial-gradient(circle,color-mix(in srgb,var(--br) 30%,var(--bg2,var(--br))),transparent 66%);animation:imd2 48s ease-in-out infinite alternate}
 #amb[data-s=aurora] .a3,#amb[data-s=grid] .a3,#amb[data-s=pulse] .a2,#amb[data-s=pulse] .a3{display:none}
 #amb[data-s=grid] .a1{inset:0;background-image:linear-gradient(color-mix(in srgb,var(--br) 14%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--br) 14%,transparent) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse at 50% 20%,#000 5%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 20%,#000 5%,transparent 75%)}
 #amb[data-s=grid] .a2{left:-30%;top:0;width:60%;height:100%;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--br) 14%,transparent),transparent);animation:imsw 26s ease-in-out infinite alternate;will-change:transform}
@@ -743,11 +743,11 @@ body.no-shine .card::after{display:none!important}
 :root:is([data-bg=aurora],[data-bg=mesh],[data-bg=dusk],[data-bg=dots],[data-bg=grid],[data-bg=lines],[data-bg=stars]) #fx{display:none}
 :root:is([data-bg=aurora],[data-bg=mesh],[data-bg=dusk],[data-bg=dots],[data-bg=grid],[data-bg=lines],[data-bg=stars]) .card::after{display:none}
 :root:is([data-bg=aurora],[data-bg=mesh],[data-bg=dusk],[data-bg=dots],[data-bg=grid],[data-bg=lines],[data-bg=stars]) body::before{display:block}
-:root[data-bg=aurora] body::before{background:radial-gradient(60vmax 40vmax at 15% 10%,color-mix(in srgb,var(--br) 30%,transparent),transparent 70%),radial-gradient(50vmax 35vmax at 85% 20%,color-mix(in srgb,#2f8fe0 24%,transparent),transparent 70%),radial-gradient(55vmax 40vmax at 60% 95%,color-mix(in srgb,#1f9d6b 20%,transparent),transparent 70%);background-size:150% 150%;animation:bgdrift 26s ease-in-out infinite alternate}
+:root[data-bg=aurora] body::before{background:radial-gradient(60vmax 40vmax at 15% 10%,color-mix(in srgb,var(--br) 30%,transparent),transparent 70%),radial-gradient(50vmax 35vmax at 85% 20%,color-mix(in srgb,var(--bg2,var(--br)) 24%,transparent),transparent 70%),radial-gradient(55vmax 40vmax at 60% 95%,color-mix(in srgb,var(--bg2,var(--br)) 20%,transparent),transparent 70%);background-size:150% 150%;animation:bgdrift 26s ease-in-out infinite alternate}
 @keyframes bgdrift{from{background-position:0% 0%}to{background-position:100% 100%}}
 body.no-loop::before,body.calm::before{animation:none!important}
-:root[data-bg=mesh] body::before{background:radial-gradient(at 0% 0%,color-mix(in srgb,var(--br) 30%,transparent) 0,transparent 55%),radial-gradient(at 100% 0%,color-mix(in srgb,#e2487a 18%,transparent) 0,transparent 55%),radial-gradient(at 100% 100%,color-mix(in srgb,#2f8fe0 22%,transparent) 0,transparent 55%),radial-gradient(at 0% 100%,color-mix(in srgb,#e8a020 16%,transparent) 0,transparent 55%)}
-:root[data-bg=dusk] body::before{background:linear-gradient(180deg,color-mix(in srgb,var(--br) 16%,transparent),transparent 50%),linear-gradient(0deg,color-mix(in srgb,#e0592b 11%,transparent),transparent 45%)}
+:root[data-bg=mesh] body::before{background:radial-gradient(at 0% 0%,color-mix(in srgb,var(--br) 30%,transparent) 0,transparent 55%),radial-gradient(at 100% 0%,color-mix(in srgb,var(--bg2,var(--br)) 18%,transparent) 0,transparent 55%),radial-gradient(at 100% 100%,color-mix(in srgb,var(--bg2,var(--br)) 22%,transparent) 0,transparent 55%),radial-gradient(at 0% 100%,color-mix(in srgb,var(--bg2,var(--br)) 16%,transparent) 0,transparent 55%)}
+:root[data-bg=dusk] body::before{background:linear-gradient(180deg,color-mix(in srgb,var(--br) 16%,transparent),transparent 50%),linear-gradient(0deg,color-mix(in srgb,var(--bg2,var(--br)) 11%,transparent),transparent 45%)}
 :root[data-bg=dots] body::before{background:radial-gradient(color-mix(in srgb,var(--ink) 16%,transparent) 1.2px,transparent 1.7px) 0 0/22px 22px}
 :root[data-bg=grid] body::before{background:linear-gradient(color-mix(in srgb,var(--ink) 8%,transparent) 1px,transparent 1px) 0 0/34px 34px,linear-gradient(90deg,color-mix(in srgb,var(--ink) 8%,transparent) 1px,transparent 1px) 0 0/34px 34px}
 :root[data-bg=lines] body::before{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--ink) 7%,transparent) 0 1px,transparent 1px 15px)}
@@ -43168,7 +43168,7 @@ addEventListener('pointermove',e=>{if(document.body.classList.contains('tr-full'
  const c=e.target.closest&&e.target.closest('.card');if(c){const b=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-b.left)/z+'px');c.style.setProperty('--my',(e.clientY-b.top)/z+'px')}},{passive:true});
 /* particle network */
 (function(){const cv=$('#fx'),x=cv.getContext('2d');let W,H,P=[],mx=-999,my=-999;
- const cols=SUBJECTS.map(s=>s.c);
+ const cols=SUBJECTS.map(s=>s.c);let _ac='',_at=0;const AC=()=>{const n=performance.now();if(n-_at>400){_at=n;_ac=getComputedStyle(document.documentElement).getPropertyValue('--br').trim()||'#8f78ff'}return _ac};
  function size(){const d=devicePixelRatio||1;W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';x.setTransform(d,0,0,d,0,0);
   P=Array.from({length:Math.min(70,Math.round(innerWidth*innerHeight/24000))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,c:cols[Math.random()*4|0]}))}
  let lw=innerWidth;addEventListener('resize',()=>{const t=document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);if(t&&innerWidth===lw)return;lw=innerWidth;size()});addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY},{passive:true});size();
@@ -43176,9 +43176,9 @@ addEventListener('pointermove',e=>{if(document.body.classList.contains('tr-full'
   x.clearRect(0,0,innerWidth,innerHeight);const dk=document.documentElement.dataset.theme==='dark';
   for(const p of P){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>innerWidth)p.vx*=-1;if(p.y<0||p.y>innerHeight)p.vy*=-1;
    const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy);if(d<140){p.x+=dx/d*1.2;p.y+=dy/d*1.2}
-   x.globalAlpha=dk?.8:.55;x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,1.8,0,7);x.fill()}
+   x.globalAlpha=dk?.8:.55;x.fillStyle=AC();x.beginPath();x.arc(p.x,p.y,1.8,0,7);x.fill()}
   for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const a=P[i],b=P[j],d=Math.hypot(a.x-b.x,a.y-b.y);
-   if(d<130){x.globalAlpha=(1-d/130)*(dk?.3:.22);x.strokeStyle=a.c;x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke()}}}
+   if(d<130){x.globalAlpha=(1-d/130)*(dk?.3:.22);x.strokeStyle=AC();x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke()}}}
  loop()})();
 /* command palette + universal search */
 (function(){const cp=$('#cp'),inp=$('#cpi'),ls=$('#cpl'),ft=$('#cpf');let idx=0,list=[],sidx=null,scope=null;const ph0=inp.placeholder;
@@ -44373,24 +44373,25 @@ function bkView(){bkLoadStor();
  const snl=sn.length?sn.map((x,i)=>`<div class="set-row"><div class="set-lbl"><b>${fmtT(x.at)}</b><span class="mu sm">${KINDS[x.kind]||'Backup'} · ${fmtB(JSON.stringify(x).length*2)}</span></div><div class="set-ctl chips"><button class="btn" data-bk="rs" data-v="${i}">Restore</button><button class="btn" data-bk="dls" data-v="${i}">Download</button><button class="btn" data-bk="del" data-v="${i}">Delete</button></div></div>`).join(''):'<p class="mu sm" style="margin:0">No backups saved on this device yet.</p>';
  const cl=bkCl().map(([k,n,c])=>`<label class="set-row"><span class="set-lbl"><b>${n}</b>${c==null?'':`<span class="mu sm">${c} item${c===1?'':'s'}</span>`}</span><input name=hf64-checkbox type="checkbox" data-cl="${k}" ${bk.sel[k]?'checked':''} aria-label="${n}"></label>`).join('');
  const at=A?A.t:'';bk.html=ask;
- return `${bk.msg?`<div class="card" role="status"><p style="margin:0"${bk.err?' class="bad"':''}>${bk.msg}</p></div>`:''}
+ const mc=bk.msg?`<div class="card bk-msg" role="status"><p style="margin:0"${bk.err?' class="bad"':''}>${bk.msg}</p></div>`:'',mAt=bk.src==='reset'?'reset':bk.src==='clear'||bk.src==='clr'?'clear':'top';
+ return `${mAt==='top'?mc:''}
 <div class="card"><h3>Backup and export</h3><p class="mu sm" style="margin-top:0">A backup holds your settings, progress, activity, favourites, exam attempts and anything your subjects store in this browser. Download one before clearing browser data or switching device.</p>
 ${setRow('Last backup',d.lastKind?(KINDS[d.lastKind]||'Backup'):'',fmtT(d.last))}
 <div class="chips" style="margin-top:12px"><button class="btn p" data-bk="dl">Export all Hub data</button><button class="btn" data-bk="snap">Create backup on this device</button><button class="btn" data-bk="imp">Import Hub data</button></div><input type="file" id="bkf" accept="application/json,.json" hidden>${at==='import'?ask:''}</div>
 <div class="card"><h3>Backups on this device</h3>${snl}${at==='restore'||at==='del'?ask:''}<p class="mu sm" style="margin-bottom:0">These live in this browser, so they do not protect you if browser data is cleared. Download a copy too.</p></div>
 <div class="card"><h3>Automatic backup</h3>${setRow('Back up automatically','Runs when the Hub opens and a backup is due',grp('Automatic backup',[['off','Off'],['daily','Daily'],['weekly','Weekly']].map(([v,l])=>cb('bkau',v,d.auto===v,l)).join('')))}${setRow('Backups to keep','Older ones are replaced; at least one is always kept',grp('Backups to keep',[3,5,10].map(v=>cb('bkkp',v,+d.keep===v,v)).join('')))}${setRow('Last automatic backup','',fmtT(d.lastAuto))}</div>
 <div class="card"><h3>Storage</h3>${setRow('Settings','',fmtB(z.set))}${setRow('Progress, activity and favourites','',fmtB(z.hub))}${setRow('Subjects and other modules','',fmtB(z.oth))}${setRow('Backups on this device','',fmtB(z.bk))}${setRow('Exam attempts','Kept in the browser database',X.hist.length+' saved')}${stor&&stor.quota?setRow('Browser storage used','Includes the browser database and offline copy',fmtB(stor.usage||0)+' of '+fmtB(stor.quota)):''}</div>
-<div class="card"><h3>Clear selected data</h3><p class="mu sm" style="margin-top:0">Tick what to delete. Settings are not touched. You are asked to confirm first.</p>${cl}<div style="margin-top:12px">${at==='clear'?ask:'<button class="btn x" data-bk="clr">Clear selected data</button>'}</div></div>
-<div class="card"><h3>Reset settings</h3><p class="mu sm" style="margin-top:0">Puts every setting back to its default. Your name, progress, activity and favourites are kept. Your weekly goal and exam dates go back to their defaults.</p>${at==='reset'?ask:'<button class="btn x" data-bk="rall">Reset all settings</button>'}</div>
+<div class="card"><h3>Clear selected data</h3><p class="mu sm" style="margin-top:0">Tick what to delete. Settings are not touched. You are asked to confirm first.</p>${cl}<div style="margin-top:12px">${at==='clear'?ask:'<button class="btn x" data-bk="clr">Clear selected data</button>'}</div></div>${mAt==='clear'?mc:''}
+<div class="card"><h3>Reset settings</h3><p class="mu sm" style="margin-top:0">Puts every setting back to its default. Your name, progress, activity and favourites are kept. Your weekly goal and exam dates go back to their defaults.</p>${at==='reset'?ask:'<button class="btn x" data-bk="rall">Reset all settings</button>'}</div>${mAt==='reset'?mc:''}
 <div class="card"><h3>Offline</h3><p class="mu sm" style="margin:0">${!/^https?:$/.test(location.protocol)?'Opened as a local file, so it already works without internet (the Google font falls back to a system font). To install it on a phone, host the folder, e.g. on GitHub Pages, and open it once while online.':swOk?'Ready: the hub and connected subjects are saved for offline use. You can also install it from your browser menu.':'Setting up the offline copy. Reload once if this message stays.'}</p></div>`}
-const bkSay=(m,e)=>{bk.msg=m;bk.err=!!e;rerender()};
+let bkT=0;const bkSay=(m,e)=>{bk.msg=m;bk.err=!!e;bk.src=bk.cur||'';rerender();clearTimeout(bkT);const mm=m;bkT=setTimeout(()=>{if(bk.msg===mm){bk.msg='';rerender()}},7000);requestAnimationFrame(()=>{const d=$('.bk-msg');if(d)d.scrollIntoView({block:'nearest',behavior:'smooth'})})};
 document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset&&t.dataset.cl){bk.sel[t.dataset.cl]=t.checked;return}
  if(t.id!=='bkf')return;const f=t.files[0];t.value='';if(!f)return;
  f.text().then(x=>{let j;try{j=JSON.parse(x)}catch(_){}
   if(!HubBackup.valid(j))return bkSay('That file is not a valid HSC Hub backup. Nothing was changed.',1);
   bk.ask={t:'import',b:j};bk.msg='';rerender();const n=$('[data-bk=no]');if(n)n.focus({preventScroll:true})})});
-document.addEventListener('click',async e=>{const t=e.target.closest('[data-bk]');if(!t)return;const a=t.dataset.bk,v=t.dataset.v,ask=o=>{bk.ask=o;bk.msg='';rerender();const n=$('[data-bk=no]');if(n)n.focus({preventScroll:true});const d=$('.bk-ask');if(d)requestAnimationFrame(()=>d.scrollIntoView({block:'center',behavior:'smooth'}))};
+document.addEventListener('click',async e=>{const t=e.target.closest('[data-bk]');if(!t)return;const a=t.dataset.bk,v=t.dataset.v;bk.cur=(bk.ask&&bk.ask.t&&(a==='yes'||a==='ok'))?bk.ask.t:a;const ask=o=>{bk.ask=o;bk.msg='';rerender();const n=$('[data-bk=no]');if(n)n.focus({preventScroll:true});const d=$('.bk-ask');if(d)requestAnimationFrame(()=>d.scrollIntoView({block:'center',behavior:'smooth'}))};
  try{
  if(a==='dl'){HubSettings.set('data.last',Date.now());HubSettings.set('data.lastKind','export');const b=await HubBackup.build('export');HubBackup.download(b,'hsc-hub-backup-'+new Date().toISOString().slice(0,10)+'.json');bkSay('Backup downloaded.')}
  else if(a==='snap'){const b=await HubBackup.snap('manual');bkSay(b?'Backup saved on this device.':'There is not enough browser storage for a backup here. Use Export all Hub data instead.',!b)}
@@ -44404,8 +44405,8 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-bk]'
  else if(a==='yes'&&bk.ask){const A=bk.ask;bk.ask=null;
   if(A.t==='restore'||A.t==='import')await HubBackup.restore(A.b);
   else if(A.t==='del'){HubBackup.del(A.i);bkSay('Backup deleted.')}
-  else if(A.t==='reset'){if(!await HubBackup.snap('safety'))return bkSay('Could not save a safety copy, so nothing was reset. Export your data first.',1);
-   const n=g('personalisation.name');HubSettings.reset();HubSettings.set('personalisation.name',n);try{localStorage.removeItem('hsc-hub-a11y-setups')}catch(_){}bkSay('All settings were reset.')}
+  else if(A.t==='reset'){let sc=null;try{sc=await HubBackup.snap('safety')}catch(_){}   /* only settings are reset, so a full safety copy is nice to have, not a reason to refuse when browser storage is full */
+   const n=g('personalisation.name');HubSettings.reset();HubSettings.set('personalisation.name',n);try{localStorage.removeItem('hsc-hub-a11y-setups')}catch(_){}bkSay(sc?'All settings were reset.':'All settings were reset. No safety copy was made because browser storage is full.')}
   else if(A.t==='clear'){if(!await HubBackup.snap('safety'))return bkSay('Could not save a safety copy, so nothing was deleted. Export your data first.',1);
    const k=A.k;if(k.includes('subj')){S.subj={};S.last=null}if(k.includes('act')){S.act=[];S.trail=[]}if(k.includes('sess')){S.sess=[];S.eng={}}if(k.includes('saved'))S.saved=[];if(k.includes('plan'))S.plan=[];
    if(k.includes('exams'))await xrestore([]);
@@ -44532,7 +44533,7 @@ function wApply(id){const w=WORLDS.find(x=>x[0]===id);if(!w)return;const d=docum
  if(WMIX[id]&&(g('immersive.mixOn')||!Object.values(g('immersive.mix')||{}).some(v=>+v>0)))HubSettings.set('immersive.mix',WMIX[id])}
 function wView(){const cur=wCur(),_c=window.swCat?swCat():'All';return `<div class="card"><h3>Study Worlds</h3><p class="mu sm" style="margin-top:0">One tap sets the whole environment: theme, colours, background, light, weather and sound. ${wTotal()} worlds, drawn on your device, so nothing downloads and they all work offline. You can still adjust anything below afterwards.</p>
 ${typeof swCats==='function'?'<div class="chips" style="margin:0 0 10px"><button class="btn" data-a="sw_r">Surprise me</button></div>':''}${typeof swCats==='function'?grp('Category',swCats().map(x=>`<button class="chip ${swCat()===x?'on':''}" aria-pressed="${swCat()===x}" data-a="sw_c" data-v="${x}">${x}</button>`).join('')):''}<div class="wgrid swg">${['All','Classic','Favourites'].includes(_c)?WORLDS.filter(w=>_c!=='Favourites'||(window.swFavOf&&swFavOf(w[0]))).map(([id,n,s,gr])=>`<button class="wt" aria-pressed="${cur===id}" data-a="imw" data-v="${id}"><i style="--g:${gr}"></i><b>${n}</b><small>${s}</small>${typeof swHeart==='function'?swHeart(id,n):''}</button>`).join(''):''}${typeof swTiles==='function'&&swCat()!=='Classic'?swTiles('imw',true,swCat()):''}</div>
-${setRow('Follow the time of day','A faint tint that eases through the day: bright and soft in the morning, neutral in the afternoon, warm in the evening, cool at night. It never changes your chosen world.',imS('timeAtmos','Follow the time of day').replace('data-a="imt"','data-a="imtod"'))}</div>
+${setRow('Follow the time of day','A faint tint in your accent colour that eases through the day: light from the top in the morning, none in the afternoon, rising from the bottom in the evening, a soft shade at night. It never changes your chosen world.',imS('timeAtmos','Follow the time of day').replace('data-a="imt"','data-a="imtod"'))}</div>
 `}
 function imView(){const cur=Object.keys(IMPRE).find(n=>Object.entries(IMPRE[n]).every(([k,v])=>g('immersive.'+k)===v)),fm=g('study.focusMode');
  return wView()+(typeof swView==='function'?swView():'')+mxView()+`<div class="card"><h3>Presets</h3><p class="mu sm" style="margin-top:0">Everything is off until you choose it. Pick a starting point, then adjust anything below.${calmOn()?' <b>Reduce motion is on</b>, so effects appear still instead of moving.':''}</p>${setRow('Preset','Gentle: soft pulse, vignette, timer ring and progress line. Immersive: adds aurora, dimmer focus and a clock.',grp('Preset',[['off','Off'],['gentle','Gentle'],['full','Immersive']].map(([v,n])=>`<button class="chip ${cur===v?'on':''}" aria-pressed="${cur===v}" data-a="impre" data-v="${v}">${n}</button>`).join('')))}
@@ -48785,7 +48786,7 @@ let c=`:root{--bgi:${S.bgi/100};--xa2:${S.a2}}`;for(const k in PK)c+=`:root[data
 c+=`body::before,#fx{opacity:var(--bgi)!important}#hx-tint{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:var(--bgi)}`;
 c+=`:root:not([data-contrast=high]) body:not(.no-blur) :is(.card,aside){background-color:color-mix(in srgb,var(--sf) ${S.cop}%,transparent)!important;backdrop-filter:blur(${S.cbl}px) saturate(1.3)!important;-webkit-backdrop-filter:blur(${S.cbl}px) saturate(1.3)!important}`;
 if(S.bf)c+=`body,button,input,select,textarea{font-family:${FN[S.bf]}!important}`;if(S.hf)c+=`h1,h2,h3,h4{font-family:${FN[S.hf]}!important}`;
-if(S.ag)c+=`.btn.p,.chip.on{background-image:linear-gradient(135deg,var(--br),var(--xa2))!important}`;
+if(S.ag)c+=`:root{--bg2:var(--xa2)}.btn.p,.chip.on{background-image:linear-gradient(135deg,var(--br),var(--xa2))!important}`;
 st.textContent=c;tn()}
 /* audio */
 let AC,AN=null;const ac=()=>AC||(AC=new(window.AudioContext||window.webkitAudioContext)());
@@ -49457,7 +49458,8 @@ html[data-nav=drawer] body aside#nav,html[data-nav=bottom] body aside#nav,html b
 /* strip behind the status bar, above the HSC Hub row: solid page colour so scrolling content never shows through it */
 html.hub-top-on::after{content:"";position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px)/var(--uz,1));background:var(--bg);z-index:25;pointer-events:none;transform:translateZ(0);-webkit-transform:translateZ(0)}
 /* belt and braces: the top bar paints solid colour above itself too, so nothing can show in the gap over it */
-html.hub-top-on body .top{box-shadow:0 -120px 0 0 var(--bg)}
+html body .top{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg)}
+html body .top::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:300px;background:var(--bg);pointer-events:none}
 html:has(#tt),html:has(#tt) body{overflow:hidden;overscroll-behavior:none}
 @media(min-width:601px){html:not([data-nav=bottom]) body main:has(#tt){height:calc(var(--vh) - var(--hub-used,0px))!important;max-height:calc(var(--vh) - var(--hub-used,0px))!important;padding-bottom:12px!important}}
 `;document.head.appendChild(s);
@@ -49508,5 +49510,6 @@ gListen(ed,true);
 (function(){var a=document.getElementById('nav'),sc=document.getElementById('sc');if(a)gListen(a,false);if(sc)gListen(sc,false)})();
 })();
 </script>
+<style id="ipad-polish">/* iPad: two-column settings, bigger touch targets */:root[data-nav=rail][data-w~=le-980][data-w~=ge-760] .set-body{columns:2;column-gap:16px}:root[data-nav=rail][data-w~=le-980][data-w~=ge-760] .set-body .card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin:0 0 16px!important}:root[data-nav=rail][data-w~=le-980][data-w~=ge-760] .set-body .card:has(.pre-g),:root[data-nav=rail][data-w~=le-980][data-w~=ge-760] .set-body .set-foot{column-span:all}@media (min-width:1100px) and (max-width:1366px) and (pointer:coarse){:root[data-nav=rail]:not([data-w~=le-980]) .set-body{columns:2;column-gap:16px}:root[data-nav=rail]:not([data-w~=le-980]) .set-body .card{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin:0 0 16px!important}:root[data-nav=rail]:not([data-w~=le-980]) .set-body .card:has(.pre-g),:root[data-nav=rail]:not([data-w~=le-980]) .set-body .set-foot{column-span:all}}@media (pointer:coarse){.set-body .chip,.set-body .btn,.set-tabs .chip,.set-nav .nv{min-height:44px}.set-body .set-row{padding-block:16px}.set-nav{scroll-padding-inline:8px}}</style>
 </body>
 </html>
