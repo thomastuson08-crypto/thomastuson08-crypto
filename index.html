@@ -46905,6 +46905,14 @@ try{const o=JSON.parse(localStorage.getItem(SK));if(o&&typeof o==='object'){if([
  if(o.clr&&typeof o.clr==='object')Object.keys(o.clr).forEach(k=>{if(typeof o.clr[k]==='number')CLR[k]=o.clr[k]});if(o.chats&&typeof o.chats==='object'){['all','english','economics','business','history','maths'].forEach(k=>{const a=okm(o.chats[k]);if(a.length)CH[k]=a})}
  else if(Array.isArray(o.msgs)){const a=okm(o.msgs);if(a.length)CH[T.subj]=a}}}catch(e){}
 const tts=m=>{if(!m||typeof m.d!=='number')return'';const d=new Date(m.d);if(isNaN(d))return'';const same=d.toDateString()===new Date().toDateString();return'<div class="tt-ts">'+(same?'':d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+', ')+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+'</div>'};   /* shown to the minute; the full millisecond time stays stored for ordering */
+/* live Tutor update: when another device's chats arrive but the page cannot reload yet (you are typing, or the keyboard is open), add them straight into the open chat. Add-only, except chats cleared on purpose (clr). */
+window.__ttLive=raw=>{try{const o=JSON.parse(raw);if(!o||typeof o!=='object')return false;let ch=false;const SUBS=['all','english','economics','business','history','maths'];
+ if(o.clr&&typeof o.clr==='object')SUBS.forEach(k=>{const t=+o.clr[k]||0;if(t>(CLR[k]||0)){CLR[k]=t;ch=true}});
+ SUBS.forEach(k=>{const inc=Array.isArray(o.chats&&o.chats[k])?o.chats[k]:[],cur=CH[k]||[],z=CLR[k]||0,key=x=>x.id!=null?'i:'+x.id:'j:'+JSON.stringify(x),seen=new Set(),all=[];
+  for(const x of cur.concat(inc)){if(!x||typeof x!=='object'||(x.r!=='u'&&x.r!=='a')||typeof x.t!=='string')continue;if(z&&!(typeof x.d==='number'&&x.d>z))continue;const q=key(x);if(seen.has(q))continue;seen.add(q);all.push(x)}
+  const old=all.filter(x=>typeof x.d!=='number'),nw=all.filter(x=>typeof x.d==='number').map((x,i)=>[x,i]).sort((p,q)=>p[0].d-q[0].d||p[1]-q[1]).map(p=>p[0]),m=old.concat(nw).slice(-MAXMSG);
+  if(JSON.stringify(m)!==JSON.stringify(cur)){if(CH[k])CH[k].splice(0,CH[k].length,...m);else CH[k]=m;ch=true}});   /* in place, so a reply that is still being written lands in the same list */
+ if(ch){persist();if(document.getElementById('tt')&&typeof paint==='function')paint()}return ch}catch(e){return false}};
 const persist=()=>{if(window.__hubRestoring)return;try{localStorage.setItem(SK,JSON.stringify({subj:T.subj,mode:T.mode,strict:T.strict,gs:T.gs,gm:T.gm,rw:T.rw,tone:T.tone,paper:T.paper,paperDay:T.paperDay,notes:NOTES,clr:CLR,chats:Object.fromEntries(Object.keys(CH).filter(k=>CH[k].length).map(k=>[k,CH[k].slice(-MAXMSG)]))}))}catch(e){}};
 
 /* ---- corpus + retrieval (the Hub's own text, kept in memory only) ---- */
@@ -49151,6 +49159,7 @@ async function check(mode){if(!sess)return;if(busy){again=mode;return}busy=true;
      const safe=!meta.safeAt||Date.now()-meta.safeAt>6*36e5;await baseSet(M);
      if(canApply(mode)&&fpNow()===fp0){noteAp();setMeta({at,hash:M.hash,safeAt:safe?Date.now():meta.safeAt});setSt('Updating from your other device…');await applyLocal(M,safe);return}
      /* it stopped being safe while we saved: do not reload, fall through to the "newer data" path below */}
+    try{if(window.__ttLive&&M.ls&&M.ls['hsc-hub-tutor-v1'])window.__ttLive(M.ls['hsc-hub-tutor-v1'])}catch(e){}   /* the page cannot reload right now, but Tutor chats can still arrive live */
     await baseSet(L);setMeta({at,hash:L.hash,behind:true});lastFp=fp0;
     if(bannerAt!==at){bannerAt=at;banner('Newer progress from another device','Update',()=>check('manual'))}
     setSt('Newer data from your other device');return}
