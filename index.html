@@ -46886,7 +46886,7 @@ function logChat(sid,topic){try{if(!sid||typeof logAct!=='function')return;const
 const GATES={strict:[.5,.75],balanced:[.4,.7],relaxed:[.3,.6]};
 let T={subj:'all',mode:'explain',strict:true,gs:false,gm:'balanced',rw:true,tone:'enc',view:'chat',draft:'',paper:'',paperDay:''},CORP=null,CORPP=null;
 /* one separate conversation per subject: T.msgs always means the chat of the subject that is selected */
-const CH={};Object.defineProperty(T,'msgs',{get:()=>CH[T.subj]||(CH[T.subj]=[]),set:v=>{CH[T.subj]=v},enumerable:true});
+const CH={},CLR={};Object.defineProperty(T,'msgs',{get:()=>CH[T.subj]||(CH[T.subj]=[]),set:v=>{CH[T.subj]=v},enumerable:true});
 /* 'waiting for a reply' and 'error' belong to a subject as well, so you can switch tabs while a reply loads and find it there when you return */
 const BUSY={},ERR={};Object.defineProperty(T,'busy',{get:()=>!!BUSY[T.subj],set:v=>{BUSY[T.subj]=!!v},enumerable:true});Object.defineProperty(T,'err',{get:()=>ERR[T.subj]||'',set:v=>{ERR[T.subj]=v},enumerable:true});
 /* the text in the message box belongs to a subject as well, so what you type in one tab does not follow you into another */
@@ -46902,9 +46902,10 @@ const strictNow=()=>T.subj==='all'?!!T.gs:T.strict;
 const toneLine=()=>'\n'+(TONES[T.tone]||TONES.enc)[1];
 try{const o=JSON.parse(localStorage.getItem(SK));if(o&&typeof o==='object'){if(['all','english','economics','business','history','maths'].includes(o.subj))T.subj=o.subj;if(o.mode==='guide')T.mode='guide';if(TONES[o.tone])T.tone=o.tone;if(o.strict===false)T.strict=false;if(o.gs===true)T.gs=true;if(GATES[o.gm])T.gm=o.gm;if(o.rw===false)T.rw=false;if(PAPERS[o.paper]&&o.paperDay===dayKey(new Date())){T.paper=o.paper;T.paperDay=o.paperDay}if(Array.isArray(o.notes))NOTES=o.notes.filter(x=>x&&typeof x.t==='string'&&Date.now()-x.d<1728e5).slice(-6);
  const okm=a=>Array.isArray(a)?a.filter(m=>m&&(m.r==='u'||m.r==='a')&&typeof m.t==='string').slice(-MAXMSG):[];
- if(o.chats&&typeof o.chats==='object'){['all','english','economics','business','history','maths'].forEach(k=>{const a=okm(o.chats[k]);if(a.length)CH[k]=a})}
+ if(o.clr&&typeof o.clr==='object')Object.keys(o.clr).forEach(k=>{if(typeof o.clr[k]==='number')CLR[k]=o.clr[k]});if(o.chats&&typeof o.chats==='object'){['all','english','economics','business','history','maths'].forEach(k=>{const a=okm(o.chats[k]);if(a.length)CH[k]=a})}
  else if(Array.isArray(o.msgs)){const a=okm(o.msgs);if(a.length)CH[T.subj]=a}}}catch(e){}
-const persist=()=>{try{localStorage.setItem(SK,JSON.stringify({subj:T.subj,mode:T.mode,strict:T.strict,gs:T.gs,gm:T.gm,rw:T.rw,tone:T.tone,paper:T.paper,paperDay:T.paperDay,notes:NOTES,chats:Object.fromEntries(Object.keys(CH).filter(k=>CH[k].length).map(k=>[k,CH[k].slice(-MAXMSG)]))}))}catch(e){}};
+const tts=m=>{if(!m||typeof m.d!=='number')return'';const d=new Date(m.d);if(isNaN(d))return'';const same=d.toDateString()===new Date().toDateString();return'<div class="tt-ts">'+(same?'':d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+', ')+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+'</div>'};   /* shown to the minute; the full millisecond time stays stored for ordering */
+const persist=()=>{if(window.__hubRestoring)return;try{localStorage.setItem(SK,JSON.stringify({subj:T.subj,mode:T.mode,strict:T.strict,gs:T.gs,gm:T.gm,rw:T.rw,tone:T.tone,paper:T.paper,paperDay:T.paperDay,notes:NOTES,clr:CLR,chats:Object.fromEntries(Object.keys(CH).filter(k=>CH[k].length).map(k=>[k,CH[k].slice(-MAXMSG)]))}))}catch(e){}};
 
 /* ---- corpus + retrieval (the Hub's own text, kept in memory only) ---- */
 const STOP=new Set('a an and are as at be but by can do does for from had has have how i if in into is it its me my of on or our so than that the their them then there these they this to was we were what when where which who why will with would you your about also any been being both each more most other some such too very just not no yes become became becomes important importance explain tell please give show need want know like use used using should could don doesn didn isn wasn aren couldn wouldn shouldn won understand understood confused confusing confuse stuck help sense simple simply simpler easy easier break down bit little still really actually thing things example examples quiz topic again differently hint hints examined examine between versus vs whats hows pls plz thx thanks thank ok okay hey hello hi hmm ur kinda sorta gonna wanna lol mate bro dont cant im ive thats lets get gets got getting idk dunno wondering wonder quick quickly someone anyone anybody guys tho though rn abt bout sure maybe basically literally exactly walk through teach teaching cheers yo sir miss actually'.split(' '));
@@ -48269,7 +48270,7 @@ const srcHtml=a=>{const L=(a.src||[]);if(!L.length)return `<div class="tt-nosrc"
  return `<details class="tt-src"><summary>Notes used (${L.length} excerpt${L.length>1?'s':''})</summary><ol>${L.map(x=>`<li><b>${esc(snm(x.s))}</b> ${esc(plain(x.x))}${x.x.length>=240?'…':''}</li>`).join('')}</ol></details>`};
 const boxHtml=()=>{if(T.view==='quiz')return quizHtml();let h='';
  if(!T.msgs.length)h=`<div class="tt-empty">${openerHtml()}<div class="chips tt-starts"><button type="button" class="chip" data-tt="ask:q">Quiz me</button>${topicList().slice(0,3).map((t,i)=>`<button type="button" class="chip" data-tt="ask:${i}">Explain ${esc(t)}</button>`).join('')}</div></div>`;
- else h=T.msgs.map((m,i)=>m.r==='u'?`<div class="tt-m u"><div class="tt-b">${esc(m.t).replace(/\n/g,'<br>')}</div></div>`:`<div class="tt-m a"><div class="tt-b">${md(m.t)}</div><div class="tt-meta">${m.sw?`<button type="button" class="chip on" data-tt="sw:${i}">This looks like ${esc(snm(m.sw))}, switch tab</button>`:actHtml(m,i)+srcHtml(m)+tpHtml(m,i)}</div></div>`).join('');
+ else h=T.msgs.map((m,i)=>m.r==='u'?`<div class="tt-m u"><div class="tt-b">${esc(m.t).replace(/\n/g,'<br>')}</div>${tts(m)}</div>`:`<div class="tt-m a"><div class="tt-b">${md(m.t)}</div>${tts(m)}<div class="tt-meta">${m.sw?`<button type="button" class="chip on" data-tt="sw:${i}">This looks like ${esc(snm(m.sw))}, switch tab</button>`:actHtml(m,i)+srcHtml(m)+tpHtml(m,i)}</div></div>`).join('');
  if(T.msgs.length&&T.msgs[T.msgs.length-1].r==='a'&&!T.msgs[T.msgs.length-1].sw&&!T.busy&&!T.err)h+=`<div class="tt-fu" role="group" aria-label="Follow-ups">${FU[T.mode].map((f,i)=>`<button type="button" class="chip" data-tt="fu:${i}">${esc(f[0])}</button>`).join('')}</div>`;
  if(T.busy)h+=`<div class="tt-m a"><div class="tt-b tt-think" role="status" aria-label="${CORP?pn()+' is typing':'Reading your Hub notes'}"><i></i><i></i><i></i></div></div>`;
  if(T.err)h+=`<div class="tt-err" role="alert">${esc(T.err)} <button type="button" class="lnk" data-tt="retry">Try again</button></div>`;
@@ -48425,7 +48426,7 @@ main:has(#tt){max-width:none!important}.tt{max-width:none;width:100%}.tt-box.emp
 .tt-m.a .tt-b.tt-think{display:inline-flex;align-items:center;gap:5px;padding:14px 16px;line-height:1}.tt-think i{width:8px;height:8px;border-radius:50%;background:var(--mu);opacity:.45;animation:ttd 1.3s infinite ease-in-out both}.tt-think i:nth-child(2){animation-delay:.18s}.tt-think i:nth-child(3){animation-delay:.36s}@keyframes ttd{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
 .tt-err{padding:10px 14px;border-radius:14px;border:1px solid #d94d6a;background:color-mix(in srgb,#d94d6a 12%,transparent)}
 .tt-comp{display:flex;gap:10px;align-items:flex-end;margin:12px 0 0}.tt-in{flex:1;min-height:48px;max-height:180px;resize:none;padding:12px 14px;border-radius:16px;border:1px solid var(--ln);background:var(--sf);color:var(--ink);font:inherit;line-height:1.45}.tt-in:focus-visible{outline:2px solid var(--br);outline-offset:1px}
-.tt-send[disabled]{opacity:.5;cursor:default}.tt-setup{margin:12px 0 0;padding:12px 14px;border-radius:16px;border:1px dashed var(--ln);background:var(--sf2)}.tt-note{margin:10px 2px 0}
+.tt-send[disabled]{opacity:.5;cursor:default}.tt-ts{margin:3px 6px 0;font-size:calc(11.5px*var(--fs,1));color:var(--mu)}.tt-m.u .tt-ts{text-align:right}.tt-setup{margin:12px 0 0;padding:12px 14px;border-radius:16px;border:1px dashed var(--ln);background:var(--sf2)}.tt-note{margin:10px 2px 0}
 @media(max-width:600px){.tt-box{min-height:220px;max-height:calc(100dvh - 400px);padding:12px}.tt-m{max-width:100%}.tt-subj{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-right:-4px}.tt-subj::-webkit-scrollbar{display:none}.tt-subj .chip{flex:none;white-space:nowrap}}
 [data-nav=bottom] .tt-comp{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom,0px)/var(--uz,1));z-index:6;padding:8px 0;margin-top:6px;background:var(--bg)}[data-nav=bottom] .tt{padding-bottom:84px}
 .tt-seg button{white-space:nowrap}@media(max-width:600px){.tt-tone{flex-wrap:wrap}.tt-tone .tt-seg button{padding:7px 10px;font-size:13px}}.tt-view{margin:14px 0 0}.tt-tone{display:inline-flex;align-items:center;gap:8px}.tt-kick{font-size:calc(13px*var(--fs,1));font-weight:700;color:var(--br);letter-spacing:.02em;margin:0 0 6px}.tt-op{justify-content:center;margin:14px 0 4px}
@@ -48662,7 +48663,7 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(v.indexOf('sw:')===0){const m=T.msgs[+v.slice(3)];if(m&&m.sw){const q=String(m.q0||m.q||'');T.subj=m.sw;T.view='chat';T.draft=q;persist();paint(true);const i=Q('#ttIn');if(i){i.value=q;i.style.height='auto';i.style.height=Math.min(180,i.scrollHeight)+'px';try{i.focus({preventScroll:true})}catch(_){}}}}
  else if(v.indexOf('paper:')===0){const k=v.slice(6);T.paper=PAPERS[k]&&T.paper!==k?k:'';T.paperDay=T.paper?dayKey(new Date()):'';persist();paint()}
  else if(v.indexOf('mode:')===0){T.mode=v.slice(5);persist();paint()}
- else if(v==='new'){if(T.busy)return;delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();T.msgs=[];T.err='';persist();paint()}
+ else if(v==='new'){if(T.busy)return;delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();CLR[T.subj]=Date.now();T.msgs=[];T.err='';persist();paint()}
  else if(v==='opts'){OPT=!OPT;paint()}
  else if(v==='attach'){const f=Q('#ttFile');if(f)f.click()}
  else if(v==='keep'){const k=KEEP[T.subj];if(k){k.on=!k.on;paint()}}
@@ -48713,7 +48714,7 @@ try{const sw=(a,on,l)=>`<button type="button" class="sw" role="switch" aria-chec
  const _ai=SETV.ai,_bk=SETV.data;SETV.ai=()=>_ai()+tutorCard();SETV.data=()=>_bk()+chatCard();
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-tts]');if(!b)return;const a=b.dataset.tts;
   if(a==='rw')T.rw=!(T.rw!==false);else if(a==='gs')T.gs=!T.gs;else if(a==='st')T.strict=!T.strict;
-  else if(a==='clr'){if(!confirm('Clear all Tutor chats on this device? This cannot be undone.'))return;Object.keys(CH).forEach(k=>delete CH[k]);Object.keys(KEEP).forEach(k=>delete KEEP[k]);NOTES=[]}
+  else if(a==='clr'){if(!confirm('Clear all Tutor chats on this device and your other synced devices? This cannot be undone.'))return;Object.keys(CH).forEach(k=>delete CH[k]);['all','english','economics','business','history','maths'].forEach(k=>CLR[k]=Date.now());Object.keys(KEEP).forEach(k=>delete KEEP[k]);NOTES=[]}
   else return;persist();try{paint()}catch(_){}try{rerender()}catch(_){}});
  document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.ttsSel)return;const a=t.dataset.ttsSel,v=t.value;
   if(a==='tone'&&TONES[v])T.tone=v;else if(a==='mode')T.mode=v==='guide'?'guide':'explain';else if(a==='gm'&&GATES[v])T.gm=v;else return;persist();try{paint()}catch(_){}try{rerender()}catch(_){}})}catch(e){}
@@ -49033,19 +49034,18 @@ function ms(l,b,r,pref,fresh){
  return pref==='local'?l:r}
 /* Tutor chats: join both copies by message (id, or text+time), never trim, order by timestamp (older untimestamped messages stay first, in their saved order) */
 function tms(l,b,r,pref,fresh){
- if(l===r)return l;if(l===b)return r;if(r===b)return l;
+ if(l===r)return l;
  const pl=P(l),pr=P(r);if(!pl||!pr||Array.isArray(pl)||Array.isArray(pr))return undefined;
  const pb=P(b),cb=(pb&&pb.chats)||{},cl=pl.chats||{},cr=pr.chats||{};
- const strip=o=>{const c=Object.assign({},o||{});delete c.chats;return c};
- const out=m3(strip(pl),strip(pb),strip(pr),pref,fresh);out.chats={};
+ const strip=o=>{const c=Object.assign({},o||{});delete c.chats;delete c.clr;return c};
+ const out=m3(strip(pl),strip(pb),strip(pr),pref,fresh);out.chats={};const cc={};   /* clr = when a chat was deliberately cleared (New chat); the newest mark wins and only older messages go */
+ for(const k of new Set([...Object.keys(pl.clr||{}),...Object.keys(pr.clr||{})])){const t=Math.max(+(pl.clr||{})[k]||0,+(pr.clr||{})[k]||0);if(t)cc[k]=t}out.clr=cc;
  const key=x=>isO(x)&&x.id!=null?'i:'+x.id:'j:'+cj(x);
  for(const k of new Set([...Object.keys(cl),...Object.keys(cr)])){
   const A=Array.isArray(cl[k])?cl[k]:[],B2=Array.isArray(cr[k])?cr[k]:[],Z=Array.isArray(cb[k])?cb[k]:[],zk=new Set(Z.map(key));
-  let a=A,c=B2;
-  if(!A.length&&Z.length)c=B2.filter(x=>!zk.has(key(x)));   /* this side started a new chat on purpose: drop what was already there, keep anything newer */
-  else if(!B2.length&&Z.length)a=A.filter(x=>!zk.has(key(x)));
-  const seen=new Set(),all=[];
-  for(const x of [...a,...c]){if(!isO(x))continue;const q=key(x);if(seen.has(q))continue;seen.add(q);all.push(x)}
+  const a=A,c=B2;   /* a sync only ever adds messages; the one exception is a chat the student cleared on purpose (see clr) */
+  const seen=new Set(),all=[],cz=cc[k]||0;
+  for(const x of [...a,...c]){if(!isO(x))continue;if(cz&&!(typeof x.d==='number'&&x.d>cz))continue;const q=key(x);if(seen.has(q))continue;seen.add(q);all.push(x)}
   const old=all.filter(x=>typeof x.d!=='number'),nw=all.filter(x=>typeof x.d==='number').map((x,i)=>[x,i]).sort((p,q)=>p[0].d-q[0].d||p[1]-q[1]).map(p=>p[0]);
   if(old.length||nw.length)out.chats[k]=old.concat(nw)}
  return JSON.stringify(out)}
