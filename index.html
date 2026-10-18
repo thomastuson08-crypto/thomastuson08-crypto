@@ -47317,15 +47317,17 @@ try{const o=JSON.parse(localStorage.getItem(SK));if(o&&typeof o==='object'){if([
 const tts=m=>{if(!m||typeof m.d!=='number')return'';const d=new Date(m.d);if(isNaN(d))return'';const same=d.toDateString()===new Date().toDateString();return'<div class="tt-ts">'+(same?'':d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+', ')+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+'</div>'};   /* shown to the minute; the full millisecond time stays stored for ordering */
 /* live Tutor update: when another device's chats arrive but the page cannot reload yet (you are typing, or the keyboard is open), add them straight into the open chat. Add-only, except chats cleared on purpose (clr). */
 window.__ttBusy=()=>!!T.busy;   /* a Tutor reply is still being written: nothing may reload the page now or it is lost */
-window.__ttLive=raw=>{try{if(T.busy||location.hash.slice(1).split('/')[0]==='tutor')return false;   /* never rewrite a chat you are looking at or waiting on; it arrives on the next sync apply */
+window.__ttLive=raw=>{try{if(T.busy)return false;   /* never rewrite a chat while a reply is being written */
+ {const a=document.activeElement;if(a&&a.id==='ttIn'){window.__ttPend=raw;return false}}   /* you are typing in the message box: hold the new messages and add them the moment you click away */
  const o=JSON.parse(raw);if(!o||typeof o!=='object')return false;let ch=false;const SUBS=['all','english','economics','business','history','maths'];
  if(o.clr&&typeof o.clr==='object')SUBS.forEach(k=>{const t=+o.clr[k]||0;if(t>(CLR[k]||0)){CLR[k]=t;ch=true}});
  SUBS.forEach(k=>{const inc=Array.isArray(o.chats&&o.chats[k])?o.chats[k]:[],cur=CH[k]||[],z=CLR[k]||0,key=x=>x.id!=null?'i:'+x.id:'j:'+JSON.stringify(x),seen=new Set(),all=[];
   for(const x of cur.concat(inc)){if(!x||typeof x!=='object'||(x.r!=='u'&&x.r!=='a')||typeof x.t!=='string')continue;if(z&&!(typeof x.d==='number'&&x.d>z))continue;const q=key(x);if(seen.has(q))continue;seen.add(q);all.push(x)}
   const old=all.filter(x=>typeof x.d!=='number'),nw=all.filter(x=>typeof x.d==='number').map((x,i)=>[x,i]).sort((p,q)=>p[0].d-q[0].d||p[1]-q[1]).map(p=>p[0]),m=old.concat(nw).slice(-MAXMSG);
   if(JSON.stringify(m)!==JSON.stringify(cur)){if(CH[k])CH[k].splice(0,CH[k].length,...m);else CH[k]=m;ch=true}});   /* in place, so a reply that is still being written lands in the same list */
- if(ch){persist();if(document.getElementById('tt')&&typeof paint==='function')paint()}return ch}catch(e){return false}};
-const persist=()=>{if(window.__hubRestoring)return;try{localStorage.setItem(SK,JSON.stringify({subj:T.subj,mode:T.mode,strict:T.strict,gs:T.gs,gm:T.gm,rw:T.rw,tone:T.tone,paper:T.paper,paperDay:T.paperDay,notes:NOTES,clr:CLR,chats:Object.fromEntries(Object.keys(CH).filter(k=>CH[k].length).map(k=>[k,CH[k].slice(-MAXMSG)]))}))}catch(e){}};
+ if(ch){persist();if(document.getElementById('tt')&&typeof paint==='function')paint()}return true}catch(e){return false}};   /* true = this device now has every message (nothing more to wait for) */
+document.addEventListener('focusout',e=>{if(e.target&&e.target.id==='ttIn'&&window.__ttPend){const r=window.__ttPend;window.__ttPend=null;setTimeout(()=>{try{window.__ttLive(r)}catch(_){}},300)}});
+const persist=()=>{if(window.__hubRestoring)return;try{localStorage.setItem(SK,JSON.stringify({subj:T.subj,mode:T.mode,strict:T.strict,gs:T.gs,gm:T.gm,rw:T.rw,tone:T.tone,paper:T.paper,paperDay:T.paperDay,notes:NOTES,clr:CLR,chats:Object.fromEntries(Object.keys(CH).filter(k=>CH[k].length).map(k=>[k,CH[k].slice(-MAXMSG)]))}));try{window.__hubSyncSoon&&window.__hubSyncSoon(300)}catch(_){}}catch(e){}};
 
 /* ---- corpus + retrieval (the Hub's own text, kept in memory only) ---- */
 const STOP=new Set('a an and are as at be but by can do does for from had has have how i if in into is it its me my of on or our so than that the their them then there these they this to was we were what when where which who why will with would you your about also any been being both each more most other some such too very just not no yes become became becomes important importance explain tell please give show need want know like use used using should could don doesn didn isn wasn aren couldn wouldn shouldn won understand understood confused confusing confuse stuck help sense simple simply simpler easy easier break down bit little still really actually thing things example examples quiz topic again differently hint hints examined examine between versus vs whats hows pls plz thx thanks thank ok okay hey hello hi hmm ur kinda sorta gonna wanna lol mate bro dont cant im ive thats lets get gets got getting idk dunno wondering wonder quick quickly someone anyone anybody guys tho though rn abt bout sure maybe basically literally exactly walk through teach teaching cheers yo sir miss actually'.split(' '));
@@ -49555,7 +49557,7 @@ const examOpen=()=>document.body.classList.contains('xc-on')||!!document.getElem
 const canApply=mode=>{if(ttWait()||examOpen())return false;   /* a sync reload mid-reply wipes the reply and anything not yet saved */
  if(mode==='login'||mode==='manual')return true;
  if(recentAp().length>=3||mockRunning()||boxHasText()||leaveBlocked())return false;
- return mode==='load'||(!document.hidden&&!timerRunning()&&!typing()&&(mode==='show'||Date.now()-lastAct>10000))};
+ return mode==='load'||(!document.hidden&&!timerRunning()&&!typing()&&(mode==='show'||Date.now()-lastAct>(mode==='rt'?3000:10000)))};
 const setMeta=o=>{meta=Object.assign({uid:sess.uid,lt:meta.lt,safeAt:meta.safeAt},o);saveMeta()};
 const doneAt=m=>setSt(m+' '+when(Date.now()));
 
@@ -49580,6 +49582,11 @@ async function check(mode){if(!sess)return;if(busy){again=mode;return}busy=true;
    let at=rem.at;
    if(sc(M)!==sc(rem.snap)){const p=await push(M,rem.at);if(p.c)continue;at=p.at}
    if(sc(M)!==sc(L)){   /* this device is missing things the account has */
+    {const TK0='hsc-hub-tutor-v1',nt0=S=>({ls:Object.fromEntries(Object.entries(S.ls||{}).filter(e=>e[0]!==TK0)),xh:S.xh,mods:S.mods});
+     if(window.__ttLive&&M.ls&&M.ls[TK0]&&sc(nt0(M))===sc(nt0(L))){   /* only Tutor chats differ: add them to the open chat, no page reload */
+      let live=false;try{live=window.__ttLive(M.ls[TK0])}catch(e){}
+      if(live){const L2=await snapshot();await baseSet(L2);setMeta({at,hash:L2.hash});lastFp=fpNow();doneAt('Synced');return}
+      await baseSet(L);setMeta({at,hash:L.hash,behind:true});lastFp=fp0;setSt('New chat messages from your other device');return}}
     if(canApply(mode)){
      if(fpNow()!==fp0)continue;   /* this device changed while we were merging: merge again with the newer state rather than overwrite it */
      const safe=!meta.safeAt||Date.now()-meta.safeAt>6*36e5;await baseSet(M);
@@ -49589,7 +49596,7 @@ async function check(mode){if(!sess)return;if(busy){again=mode;return}busy=true;
     await baseSet(L);setMeta({at,hash:L.hash,behind:true});lastFp=fp0;
     /* Tutor chats already arrive live (above), so a difference that is only chat messages needs no banner. Otherwise show it at most once every 3 minutes, so two devices in use at once do not keep re-triggering it. */
     {const TK='hsc-hub-tutor-v1',nt=S=>({ls:Object.fromEntries(Object.entries(S.ls||{}).filter(e=>e[0]!==TK)),xh:S.xh,mods:S.mods}),onlyChat=sc(nt(M))===sc(nt(L));
-     if(!onlyChat&&!document.body.classList.contains('xc-on')&&!document.getElementById('xc')&&bannerAt!==at&&Date.now()-(window.__sbBnT||0)>18e4){bannerAt=at;window.__sbBnT=Date.now()}}
+     if(!onlyChat&&!document.body.classList.contains('xc-on')&&!document.getElementById('xc')&&bannerAt!==at&&Date.now()-(window.__sbBnT||0)>18e4){bannerAt=at;window.__sbBnT=Date.now();banner('Newer data from your other device','Update',()=>check('manual'))}}
     setSt('Newer data from your other device');return}
    await baseSet(L);setMeta({at,hash:L.hash});lastFp=fp0;doneAt('Synced');return}
   setSt('Will retry shortly')
@@ -49737,12 +49744,48 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  if(a==='gate')gate();else if(a==='name')nameModal();else if(a==='out')signOut();else if(a==='pw')confirmPw(pwModal,'To change your password, enter your current password first. If you have forgotten it, sign out and use the reset link on the sign-in screen.');else if(a==='email')confirmPw(emailModal,'To change your email, enter your password first. This protects your account if someone else gets hold of this device or your inbox.');else if(a==='devrm')devRemove(t.dataset.id);else if(a==='outall')signOutAll();else if(a==='del')deleteModal();else if(a==='sync'){asked=false;snoozeTo=0;check('manual')}});
 
 /* rhythm: after load, when you leave or come back, shortly after you change something, and every 10s while it is open */
-const soon=ms=>{clearTimeout(dbt);dbt=setTimeout(()=>check('poll'),Math.max(ms,10000-(Date.now()-lastRun)))};
+const soon=ms=>{clearTimeout(dbt);dbt=setTimeout(()=>check('poll'),Math.max(ms,2500-(Date.now()-lastRun)))};
+window.__hubSyncSoon=ms=>{if(!sess)return;meta.lt=Date.now();saveMeta();soon(ms||500)};   /* features call this right after saving, so the account hears about it at once */
 addEventListener('online',()=>check('poll'));
 addEventListener('pagehide',()=>{if(sess)check('hide')});
 document.addEventListener('visibilitychange',()=>{if(!sess)return;if(document.hidden){hiddenAt=Date.now();check('hide')}else{check(Date.now()-hiddenAt>15000?'show':'poll');nameTick()}});
-setInterval(()=>{if(!sess||document.hidden)return;const f=fpNow();if(f!==lastFp&&f!==seenFp){seenFp=f;meta.lt=Date.now();saveMeta();soon(2500)}},3000);
+setInterval(()=>{if(!sess||document.hidden)return;const f=fpNow();if(f!==lastFp&&f!==seenFp){seenFp=f;meta.lt=Date.now();saveMeta();soon(800)}},3000);
 let slow=0;setInterval(()=>{if(sess&&!document.hidden){check('poll');if(++slow%3===0){keyTick();devTick()}}},10000);
+
+/* ---------- live updates: Supabase Realtime tells this device the moment the account row changes ----------
+ * Needs Realtime switched on for the hub_data table (see the SQL in the setup note). Until it is, or if the connection drops,
+ * this device checks for changes every 4 seconds instead, so it is never worse than before. */
+let rtWs=null,rtOn=false,rtRef=0,rtHb=0,rtRe=0,rtTry=0,rtTk=0,rtJoin='',rtUid='';
+const rtStop=()=>{clearInterval(rtHb);clearTimeout(rtRe);clearInterval(rtTk);rtRe=0;rtOn=false;const w=rtWs;rtWs=null;try{if(w){w.onclose=null;w.onerror=null;w.close()}}catch(e){}};
+const rtLater=()=>{if(rtRe)return;rtRe=setTimeout(()=>{rtRe=0;rtStart()},Math.min(30000,1000*Math.pow(2,Math.min(rtTry++,5))))};
+async function rtStart(){
+ if(!sess||rtWs||typeof WebSocket==='undefined')return;
+ let tok;try{tok=await token()}catch(e){return rtLater()}
+ if(!sess||rtWs)return;
+ const uid=sess.uid,topic='realtime:hsc-hub-'+uid;let ws;rtJoin=String(++rtRef);rtUid=uid;
+ try{ws=new WebSocket(URL_.replace(/^http/,'ws')+'/realtime/v1/websocket?apikey='+encodeURIComponent(KEYP)+'&vsn=1.0.0')}catch(e){return rtLater()}
+ rtWs=ws;
+ const send=o=>{try{if(ws.readyState===1)ws.send(JSON.stringify(o))}catch(e){}};
+ const drop=()=>{if(rtWs!==ws)return;clearInterval(rtHb);clearInterval(rtTk);rtOn=false;rtWs=null;try{ws.onclose=null;ws.onerror=null;ws.close()}catch(e){}rtLater()};
+ ws.onopen=()=>{send({topic,event:'phx_join',payload:{config:{broadcast:{self:false},presence:{key:''},postgres_changes:[{event:'*',schema:'public',table:'hub_data',filter:'user_id=eq.'+uid}],private:false},access_token:tok},ref:rtJoin,join_ref:rtJoin});
+  clearInterval(rtHb);rtHb=setInterval(()=>send({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++rtRef)}),25000);
+  clearInterval(rtTk);rtTk=setInterval(async()=>{try{const t=await token();send({topic,event:'access_token',payload:{access_token:t},ref:String(++rtRef)})}catch(e){}},20*60000)};
+ ws.onmessage=ev=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}
+  if(m.event==='phx_reply'&&m.ref===rtJoin){if(!(m.payload&&m.payload.status==='ok')){rtOn=false;drop()}return}
+  if(m.event==='system'&&m.payload&&(m.payload.extension==='postgres_changes'||/postgres/i.test(String(m.payload.message||'')))){
+   if(m.payload.status==='ok'){rtOn=true;rtTry=0;check('poll')}   /* subscribed: catch up on anything missed while disconnected */
+   else rtOn=false;   /* Realtime is not switched on for the table: the 4 second check below covers it */
+   return}
+  if(m.event==='postgres_changes'){const d=m.payload&&m.payload.data,rec=d&&d.record;if(rec&&rec.updated_at&&rec.updated_at===meta.at)return;   /* our own save */
+   check('rt');return}
+  if(m.event==='phx_close'||m.event==='phx_error'){drop()}};
+ ws.onclose=drop;ws.onerror=drop}
+setInterval(()=>{if(!sess){if(rtWs||rtRe)rtStop();return}
+ if(rtWs&&rtUid&&rtUid!==sess.uid)rtStop();
+ if(!rtWs&&!rtRe)rtStart()},5000);
+setInterval(()=>{if(sess&&!document.hidden&&!rtOn)check('poll')},4000);   /* fallback while the live connection is not up */
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sess&&!rtWs&&!rtRe)rtStart()});
+addEventListener('online',()=>{if(sess&&!rtWs&&!rtRe)rtStart()});
 setTimeout(refresh,0);const rec=!!window.__sbHash;if(rec)setTimeout(recovery,500);if(!sess&&!rec&&!sessionStorage.getItem(SKIP))gate();
 setTimeout(()=>{if(sess){check('load');keyTick();devTick()}else if(!rec&&!sessionStorage.getItem(SKIP))gate();mount()},2500);
 
