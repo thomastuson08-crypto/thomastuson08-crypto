@@ -44571,6 +44571,10 @@ ${setRow('Interface scale',sup?'Scales everything together: text, buttons, icons
 <div class="card"><h3>Focus indicator</h3>${setRow('Outline style','The outline that shows which control the keyboard (or an external keyboard on iPad) is on',acCh('acfo','Outline style',g('accessibility.focus'),ACF))}<p class="mu sm" style="margin:8px 0 6px">Press Tab to move onto these and see the outline:</p><div class="chips"><button class="btn">Sample button</button><button class="chip">Sample chip</button><input name=hf63-text type="text" placeholder="Sample field" aria-label="Sample field" style="width:180px"></div></div>`}
 
 /* ---------- events ---------- */
+/* touch: Next/Previous act on finger-down, so a dropped or cancelled click cannot lose the tap. The click that follows is ignored. */
+(()=>{let last=0;const SEL='[data-xc="next"],[data-xc="prev"]';
+document.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch'||!X.run||!xo)return;if(window.HubPalm&&HubPalm.palm(e.pointerId))return;const b=e.target.closest&&e.target.closest(SEL);if(!b||b.disabled)return;last=Date.now();xstep(b.dataset.xc==='next'?1:-1)},true);
+document.addEventListener('click',e=>{if(!last||Date.now()-last>900)return;const b=e.target.closest&&e.target.closest(SEL);if(!b)return;last=0;e.preventDefault();e.stopPropagation()},true)})();
 document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!t)return;const a=t.dataset.xc,r=X.run;if(a==='brk'){xbrkStart();return}if(a==='brkend'){xbrkEnd();return}
  if(a==='start')xstart(t.dataset.v,t.dataset.vr);else if(a==='resume'){xresume(true)}
  else if(a==='abandon'){xask('Abandon this exam? Your answers will be discarded, but the time you spent is still recorded as an unfinished exam.','Abandon',()=>{xpartial(X.run);X.run=null;xsave();render()})}
