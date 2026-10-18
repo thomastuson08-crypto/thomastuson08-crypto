@@ -393,6 +393,7 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflo
 .xc-tb{border-collapse:collapse;width:100%;font-size:14px;margin-top:8px}.xc-tb th,.xc-tb td{border-bottom:1px solid var(--ln);padding:6px 8px;text-align:left}
 .xc-modal.fx{position:fixed;z-index:2147483001}
 .xc-rv details{margin-top:6px}.xc-rv summary{cursor:pointer;font-weight:600}
+
 .xc-hg{border:1px solid var(--ln);border-left:4px solid var(--c);border-radius:12px;padding:14px 16px;margin:0 0 16px;background:var(--bg)}
 .xc-hgt{font-size:1.08em}
 
@@ -43772,11 +43773,13 @@ function xpartial(r){try{if(!r||!PT('trackSessions'))return;const now=Date.now()
  logAct(`HSC Exam Centre: ${nm} exam left unfinished · ${m} min, ${ans} of ${tot} answered`,r.subj);save()}catch(e){}}
 function xexit(){const m=document.createElement('div');m.className='xc-modal';m.id='xcmd';
  m.innerHTML=`<div role="dialog" aria-modal="true"><h2 style="margin-top:0">Leave the exam?</h2><p>Leaving now abandons this attempt and discards your answers, but the time you spent and how many questions you answered are still recorded as an unfinished exam. To finish properly, keep working and use Submit exam.</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn p" data-xc="cancel">Keep working</button><button class="btn" data-xc="abandonrun">Abandon exam</button></div></div>`;xo.appendChild(m);m.querySelector('button').focus()}
-function xsubmit(auto,silent){const r=X.run;if(!r)return;const now=Date.now(),taken=xsecs(r,now);
+function xsubmit(auto,silent){const r=X.run;if(!r)return;
+ if(X.hist.some(h=>h.id===r.id)){clearInterval(xti);X.run=null;xsave();if(!silent)xres(r.id,auto);return r.id}   /* this exam was already submitted (for example on your other device): do not record it, or its time, a second time */
+ const now=Date.now(),taken=xsecs(r,now);
  const at={id:r.id,subj:r.subj,vr:r.vr||'',title:r.paper.title,t:now,taken,allowed:r.paper.minutes*60,auto:!!auto,paper:r.paper,a:r.a,dw:r.dw||{},fa:r.fa||{},wk:r.wk||{},pick:r.pick,fl:r.fl,mk:xauto(r),am:{}};
  if(r.subj!=='maths'&&typeof HubAI!=='undefined'&&HubAI.auto())at.aiq=1;   /* AI marks the written answers by default; self marks (mk) still override */
  const keep=PT('saveExams');at.tot=xsum(at);X.hist.unshift(at);if(!keep)X.tmp=at.id;xput(at);X.hist.splice(xcap()).forEach(a=>xdel(a.id));X.run=null;X.note=silent&&keep?{id:at.id,t:now}:null;if(!keep&&silent){X.tmp=null;X.hist=X.hist.filter(h=>h.id!==at.id)}clearInterval(xti);xsave();
- const m=Math.round(taken/60);if(PT('trackSessions')){S.sess.unshift({kind:'xc',subj:at.subj,min:m,t:now});sd(at.subj).min+=m}   /* recorded even under a minute, so a submitted exam always counts as completed */
+ const m=Math.round(taken/60);if(PT('trackSessions')&&!S.sess.some(x=>x&&x.rid===at.id)){S.sess.unshift({kind:'xc',subj:at.subj,min:m,t:now,rid:at.id});sd(at.subj).min+=m}   /* recorded even under a minute, so a submitted exam always counts as completed */
  logAct(`HSC Exam Centre: ${sub(at.subj).name} full paper submitted`,at.subj);if(keep)xplanSync(at);save();if(!silent)xres(at.id,auto);return at.id}
 
 /* ---------- results ---------- */
@@ -44686,7 +44689,10 @@ addEventListener('pagehide',xsaveNow);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)xsaveNow()});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&xo&&X.run)xfsBar();else{const b=$('#xcfs');if(b)b.innerHTML=''}});
 /* an exam left running is picked up again on load; one whose time has run out is submitted for you */
-function xboot(){const r=X.run;if(!r)return;let nores=false;try{nores=sessionStorage.getItem('hsc-sb-nores')==='1';sessionStorage.removeItem('hsc-sb-nores')}catch(e){}
+function xboot(){if(!X.run)return;xready.then(xboot2,xboot2)}
+function xboot2(){const r=X.run;if(!r)return;
+ if(X.hist.some(h=>h.id===r.id)){X.run=null;xsave();render();return}   /* already submitted on another device: nothing to resume or auto-submit */
+ let nores=false;try{nores=sessionStorage.getItem('hsc-sb-nores')==='1';sessionStorage.removeItem('hsc-sb-nores')}catch(e){}
  if(!r.bs&&Date.now()>=r.wEnd){xsubmit(true,true);render();return}
  if(nores)return;   /* reloaded by an account sync: the exam stays paused and can be resumed from the Exams page */
  xresume()}
