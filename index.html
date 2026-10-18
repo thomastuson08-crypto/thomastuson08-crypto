@@ -275,6 +275,9 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflo
 .xc-clock{font:700 28px/1 ui-monospace,Menlo,Consolas,monospace;padding:6px 14px;border-radius:10px;background:var(--sf2)}
 .xc-clock.warn{color:#b45309;background:#fef3c7}.xc-clock.crit{color:#fff;background:#dc2626}
 .xc-r{display:flex;align-items:center;gap:12px}
+#xcsv{display:inline-block;min-width:13.5em;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#xcpr{display:inline-block;min-width:7.5em;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#xcbb{white-space:nowrap}.xc-clock{min-width:5.6em;text-align:center}
 .xc-bn{margin:0;padding:9px 18px;background:#fef3c7;color:#78350f;font-weight:600;text-align:center}
 .xc-body{flex:1;display:flex;min-height:0}
 #xcnv{width:250px;flex:none;overflow:auto;padding:14px;border-right:1px solid var(--ln);background:var(--sf)}
@@ -291,6 +294,7 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflo
 .xc-stim{padding:12px 14px;border:1px solid var(--ln);border-left:4px solid var(--br);border-radius:8px;background:var(--sf);margin:0 0 16px;font-size:15px}
 .xc-stim table{border-collapse:collapse;width:100%}.xc-stim td,.xc-stim th{border:1px solid var(--ln);padding:5px 9px;text-align:left}
 .xc-opt{display:flex;gap:12px;width:100%;text-align:left;padding:12px 14px;margin:0 0 9px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink);font:inherit;cursor:pointer}
+.xc-wk{margin:4px 0 14px}.xc-wk .xc-pad{margin-top:10px}.xc-wkb.on{font-weight:600}
 .xc-opt.on{border-color:var(--br);background:var(--sf2);box-shadow:0 0 0 1px var(--br)}.xc-opt:disabled{cursor:default;opacity:.7}
 .xc-ta{width:100%;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--sf);color:var(--ink);font:inherit;resize:vertical}
 .xc-wc{font-size:12px;color:var(--mu);text-align:right;margin:2px 0 14px}
@@ -41523,6 +41527,38 @@ function mountSubject(host,api,document,root){
   while(add&&sum<goal){add=false;for(const a of by){const i=a.findIndex(e=>sum+e.q.marks<=goal&&reach(goal-sum-e.q.marks,e.q.marks));
    if(i>=0){const e=a.splice(i,1)[0];cnt[e.q.marks]--;out.push(e);sum+=e.q.marks;add=true;if(sum>=goal)break}}}
   return out}
+ /* Exam Centre paper builder: spreads questions across the five modules plus probability, weighted like a real paper, AND across topics, aims for a realistic Section II (about 23 questions of mixed size), orders easy to hard, and avoids two questions from one topic back to back. The total is still exact. */
+ function pickSpread(pool,target,used,N){
+  const U=id=>(used&&used[id])||0,rnd=n=>Math.floor(Math.random()*n);
+  const L=shuf(pool).sort((a,b)=>U(a.q.id)-U(b.q.id)||att(a.q.id).length-att(b.q.id).length),cnt={};
+  L.forEach(e=>cnt[e.q.marks]=(cnt[e.q.marks]||0)+1);
+  let memo={};
+  const reach=(n,sk)=>{const key=n+':'+sk;if(key in memo)return memo[key];const r=new Uint8Array(n+1);r[0]=1;
+   for(const v in cnt){const w=+v,c=cnt[v]-(w===sk?1:0);for(let k=0;k<c;k++){let any=false;for(let x=n;x>=w;x--)if(!r[x]&&r[x-w]){r[x]=1;any=true}if(!any)break}}
+   return memo[key]=!!r[n]};
+  let goal=target;while(goal>0&&!reach(goal,0))goal--;
+  /* a soft plan of question sizes (about 1 to 7 marks, averaging near the real paper's) that adds up to the goal; the bank decides what is really available */
+  const W=[[1,1],[2,5],[3,6],[4,5],[5,4],[6,2],[7,1]],tw=W.reduce((a,x)=>a+x[1],0),plan=[];
+  for(let i=0;i<N;i++){let r=rnd(tw),k=0;while(r>=W[k][1]){r-=W[k][1];k++}plan.push(W[k][0])}
+  let ps=plan.reduce((a,b)=>a+b,0),g=0;while(ps!==goal&&g++<5000){const i=rnd(N);if(ps<goal&&plan[i]<7){plan[i]++;ps++}else if(ps>goal&&plan[i]>1){plan[i]--;ps--}}
+  const G=e=>/relative-frequency-and-probability/.test(String(e.t.id||e.q.topic))?'probability':e.t.mod.id,   /* probability counts as its own area, balanced with the five modules */
+   mods=shuf([...new Set(L.map(G))]),byM=new Map(mods.map(m=>[m,L.filter(e=>G(e)===m)])),mc={},tc={},out=[],
+   /* share of the 100 marks per area, from the 2020 to 2024 papers (an estimate, not an official NESA figure); probability is Year 11 content so it is a small slice of Statistical Analysis. Each paper nudges the shares a little, as real papers vary. */
+   WT={'financial-mathematics':26,'measurement':25,'algebra':18,'statistical-analysis':13,'networks':13,probability:5},JW={};let sum=0;
+  mods.forEach(m=>JW[m]=(WT[m]||15)*(.92+Math.random()*.16));
+  while(sum<goal){
+   const want=plan.length>out.length?plan[out.length]:(goal-sum)/Math.max(1,N-out.length);let hit=null;
+   const order=mods.filter(m=>byM.get(m).length).sort((a,b)=>((mc[a]||0)+want/2)/JW[a]-((mc[b]||0)+want/2)/JW[b]);   /* the area furthest behind its share of marks goes first */
+   for(const m of order){
+    const c=byM.get(m).map((e,i)=>[tc[e.t.id]||0,Math.abs(e.q.marks-want),i]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]||a[2]-b[2]);   /* least-used topic, then nearest planned size, then least attempted */
+    const f=c.find(x=>{const mk=byM.get(m)[x[2]].q.marks;return sum+mk<=goal&&reach(goal-sum-mk,mk)});
+    if(f){hit=[m,f[2]];break}}
+   if(!hit)break;
+   const e=byM.get(hit[0]).splice(hit[1],1)[0];cnt[e.q.marks]--;memo={};out.push(e);sum+=e.q.marks;mc[hit[0]]=(mc[hit[0]]||0)+e.q.marks;tc[e.t.id]=(tc[e.t.id]||0)+1}
+  /* easy to hard (then short to long), and no two questions from the same topic side by side where it can be helped */
+  out.sort((a,b)=>(a.q.difficulty||0)-(b.q.difficulty||0)||a.q.marks-b.q.marks);
+  for(let i=1;i<out.length;i++)if(out[i].t.id===out[i-1].t.id){for(let j=i+1;j<out.length;j++)if(out[j].t.id!==out[i-1].t.id&&(j+1>=out.length||out[j+1].t.id!==out[i].t.id||j===out.length-1)){const x=out.splice(j,1)[0];out.splice(i,0,x);break}}
+  return out}
  /* the questions a mode may draw from; weak mode keeps only topics in weakAll() (flagged as needs work, or under the practice threshold) */
  function exPool(mode,mod){const W=mode==='weak'?new Set(weakAll().map(w=>w.t.id)):null;return bank().ok.filter(e=>(mode!=='mod'||e.t.mod.id===mod)&&(!W||W.has(e.t.id)))}
  function buildPaper(mode,mod){
@@ -42310,7 +42346,7 @@ function mountSubject(host,api,document,root){
  window.HubExam.maths={build(o){
   examCss();
   const used=(o&&o.used)||{},pool=bank().ok,sum=L=>L.reduce((a,e)=>a+e.q.marks,0);
-  const I=pickMarks(pool.filter(e=>e.q.type==='mc'),EXAM.secI,null,used),II=pickMarks(pool.filter(e=>e.q.type!=='mc'),EXAM.total-EXAM.secI,null,used);
+  const I=pickSpread(pool.filter(e=>e.q.type==='mc'),EXAM.secI,used,EXAM.secI),II=pickSpread(pool.filter(e=>e.q.type!=='mc'),EXAM.total-EXAM.secI,used,23);
   if(!I.length&&!II.length)throw new Error('The Standard Mathematics question bank is empty.');
   let n=0;const qI=I.map(e=>xq(e,++n)),qII=II.map(e=>xq(e,++n)),secs=[];
   if(qI.length)secs.push({id:'I',title:'Section I',sub:'Multiple choice · '+sum(I)+' marks · allow about '+EXAM.guideI+' minutes',qs:qI});
@@ -43402,7 +43438,7 @@ function xrestore(list){list=(list||[]).filter(a=>a&&a.id);X.hist=list.sort((a,b
 let xdeb=0,xo=null,xti=0,xpre=null,xfs=false,xin=[],xmsg='';
 
 /* ---------- saving (never silent: a failed save is shown on screen) ---------- */
-const xslim=a=>{a.paper=null;a.dw={};a.fa={};a.a={};a.pick={};a.fl={};a.mk={};a.am={};a.slim=true};
+const xslim=a=>{a.paper=null;a.dw={};a.fa={};a.wk={};a.wo={};a.a={};a.pick={};a.fl={};a.mk={};a.am={};a.slim=true};
 function xsave(){
  if(xmode!=='off'){let ok=true;
   try{let c={};if(xmode==='pending'){try{c=JSON.parse(localStorage.getItem(XK))||{}}catch(_){}}   /* until migrated, leave the stored history untouched */
@@ -43413,8 +43449,10 @@ function xsave(){
   for(let i=X.hist.length-1;i>=1;i--){if(X.hist[i].slim)continue;xslim(X.hist[i]);try{w();X.bad=0;return true}catch(_){}}
   X.bad=1;return false}}
 const xstat=ok=>{const e=$('#xcsv');if(!e)return;e.style.display=!ok||st('saveStatus')!==false?'':'none';e.title=ok?'':'Your browser storage is full';e.textContent=ok?'Saved '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'Warning: could not save (browser storage is full)';e.style.color=ok?'':'#dc2626'};
-const xnavS=(()=>{let t=0;return()=>{if(t)return;t=setTimeout(()=>{t=0;if(X.run)xnav()},500)}})();
-const xsaveD=()=>{clearTimeout(xdeb);xdeb=setTimeout(()=>xstat(xsave()),{instant:350,normal:2000,relaxed:8000}[st('autoSave')]||350)};
+let xAct=0;   /* time of the last keystroke or Pencil stroke: side panels are only redrawn once you have paused */
+const xIdle=()=>!XD&&Date.now()-xAct>2500;
+const xnavS=(()=>{let t=0;const go=()=>{t=0;if(!X.run)return;if(!xIdle()){t=setTimeout(go,800);return}xnav()};return()=>{if(t)return;t=setTimeout(go,800)}})();
+const xsaveD=()=>{clearTimeout(xdeb);const ms={instant:350,normal:2000,relaxed:8000}[st('autoSave')]||350;const go=()=>{if(XD&&XD.cv){xdeb=setTimeout(go,300);return}xstat(xsave())};xdeb=setTimeout(go,ms)};
 const xsaveNow=()=>{clearTimeout(xdeb);if(X.run)xstat(xsave())};
 
 /* ---------- helpers ---------- */
@@ -43527,7 +43565,7 @@ function xcover(){const p=xpre.paper,s=sub(xpre.subj),tot=xtotalP(p);
  <li>You can move between questions and sections in any order, and flag questions to come back to.</li><li>Answers are saved automatically as you work.</li>${p.refsheet?'<li>The HSC reference sheet is printed with the real paper, so it is available here too. Use the Reference sheet button at the top of the screen.</li>':''}<li>There are no hints, notes or study tools during the exam. Marks and feedback appear after you submit.</li></ul>
  <p style="display:flex;gap:10px;margin:24px 0"><button class="btn p" data-xc="begin">Begin exam</button><button class="btn" data-xc="cancelpre">Cancel</button></p></div></div>`}
 function xbegin(){if(!xpre)return;const p=xpre.paper,now=Date.now();
- X.run={id:'x'+now,subj:xpre.subj,vr:xpre.vr,paper:p,phase:p.reading?'reading':'writing',rEnd:now+(p.reading||0)*1000,wEnd:now+((p.reading||0)+p.minutes*60)*1000,ws:now+(p.reading||0)*1000,a:{},dw:{},fa:{},pick:{},fl:{},wn:{},cur:xall(p)[0].id};
+ X.run={id:'x'+now,subj:xpre.subj,vr:xpre.vr,paper:p,phase:p.reading?'reading':'writing',rEnd:now+(p.reading||0)*1000,wEnd:now+((p.reading||0)+p.minutes*60)*1000,ws:now+(p.reading||0)*1000,a:{},dw:{},fa:{},wk:{},wo:{},pick:{},fl:{},wn:{},cur:xall(p)[0].id};
  xpre=null;X.note=null;xsave();xfsReq();xresume()}
 function xresume(fs){const r=X.run;if(!r)return;if(fs===true)xfsReq();
  {const t=S.run;if(t&&t.paused==null&&!t.over){t.paused=Math.max(0,t.end-Date.now());save();pill();toast('Study timer paused while the exam runs, so the time is not counted twice.',true)}}xopen();xrun();xtick();clearInterval(xti);xti=setInterval(xtick,500)}
@@ -43550,8 +43588,8 @@ function xfsBar(){const b=$('#xcfs');if(!b)return;b.innerHTML=(xfs&&st('fsRemind
 const xbAllow=r=>Math.floor(r.paper.minutes/30)*300;
 const xbm=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function xbrkBtn(r){const o=document.getElementById('xcbrk');if(o)o.remove();const b=document.getElementById('xcbb');if(!b)return;
- const left=Math.max(0,xbAllow(r)-(r.bt||0)/1000);b.textContent='Rest break \u00b7 '+Math.floor(left/60)+' min left';
- b.disabled=r.phase!=='writing'||left<300;b.title=r.phase!=='writing'?'Rest breaks are taken in writing time':left<300?'Not enough break allowance left (a break is at least 5 minutes)':'Pause the clock for a rest break'}
+ const left=Math.max(0,xbAllow(r)-(r.bt||0)/1000);const tx='Rest break \u00b7 '+Math.floor(left/60)+' min left',ds=r.phase!=='writing'||left<300,ti=r.phase!=='writing'?'Rest breaks are taken in writing time':left<300?'Not enough break allowance left (a break is at least 5 minutes)':'Pause the clock for a rest break';
+ if(b.textContent!==tx)b.textContent=tx;if(b.disabled!==ds)b.disabled=ds;if(b.title!==ti)b.title=ti}
 function xbrkStart(){const r=X.run;if(!r||r.bs||r.phase!=='writing'||Date.now()>=r.wEnd)return;
  if(xbAllow(r)-(r.bt||0)/1000<300){xbanner('Not enough break allowance left. A break is at least 5 minutes.');return}
  r.bs=Date.now();xsave();xtick()}
@@ -43590,7 +43628,7 @@ function xmain(keep){const r=X.run,q=xfind(r.paper,r.cur),el=$('#xcmain');if(!q|
  h+=`<div class="xc-meta">${esc(sec.title)} · ${esc(xttl(q))} · ${q.marks} mark${q.marks>1?'s':''}</div>`+xpk(r,q);
  if(sec.booklet)h+=`<details class="xc-bk" open><summary>${sec.bookTitle||'Reference material'}</summary>${sec.booklet}</details>`;
  if(q.stim)h+=`<div class="xc-stim">${q.stim}</div>`;
- if(q.type==='mc')h+=`<div class="xc-qt">${q.q}</div>`+q.options.map((o,i)=>`<button class="xc-opt ${r.a[q.id]===i?'on':''}" ${dis} data-xc="opt" data-q="${q.id}" data-v="${i}"><b>${'ABCD'[i]}</b><span>${o}</span></button>`).join('');
+ if(q.type==='mc')h+=`<div class="xc-qt">${q.q}</div>`+q.options.map((o,i)=>`<button class="xc-opt ${r.a[q.id]===i?'on':''}" ${dis} data-xc="opt" data-q="${q.id}" data-v="${i}"><b>${'ABCD'[i]}</b><span>${o}</span></button>`).join('')+xwk(r,q,lock);
  else if(q.type==='sa'){const a=r.a[q.id]||[];h+=q.parts.map((p,i)=>`<div class="xc-pt">(${'abcdefgh'[i]}) ${p.q} <span class="mu sm">[${p.marks} mark${p.marks>1?'s':''}]</span></div>${q.draw?xpad(r,q,i,lock):`<textarea name=hf51-xc-ta class="xc-ta" rows="${Math.min(14,3+p.marks)}" ${dis} data-xa="${q.id}" data-p="${i}" aria-label="Answer part ${'abcdefgh'[i]}">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`}`).join('')}
  else h+=`<div class="xc-qt">${xmk(q)}</div><textarea name=hf52-xc-ta class="xc-ta" rows="${q.rows||20}" ${dis} data-xa="${q.id}" aria-label="Written answer">${esc(r.a[q.id]||'')}</textarea><div class="xc-wc">${xwc(r.a[q.id])} words</div>`;
  el.innerHTML=h+'</div>';el.scrollTop=keep===true?y:0;el.querySelectorAll('canvas[data-xcv]').forEach(xcpaint);xtick()}
@@ -43610,7 +43648,7 @@ function xpartial(r){try{if(!r||!PT('trackSessions'))return;const now=Date.now()
 function xexit(){const m=document.createElement('div');m.className='xc-modal';m.id='xcmd';
  m.innerHTML=`<div role="dialog" aria-modal="true"><h2 style="margin-top:0">Leave the exam?</h2><p>Leaving now abandons this attempt and discards your answers, but the time you spent and how many questions you answered are still recorded as an unfinished exam. To finish properly, keep working and use Submit exam.</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn p" data-xc="cancel">Keep working</button><button class="btn" data-xc="abandonrun">Abandon exam</button></div></div>`;xo.appendChild(m);m.querySelector('button').focus()}
 function xsubmit(auto,silent){const r=X.run;if(!r)return;const now=Date.now(),taken=xsecs(r,now);
- const at={id:r.id,subj:r.subj,vr:r.vr||'',title:r.paper.title,t:now,taken,allowed:r.paper.minutes*60,auto:!!auto,paper:r.paper,a:r.a,dw:r.dw||{},fa:r.fa||{},pick:r.pick,fl:r.fl,mk:xauto(r),am:{}};
+ const at={id:r.id,subj:r.subj,vr:r.vr||'',title:r.paper.title,t:now,taken,allowed:r.paper.minutes*60,auto:!!auto,paper:r.paper,a:r.a,dw:r.dw||{},fa:r.fa||{},wk:r.wk||{},pick:r.pick,fl:r.fl,mk:xauto(r),am:{}};
  if(r.subj!=='maths'&&typeof HubAI!=='undefined'&&HubAI.auto())at.aiq=1;   /* AI marks the written answers by default; self marks (mk) still override */
  const keep=PT('saveExams');at.tot=xsum(at);X.hist.unshift(at);if(!keep)X.tmp=at.id;xput(at);X.hist.splice(xcap()).forEach(a=>xdel(a.id));X.run=null;X.note=silent&&keep?{id:at.id,t:now}:null;if(!keep&&silent){X.tmp=null;X.hist=X.hist.filter(h=>h.id!==at.id)}clearInterval(xti);xsave();
  const m=Math.round(taken/60);if(PT('trackSessions')){S.sess.unshift({kind:'xc',subj:at.subj,min:m,t:now});sd(at.subj).min+=m}   /* recorded even under a minute, so a submitted exam always counts as completed */
@@ -43663,30 +43701,42 @@ function xtutorAsk(aid,qid){const a=X.hist.find(x=>x.id===aid),q=a&&a.paper&&xfi
 function xrev0(a,b){const q=b.q,it=b.it;if(!q)return`<div class="xc-rv"><b>${esc(it.sec.title)}</b>: no question was chosen. <span class="bad">0/${it.marks}</span></div>`;
  const ans=a.a[q.id],head=`<div class="xc-meta">${esc(it.sec.title)} · ${esc(xttl(q))} · ${q.topic?esc(xtn(q.topic)):''}${a.fl[q.id]?' · flagged':''}</div>`,
  gd=q.guide?`<details style="margin-top:8px"><summary>${q.glabel||'Marking guide'}</summary>${q.guide}</details>`:'';
- if(q.type==='mc')return`<div class="xc-rv">${head}${q.stim?`<div class="xc-stim">${q.stim}</div>`:''}<p style="margin:0 0 6px">${q.q}</p><div class="${ans==null?'':'bad'}">Your answer: ${ans==null?'not answered':'ABCD'[ans]+'. '+q.options[ans]}</div><div class="good">Correct: ${'ABCD'[q.correct]}. ${q.options[q.correct]}</div>${q.exp?`<div class="mu sm" style="margin-top:6px">${q.exp}</div>`:''}</div>`;
+ if(q.type==='mc')return`<div class="xc-rv">${head}${q.stim?`<div class="xc-stim">${q.stim}</div>`:''}<p style="margin:0 0 6px">${q.q}</p><div class="${ans==null?'':'bad'}">Your answer: ${ans==null?'not answered':'ABCD'[ans]+'. '+q.options[ans]}</div><div class="good">Correct: ${'ABCD'[q.correct]}. ${q.options[q.correct]}</div>${xwkRev(a,q)}${q.exp?`<div class="mu sm" style="margin-top:6px">${q.exp}</div>`:''}</div>`;
  const mk=a.mk[q.id],am=a.am&&a.am[q.id],hasAm=am!=null,
  inp=`<label class="mu sm">${hasAm?'Override mark':'Your mark'} (0–${q.marks}) <input name=hf53-xc-mk type="number" class="xc-mk" min="0" max="${q.marks}" step="1" data-xm="${q.id}" data-a="${a.id}" value="${mk==null?'':mk}"${hasAm?` placeholder="${am}"`:''}></label>`+(hasAm?(mk==null?` <span class="mu sm" style="margin-left:8px"><b>Auto-marked ${am}/${q.marks}</b> (${a.ai&&a.ai[q.id]?'marked by AI, a guide only':'saved from an earlier attempt, a guide only'}). Enter your own mark to override it.</span>`:` <span class="mu sm" style="margin-left:8px">Self-marked ${mk}/${q.marks}, overriding the auto mark of ${am}. <button type="button" class="btn" data-xc="automk" data-a="${a.id}" data-q="${q.id}">Use auto mark</button></span>`):'');
  if(q.type==='sa')return`<div class="xc-rv">${head}${q.stim?`<div class="xc-stim">${q.stim}</div>`:''}${q.parts.map((p,i)=>`<p style="margin:10px 0 2px"><b>(${'abcdefgh'[i]})</b> ${xnoM(p.q)} [${p.marks}]</p>${xrevAns(a,q,i,ans)}${p.pts&&p.pts.length?`<div class="mu sm"><b>Marking points:</b><ul style="margin:4px 0 0 18px">${p.pts.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}${p.model?`<details><summary>Model answer for part (${'abcdefgh'[i]})</summary><div>${p.model}</div></details>`:''}`).join('')}${xaiBlock(a,q)}${gd}<p style="margin:12px 0 0">${inp}${q.draw?'<span class="mu sm" style="margin-left:8px">Marked automatically from your final answers where possible. Change it if your working earns method marks.</span>':''}</p></div>`;
  return`<div class="xc-rv">${head}${q.stim?`<div class="xc-stim">${q.stim}</div>`:''}<div style="margin:0 0 6px"><b>${q.q}</b></div><div class="xc-ans">${esc(ans||'(no answer)')}</div>${q.model?`<details><summary>Model answer${q.mnote?' and marker note':''}</summary>${q.mnote?`<p class="mu sm">${q.mnote}</p>`:''}<div>${q.model}</div></details>`:''}${xaiBlock(a,q)}${gd}<p style="margin:12px 0 0">${inp}</p></div>`}
 
 
+
+/* ---------- working section on multiple-choice questions that involve calculations (Exam Centre) ---------- */
+const xCalc=(r,q)=>{if(!q||q.type!=='mc')return false;if(r.subj==='maths')return true;if(!/^(economics|business)$/.test(r.subj))return false;
+ const t=[q.q,q.stim].concat(q.options||[]).join(' ').replace(/<[^>]*>/g,' ');
+ return /calculat/i.test(t)||(/\d/.test(t)&&/[%$]|percent|per cent|ratio|break-?even|margin|rate|index|profit|revenue|cost|price|growth|average|mean|multiplier|total/i.test(t))};
+function xwk(r,q,lock){if(!xCalc(r,q))return'';const d=(r.dw||{})[q.id+':w'],has=!!(((r.wk||{})[q.id])||'').trim()||!!(d&&d.st&&d.st.length),open=!!(r.wo&&r.wo[q.id]);
+ return `<div class="xc-wk"><button type="button" class="btn xc-wkb${open?' on':''}" aria-expanded="${open}" data-xc="wktog" data-q="${q.id}">${open?'Hide working':'Working'}${has?' •':''}</button>${open?xpad(r,q,'w',lock):''}</div>`}
+function xopt(id){const r=X.run,m=$('#xcmain');if(!r||!m)return;m.querySelectorAll('.xc-opt').forEach(b=>b.classList.toggle('on',+b.dataset.v===r.a[id]))}
+function xwkRev(a,q){const t=(((a.wk||{})[q.id])||'').trim(),d=(a.dw||{})[q.id+':w'],hd=d&&d.st&&d.st.length;if(!t&&!hd)return'';
+ return `<div style="margin-top:8px"><div class="mu sm"><b>Your working</b> (not marked)</div>${t?`<div class="xc-ans">${esc(t)}</div>`:''}${hd?`<div class="xc-dv">${xsvg(d)}</div>`:''}</div>`}
+document.addEventListener('input',e=>{const t=e.target;if(!xo||!X.run||!t.dataset||t.dataset.xw==null||X.run.phase!=='writing')return;
+ const r=X.run;r.wk=r.wk||{};r.wk[t.dataset.xw]=t.value;const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD()});
 /* ---------- maths written answers: type or draw, plus a final answer line (auto-marked) ---------- */
 const XCOLS=['#141a30','#1d5fd6','#d62f2f','#1f9d63'],XPADS=new Map();
 /* d = what is saved with the exam {m:mode,bg,h:height px,ar:height/width,st:strokes}; u = session-only pen settings and the redo stack */
 const xpd=(r,k)=>{r.dw=r.dw||{};return r.dw[k]||(r.dw[k]={m:'type',bg:'plain',h:320,ar:.45,st:[]})};
 const xpu=(r,k)=>{const id=r.id+'|'+k;let u=XPADS.get(id);if(!u){u={tool:'pen',col:XCOLS[0],fing:false,rd:[]};XPADS.set(id,u)}return u};
-function xpad(r,q,i,lock){const k=q.id+':'+i,d=xpd(r,k),u=xpu(r,k),dis=lock?' disabled':'',a=r.a[q.id]||[],fv=(((r.fa||{})[q.id])||[])[i]||'';
+function xpad(r,q,i,lock){const k=q.id+':'+i,d=xpd(r,k),u=xpu(r,k),dis=lock?' disabled':'',a=r.a[q.id]||[],fv=(((r.fa||{})[q.id])||[])[i]||'',mw=i==='w';
  const b=(act,v,t,on)=>`<button type="button" class="btn xc-pb${on?' on':''}" aria-pressed="${!!on}" data-xc="dw${act}" data-k="${k}" data-v="${v}"${dis}>${t}</button>`;
  return `<div class="xc-pad" data-xpad="${k}"><div class="xc-pbar" role="group" aria-label="Answer method">${b('mode','type','Type',d.m==='type')}${b('mode','draw','Draw',d.m==='draw')}</div>`+
   (d.m==='type'
-   ?`<textarea name=hf54-xc-ta class="xc-ta" autocorrect="off" autocapitalize="off" spellcheck="false" rows="${Math.min(14,3+q.parts[i].marks)}"${dis} data-xa="${q.id}" data-p="${i}" aria-label="Working for part ${'abcdefgh'[i]}" placeholder="Show your full working here. It is not marked.">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`
+   ?`<textarea name=hf54-xc-ta class="xc-ta" autocorrect="off" autocapitalize="off" spellcheck="false" rows="${mw?7:Math.min(14,3+q.parts[i].marks)}"${dis} ${mw?`data-xw="${q.id}"`:`data-xa="${q.id}" data-p="${i}"`} aria-label="${mw?'Working':'Working for part '+'abcdefgh'[i]}" placeholder="Show your full working here. It is not marked.">${esc(mw?((r.wk||{})[q.id]||''):(a[i]||''))}</textarea><div class="xc-wc">${xwc(mw?(r.wk||{})[q.id]:a[i])} words</div>`
    :`<div class="xc-pbar">${b('tool','pen','Pen',u.tool==='pen')}${b('tool','eraser','Eraser',u.tool==='eraser')}${XCOLS.map(c=>`<button type="button" class="xc-sw${u.col===c&&u.tool==='pen'?' on':''}" style="background:${c}" aria-label="Ink colour ${c}" data-xc="dwcol" data-k="${k}" data-v="${c}"${dis}></button>`).join('')}${b('undo','','Undo')}${b('redo','','Redo')}${b('clr','','Clear')}</div>
     <div class="xc-pbar">${['plain','lines','grid'].map(g=>b('bg',g,g[0].toUpperCase()+g.slice(1),d.bg===g)).join('')}${b('fing','',u.fing?'Finger draws':'Pencil only',u.fing)}${b('grow','','+ Space')}</div>
     <div class="xc-pv"><canvas class="xcp-${d.bg}" data-xcv="${k}" style="height:${d.h}px" role="img" aria-label="Drawing area for your working"></canvas></div>
-    <div class="mu sm" style="margin:6px 0 12px">${u.fing?'Finger and Pencil both draw.':'Apple Pencil draws; a finger scrolls the page.'} Working is not marked. Your drawing is saved with the exam.</div>`)+
-  `<label class="xc-fa"><span class="mu sm">Final answer (this is what is auto-marked)</span><input name=hf55-xc-fi class="xc-fi" data-xf="${q.id}" data-p="${i}" value="${esc(fv)}"${dis} autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="e.g. 24, y = 4x + 2, A-B-D, or a sentence"></label></div>`}
+    <div class="mu sm" style="margin:6px 0 12px">${u.fing?'Finger and Pencil both draw.':'Apple Pencil draws; a finger scrolls the page.'} Working is not marked. Your drawing is saved with the exam.</div>`)+(mw?'</div>':
+  `<label class="xc-fa"><span class="mu sm">Final answer (this is what is auto-marked)</span><input name=hf55-xc-fi class="xc-fi" data-xf="${q.id}" data-p="${i}" value="${esc(fv)}"${dis} autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="e.g. 24, y = 4x + 2, A-B-D, or a sentence"></label></div>`)}
 function xpadRefresh(k){const r=X.run,n=xo&&xo.querySelector('[data-xpad="'+k+'"]');if(!r||!n)return;const j=k.lastIndexOf(':'),q=xfind(r.paper,k.slice(0,j));if(!q)return;
- const t=document.createElement('template');t.innerHTML=xpad(r,q,+k.slice(j+1),r.phase!=='writing');n.replaceWith(t.content.firstElementChild);xo.querySelectorAll('canvas[data-xcv]').forEach(xcpaint)}
+ const t=document.createElement('template');t.innerHTML=xpad(r,q,k.slice(j+1)==='w'?'w':+k.slice(j+1),r.phase!=='writing');n.replaceWith(t.content.firstElementChild);xo.querySelectorAll('canvas[data-xcv]').forEach(xcpaint)}
 function xpadAct(act,k,v){const r=X.run;if(!r||r.phase!=='writing')return;const d=xpd(r,k),u=xpu(r,k);
  if(act==='mode')d.m=v==='draw'?'draw':'type';
  else if(act==='tool')u.tool=v==='eraser'?'eraser':'pen';
@@ -43725,12 +43775,14 @@ document.addEventListener('pointermove',e=>{if(!XD||e.pointerId!==XD.id)return;
  const n0=XD.s?XD.s.pts.length:0;(()=>{const c=e.getCoalescedEvents?e.getCoalescedEvents():[];return c.length?c:[e]})().forEach(xcpt);if(XD.s&&n0>0)xcseg(XD.cv,XD.s,n0);else xcpaint(XD.cv)});
 function xcseg(cv,s,from){const W=cv.clientWidth,dp=window.devicePixelRatio||1,g=cv.getContext('2d');g.setTransform(dp,0,0,dp,0,0);g.lineCap=g.lineJoin='round';g.strokeStyle=g.fillStyle=s.c;
  for(let i=Math.max(1,from);i<s.pts.length;i++){const a=s.pts[i-1],b=s.pts[i];g.lineWidth=s.w*(.55+b[2]);g.beginPath();g.moveTo(a[0]*W,a[1]*W);g.lineTo(b[0]*W,b[1]*W);g.stroke()}}
-const xpend=e=>{if(!XD||e.pointerId!==XD.id)return;const D=XD;XD=null;
+const xpend=e=>{if(!XD||e.pointerId!==XD.id)return;const D=XD;XD=null;xAct=Date.now();
  if(D.sc){let v=D.v*16;const step=()=>{D.sc.scrollTop+=v;v*=.94;if(Math.abs(v)>.4)requestAnimationFrame(step)};if(Math.abs(v)>2)step();return}
  if(D.s&&D.s.pts.length){D.d.st.push(D.s);D.u.rd=[];D.ch=1}
  xcpaint(D.cv);
  if(D.ch&&X.run){D.d.ar=+(D.cv.clientHeight/Math.max(1,D.cv.clientWidth)).toFixed(3);const sv=$('#xcsv');if(sv){sv.textContent='Saving…';sv.style.color=''}xsaveD();xnavS()}};
 document.addEventListener('pointerup',xpend);document.addEventListener('pointercancel',xpend);
+['keydown','input','compositionupdate'].forEach(k=>document.addEventListener(k,e=>{if(xo&&e.target&&xo.contains(e.target))xAct=Date.now()},{passive:true,capture:true}));
+document.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')xAct=Date.now()},{passive:true,capture:true});
 document.addEventListener('contextmenu',e=>{if(xo&&e.target.closest&&e.target.closest('canvas[data-xcv]'))e.preventDefault()});
 /* iPad keyboard: keep the exam pinned to the visible area and the focused field in view, instead of letting Safari pan the page */
 function xshow(t){const m=$('#xcmain'),vv=window.visualViewport;if(!m||!m.contains(t))return;const mr=m.getBoundingClientRect(),tr=t.getBoundingClientRect(),bot=Math.min(mr.bottom,vv?vv.offsetTop+vv.height:innerHeight)-12;
@@ -44468,7 +44520,8 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!
  else if(!r||!xo)return;
  else if(a==='go')xgo(t.dataset.q);else if(a==='prev')xstep(-1);else if(a==='next')xstep(1);
  else if(a==='refsheet'){xrefOpen()}else if(a==='refclose'){xrefClose()}else if(a==='qlist'){const n=$('#xcnv');if(n)n.classList.add('open')}else if(a==='qclose'){const n=$('#xcnv');if(n)n.classList.remove('open')}
- else if(a==='opt'&&r.phase==='writing'){r.a[t.dataset.q]=+t.dataset.v;xsaveD();xnav();xmain(true)}
+ else if(a==='opt'&&r.phase==='writing'){r.a[t.dataset.q]=+t.dataset.v;xsaveD();xnav();xopt(t.dataset.q)}
+ else if(a==='wktog'){r.wo=r.wo||{};r.wo[t.dataset.q]=!r.wo[t.dataset.q];xsaveD();xmain(true)}
  else if(a==='pick'&&r.phase==='writing'){const q=xfind(r.paper,t.dataset.q);r.pick[q.sec]=q.id;xsaveD();xnav();xmain(true)}
  else if(a.slice(0,2)==='dw')xpadAct(a.slice(2),t.dataset.k,t.dataset.v);
  else if(a==='flag'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
@@ -44485,7 +44538,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset.xm)return;
 document.addEventListener('keydown',e=>{if(xo&&X.run&&$('#xcrs')){if(e.key==='Escape'){xrefClose();e.preventDefault()}return}if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;if(X.run.bs)return;const r=X.run,k=e.key;
  if(k==='ArrowRight'){xstep(1);e.preventDefault()}else if(k==='ArrowLeft'){xstep(-1);e.preventDefault()}
  else if(k.length===1&&k.toLowerCase()==='f'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
- else if(/^[a-d]$/i.test(k)){const q=xfind(r.paper,r.cur),i=k.toLowerCase().charCodeAt(0)-97;if(q&&q.type==='mc'&&r.phase==='writing'&&q.options[i]!=null){r.a[q.id]=i;xsaveD();xnav();xmain(true)}}});
+ else if(/^[a-d]$/i.test(k)){const q=xfind(r.paper,r.cur),i=k.toLowerCase().charCodeAt(0)-97;if(q&&q.type==='mc'&&r.phase==='writing'&&q.options[i]!=null){r.a[q.id]=i;xsaveD();xnav();xopt(q.id)}}});
 addEventListener('keydown',e=>{if(xo&&(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();e.stopPropagation()}},true);
 addEventListener('beforeunload',e=>{if(X.run&&xo){xsaveNow();e.preventDefault();e.returnValue=''}});
 addEventListener('pagehide',xsaveNow);
