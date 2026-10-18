@@ -333,6 +333,13 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflo
 .xc-src blockquote{margin:6px 0;padding:0 0 0 12px;border-left:2px solid var(--ln);font-style:italic}
 .xc-srcl{font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:12px;margin-bottom:2px}
 .xc-src table{border-collapse:collapse;width:100%}.xc-src td,.xc-src th{border:1px solid var(--ln);padding:5px 9px;text-align:left}
+.xc-stim .gr,.xc-rv .gr,.xc-vis .gr{margin:0 0 10px;max-width:560px;--c:#6b4cf6;--fi:#141a30;--fm:#566080;--fl:#cdd4e6;--fp:#fff;color:#141a30;background:#fff;border:1px solid #cdd4e6;border-radius:14px;padding:12px 16px}
+.xc-stim .gr svg,.xc-rv .gr svg{display:block;overflow:visible;overflow:visible;width:100%;height:auto}.xc-stim .gr figcaption,.xc-rv .gr figcaption{font-size:13px;color:#566080;margin-top:6px}
+.xc-stim .gf,.xc-rv .gf{fill:#fff;stroke:#cdd4e6}.xc-stim .gg,.xc-rv .gg{stroke:#cdd4e6}.xc-stim .ga,.xc-rv .ga{stroke:#566080;stroke-width:1.5}.xc-stim .gt,.xc-rv .gt{fill:#566080;font-size:12px}.xc-stim .gl,.xc-rv .gl{fill:#141a30;font-size:13px}
+.xc-stim .s0,.xc-rv .s0{--sc:var(--c)}.xc-stim .s1,.xc-rv .s1{--sc:#141a30}.xc-stim .s2,.xc-rv .s2{--sc:#566080}
+.xc-stim .sl,.xc-rv .sl{fill:none;stroke:var(--sc);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.xc-stim .sl.s1,.xc-rv .sl.s1{stroke-dasharray:7 5}.xc-stim .sl.s2,.xc-rv .sl.s2{stroke-dasharray:2 5}
+.xc-stim .mk,.xc-rv .mk{fill:var(--sc);stroke:#fff;stroke-width:1.5}
+.xc-stim .dk,.xc-rv .dk{fill:none;stroke:#141a30;stroke-width:2;stroke-linejoin:round}.xc-stim .dk.df,.xc-rv .dk.df{fill:color-mix(in srgb,var(--c) 14%,transparent)}.xc-stim .dk.dd,.xc-rv .dk.dd{stroke-dasharray:6 4}.xc-stim .dk.ds,.xc-rv .dk.ds{fill:#fff}.xc-stim .dt,.xc-rv .dt{fill:#141a30;font-size:15px}
 .xc-pre{white-space:pre-wrap}.xc-vis{margin:8px 0}.xc-vis svg,.xc-stim svg,.xc-bk svg{max-width:100%;height:auto}
 .xc-bk{border:1px solid var(--ln);border-radius:10px;background:var(--sf2);margin:0 0 16px;padding:0 14px}
 .xc-rs{position:fixed;inset:0;z-index:60;background:rgba(10,14,30,.5);display:flex;justify-content:flex-end}
@@ -39948,7 +39955,7 @@ sup{font-size:.7em;line-height:0}
 .tbw{overflow-x:auto;border:1px solid var(--ln);border-radius:14px;background:var(--sf)}
 .tb{border-collapse:collapse;width:100%;font-size:14px}.tb caption{text-align:left;padding:10px 14px;font-weight:700}
 .tb th,.tb td{padding:9px 14px;text-align:left;border-top:1px solid var(--ln);white-space:nowrap}.tb thead th{background:var(--sf2);color:var(--mu);font-weight:600;font-size:13px;border-top:0}.tb .n{text-align:right;font-variant-numeric:tabular-nums}
-.gr{margin:0;max-width:560px;--fi:#141a30;--fm:#566080;--fl:#cdd4e6;--fp:#fff;color:#141a30;background:#fff;border:1px solid #cdd4e6;border-radius:14px;padding:10px 12px}.gr svg{display:block;width:100%;height:auto}.gr figcaption{font-size:13px;color:var(--fm);margin-top:6px}
+.gr{margin:0;max-width:560px;--fi:#141a30;--fm:#566080;--fl:#cdd4e6;--fp:#fff;color:#141a30;background:#fff;border:1px solid #cdd4e6;border-radius:14px;padding:12px 16px}.gr svg{display:block;overflow:visible;width:100%;height:auto}.gr figcaption{font-size:13px;color:var(--fm);margin-top:6px}
 .gf{fill:var(--fp);stroke:var(--fl)}.gg{stroke:var(--fl)}.ga{stroke:var(--fm);stroke-width:1.5}.gt{fill:var(--fm);font-size:12px}.gl{fill:var(--fi);font-size:13px}
 .s0{--sc:var(--c)}.s1{--sc:var(--fi)}.s2{--sc:var(--fm)}
 .sl{fill:none;stroke:var(--sc);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.sl.s1{stroke-dasharray:7 5}.sl.s2{stroke-dasharray:2 5}
@@ -40163,8 +40170,9 @@ let GID=0;
 const svgT=s=>esc(s).replace(/\^(-?\d+)/g,(_,d)=>`<tspan dy="-5" font-size="70%">${d}</tspan><tspan dy="5">\u200B</tspan>`);
 const nice=(r,n)=>{const w=r/n,p=Math.pow(10,Math.floor(Math.log10(w))),f=w/p;return(f<1.5?1:f<3?2:f<7?5:10)*p};
 const fig=(svg,leg,cap)=>`<figure class="gr">${svg}${leg||''}${cap?`<figcaption>${esc(cap)}</figcaption>`:''}</figure>`;
+function graphL(o){try{const y0=o.ymin??0,y1=o.ymax??10,st=o.ystep||nice(y1-y0,5),d=Math.max(0,-Math.floor(Math.log10(st)+1e-9));let n=0;for(let k=Math.ceil(y0/st-1e-9);k*st<=y1+1e-9&&k<400;k++)n=Math.max(n,String(+(k*st).toFixed(d)).length);return Math.max(46,Math.round(7*n+32))}catch(e){return 46}}
 function graph(o){
- const W=o.w||400,H=o.h||280,L=46,R=14,T=14,B=o.xlabel?46:32,x0=o.xmin??0,x1=o.xmax??10,y0=o.ymin??0,y1=o.ymax??10,id='gc'+(++GID);
+ const W=o.w||400,H=o.h||280,L=graphL(o),R=14,T=14,B=o.xlabel?46:32,x0=o.xmin??0,x1=o.xmax??10,y0=o.ymin??0,y1=o.ymax??10,id='gc'+(++GID);
  const sx=x=>L+(x-x0)/(x1-x0)*(W-L-R),sy=y=>H-B-(y-y0)/(y1-y0)*(H-T-B),m1=v=>String(v).replace('-','−');
  const tk=(a,b,st)=>{const d=Math.max(0,-Math.floor(Math.log10(st)+1e-9)),r=[];for(let k=Math.ceil(a/st-1e-9);k*st<=b+1e-9;k++)r.push(+(k*st).toFixed(d));return r};
  const xs=tk(x0,x1,o.xstep||nice(x1-x0,6)),ys=tk(y0,y1,o.ystep||nice(y1-y0,5)),mk=(i,x,y)=>{const k=i%3;return k===0?`<circle class="mk s${k}" cx="${x}" cy="${y}" r="4.5"/>`:k===1?`<rect class="mk s${k}" x="${x-4}" y="${y-4}" width="8" height="8"/>`:`<path class="mk s${k}" d="M${x} ${y-5.5}l5.5 5.5-5.5 5.5-5.5-5.5z"/>`};
@@ -40195,7 +40203,7 @@ const dItem=e=>{switch(e.t){
 const diagram=o=>fig(`<svg viewBox="0 0 ${o.w||320} ${o.h||200}" role="img" aria-label="${esc(o.alt||'Diagram')}">${(o.items||[]).map(dItem).join('')}</svg>`,'',o.caption);
 const tri=o=>{const f=Math.atan2(130,200)*180/Math.PI,am=(180-f+180)/2*Math.PI/180;   /* right-angled triangle preset, labels only */
  return diagram({alt:o.alt,caption:o.caption,items:[{t:'poly',fill:1,pts:[[40,170],[240,170],[40,40]]},{t:'right',x:40,y:170,sx:1,sy:-1},{t:'arc',x:240,y:170,r:30,a0:180-f,a1:180},
-  {t:'text',x:28,y:110,s:o.a||'',anchor:'end'},{t:'text',x:140,y:190,s:o.b||''},{t:'text',x:154,y:92,s:o.c||'',anchor:'start'},{t:'text',x:240+44*Math.cos(am),y:170-44*Math.sin(am)+5,s:o.ang||''}]})};
+  {t:'text',x:50,y:122,s:o.a||'',anchor:'start'},{t:'text',x:140,y:190,s:o.b||''},{t:'text',x:154,y:92,s:o.c||'',anchor:'start'},{t:'text',x:204,y:164,s:o.ang||'',anchor:'end'}]})};
 const UI={parseMath,mi,mb,rich,un,fcard,wsteps,ans,worked,tbl,graph,diagram,tri};
 const MMLOK=(()=>{try{const d=document.createElement('div');d.style.cssText='position:absolute;left:-9999px;visibility:hidden';d.innerHTML='<math><mspace height="23px" width="77px"></mspace></math>';document.documentElement.appendChild(d);const h=d.firstChild.firstChild.getBoundingClientRect().height;d.remove();return Math.abs(h-23)<=1}catch(e){return false}})();
 
@@ -40667,19 +40675,28 @@ Maths inside text goes between \\( and \\). In JSON write each backslash twice.`
 /* ---------- 3e. QUESTION FIGURES (pure) ----------
    FIGS maps a question id (or 'id#partLabel') to a figure drawn with the Phase 3 components. Kept apart from the bank so the schema, the
    validator and pasted JSON questions are unchanged. Spec is one of {graph:{..}} {diagram:{..}} {tri:{..}}. Functions are allowed here (graph fn). */
-const NET=o=>{const V=o.v,r=14,it=[];
+const NET=o=>{const V=o.v,r=14,it=[],pts=[],rects=[],req=[],W=o.w||360,H=o.h||240;
+ const sl=(x1,y1,x2,y2)=>{const n=Math.max(2,Math.ceil(Math.hypot(x2-x1,y2-y1)/2));for(let i=0;i<=n;i++)pts.push([x1+(x2-x1)*i/n,y1+(y2-y1)*i/n])};
  o.e.forEach(([a,b,w])=>{const[x1,y1]=V[a],[x2,y2]=V[b],L=Math.hypot(x2-x1,y2-y1),ux=(x2-x1)/L,uy=(y2-y1)/L,ex=o.dir?x2-ux*r:x2,ey=o.dir?y2-uy*r:y2;
-  it.push({t:'line',x1,y1,x2:ex,y2:ey});
-  if(o.dir)[.45,-.45].forEach(q=>{const c=Math.cos(q),n=Math.sin(q);it.push({t:'line',x1:ex,y1:ey,x2:ex-11*(ux*c-uy*n),y2:ey-11*(ux*n+uy*c)})});
-  if(w!=null)it.push({t:'text',x:(x1+x2)/2-uy*13,y:(y1+y2)/2+ux*13+5,s:String(w)})});
- Object.entries(V).forEach(([n,[x,y]])=>it.push({t:'circle',x,y,r,solid:1},{t:'text',x,y:y+5,s:n}));
- return{diagram:{w:o.w||360,h:o.h||240,alt:o.alt,caption:o.caption||'Weights are shown beside each edge.',items:it}}};
+  it.push({t:'line',x1,y1,x2:ex,y2:ey});sl(x1,y1,ex,ey);
+  if(o.dir)[.45,-.45].forEach(q=>{const c=Math.cos(q),n=Math.sin(q),ax=ex-11*(ux*c-uy*n),ay=ey-11*(ux*n+uy*c);it.push({t:'line',x1:ex,y1:ey,x2:ax,y2:ay});sl(ex,ey,ax,ay)});
+  if(w!=null)req.push([x1,y1,x2,y2,String(w)])});
+ Object.entries(V).forEach(([n,[x,y]])=>{it.push({t:'circle',x,y,r,solid:1},{t:'text',x,y:y+5,s:n});for(let a=0;a<360;a+=15)pts.push([x+r*Math.cos(a*Math.PI/180),y+r*Math.sin(a*Math.PI/180)]);pts.push([x,y],[x+5,y],[x-5,y],[x,y+5],[x,y-5])});
+ req.forEach(([x1,y1,x2,y2,s])=>{const w=s.length*8.6+4,h=15;let best=null;
+  [.5,.4,.6,.3,.7].forEach(t=>{const mx=x1+(x2-x1)*t,my=y1+(y2-y1)*t;[7,13].forEach(rr=>{for(let a=0;a<360;a+=30){const th=a*Math.PI/180,c=Math.cos(th),n=Math.sin(th),cx=mx+c*(rr+w/2*Math.abs(c)),cy=my+n*(rr+h/2*Math.abs(n)),X0=cx-w/2,X1=cx+w/2,Y0=cy-h/2,Y1=cy+h/2;let cost=rr*.5+Math.abs(t-.5)*40;
+   pts.forEach(q=>{if(q[0]>X0-1.5&&q[0]<X1+1.5&&q[1]>Y0-1.5&&q[1]<Y1+1.5)cost+=25});
+   rects.forEach(q=>{if(X0<q.x1&&X1>q.x0&&Y0<q.y1&&Y1>q.y0)cost+=4000});
+   if(X0<2||X1>W-2||Y0<4||Y1>H-2)cost+=4000;
+   if(!best||cost<best.cost)best={cost,cx,cy,x0:X0,x1:X1,y0:Y0,y1:Y1}}})});
+  rects.push(best);it.push({t:'text',x:best.cx,y:best.cy+5,s})});
+ return{diagram:{w:W,h:H,alt:o.alt,caption:o.caption||'Weights are shown beside each edge.',items:it}}};
 const TRI=(alt,v,s,g,pts)=>{pts=pts||[[50,170],[280,170],[190,40]];
  const cx=(pts[0][0]+pts[1][0]+pts[2][0])/3,cy=(pts[0][1]+pts[1][1]+pts[2][1])/3,it=[{t:'poly',fill:1,pts}],
-  out=(x,y,d)=>{const L=Math.hypot(x-cx,y-cy)||1;return[x+(x-cx)/L*d,y+(y-cy)/L*d]};
- [[1,2],[2,0],[0,1]].forEach(([i,j],n)=>{if(!s[n])return;const[x,y]=out((pts[i][0]+pts[j][0])/2,(pts[i][1]+pts[j][1])/2,18);it.push({t:'text',x,y:y+5,s:s[n]})});
+  out=(x,y,d)=>{const L=Math.hypot(x-cx,y-cy)||1;return[x+(x-cx)/L*d,y+(y-cy)/L*d]},ep=[];
+ [[0,1],[1,2],[2,0]].forEach(([i,j])=>{const n=Math.ceil(Math.hypot(pts[j][0]-pts[i][0],pts[j][1]-pts[i][1])/2);for(let k=0;k<=n;k++)ep.push([pts[i][0]+(pts[j][0]-pts[i][0])*k/n,pts[i][1]+(pts[j][1]-pts[i][1])*k/n])});
+ [[1,2],[2,0],[0,1]].forEach(([i,j],n)=>{if(!s[n])return;const mx=(pts[i][0]+pts[j][0])/2,my=(pts[i][1]+pts[j][1])/2,dx=pts[j][0]-pts[i][0],dy=pts[j][1]-pts[i][1],Ln=Math.hypot(dx,dy)||1;let nx=-dy/Ln,ny=dx/Ln;if(nx*(mx-cx)+ny*(my-cy)<0){nx=-nx;ny=-ny}const a=nx>.35?'start':nx<-.35?'end':'middle',d=a==='middle'?18:10;it.push({t:'text',x:mx+nx*d,y:my+ny*(a==='middle'?d:6)+5,s:s[n],anchor:a})});
  pts.forEach((q,n)=>{const[x,y]=out(q[0],q[1],14),L=Math.hypot(q[0]-cx,q[1]-cy)||1;it.push({t:'text',x,y:y+5,s:v[n]});
-  if(g[n])it.push({t:'text',x:q[0]+(cx-q[0])/L*36,y:q[1]+(cy-q[1])/L*36+5,s:g[n]})});
+  if(g[n]){const w=g[n].length*8.6+4,h=15;let best=null;for(let d=20;d<=96;d+=4){const x=q[0]+(cx-q[0])/L*d,y=q[1]+(cy-q[1])/L*d;let hit=0;ep.forEach(e=>{if(e[0]>x-w/2-2&&e[0]<x+w/2+2&&e[1]>y-h/2-2&&e[1]<y+h/2+2)hit++});if(!best||hit<best.hit){best={hit,x,y};if(!hit)break}}it.push({t:'text',x:best.x,y:best.y+5,s:g[n]})}});
  return{diagram:{w:330,h:210,alt,caption:'Not drawn to scale.',items:it}}};
 const SCAT=(alt,xl,yl,pts,fn,b)=>({graph:{alt,xmin:b[0],xmax:b[1],ymin:b[2],ymax:b[3],xstep:b[4],ystep:b[5],xlabel:xl,ylabel:yl,
  series:[{type:'pts',label:'Data',pts},{label:'Regression line',fn}]}});
@@ -40773,16 +40790,30 @@ Object.assign(FIGS,{
  'a2-ex-08':FN('Decreasing curve of cost per person against number of people sharing a bus.',n=>360/n,[0,40,0,72],'n (people)','C (dollars)','C = k/n',5)
 });
 /* ADDED FIGURES 2: bearings and surveys (M6), scatterplots (S4), share prices (F4.1), more networks (N2). */
-const BEAR=(alt,nm,legs,o)=>{o=o||{};const P=[[0,0]];legs.forEach(([b,d],i)=>{const q=o.fan?P[0]:P[i],r=b*Math.PI/180;P.push([q[0]+d*Math.sin(r),q[1]-d*Math.cos(r)])});
- const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),x0=Math.min(...xs),y0=Math.min(...ys),k=Math.min(220/Math.max(Math.max(...xs)-x0,1),140/Math.max(Math.max(...ys)-y0,1)),
-  Q=P.map(p=>[50+(p[0]-x0)*k,60+(p[1]-y0)*k]),it=[],T=(x,y,s)=>{if(s)it.push({t:'text',x,y,s})};
- Q.forEach(([x,y],i)=>{if(i<legs.length&&(!o.fan||i===0)||(o.last&&i===legs.length)){it.push({t:'line',x1:x,y1:y,x2:x,y2:y-34,dash:1});T(x,y-40,'N')}T(x+12,y+18,nm[i])});
- legs.forEach(([b,d,lab],i)=>{const[x,y]=Q[o.fan?0:i],[ex,ey]=Q[i+1],r=o.fan?22+i*9:24,m=(90-b/2)*Math.PI/180;
-  it.push({t:'line',x1:x,y1:y,x2:ex,y2:ey},{t:'arc',x,y,r,a0:90-b,a1:90});T(x+(r+17)*Math.cos(m),y-(r+13)*Math.sin(m)+4,String(b).padStart(3,'0')+'°');
-  T((x+ex)/2+(ey-y>0?-1:1)*14,(y+ey)/2-8,lab)});
- if(o.close)it.push({t:'line',x1:Q[1][0],y1:Q[1][1],x2:Q[2][0],y2:Q[2][1],dash:1});
- if(o.poly)it.push({t:'poly',pts:Q.slice(1)});
- return{diagram:{w:320,h:250,alt,caption:'Bearings are measured clockwise from north. Not drawn to scale.',items:it}}};
+const BEAR=(alt,nm,legs,o)=>{o=o||{};const FP=!!(o.fan&&o.poly),W=380,H=FP?300:260,p3=v=>String(v).padStart(3,'0')+'\u00B0';
+ const P=[[0,0]];legs.forEach(([b,d],i)=>{const q=o.fan?P[0]:P[i],r=b*Math.PI/180;P.push([q[0]+d*Math.sin(r),q[1]-d*Math.cos(r)])});
+ const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]),x0=Math.min(...xs),y0=Math.min(...ys),k=Math.min(190/Math.max(Math.max(...xs)-x0,1),(FP?180:130)/Math.max(Math.max(...ys)-y0,1)),
+  Q=P.map(p=>[120+(p[0]-x0)*k,70+(p[1]-y0)*k]),it=[],pts=[],rects=[];
+ const sl=(x1,y1,x2,y2)=>{const n=Math.max(2,Math.ceil(Math.hypot(x2-x1,y2-y1)/2));for(let i=0;i<=n;i++)pts.push([x1+(x2-x1)*i/n,y1+(y2-y1)*i/n])};
+ const ln=(x1,y1,x2,y2,d)=>{it.push({t:'line',x1,y1,x2,y2,dash:d?1:0});sl(x1,y1,x2,y2)};
+ const arc=(x,y,r,a0,a1)=>{it.push({t:'arc',x,y,r,a0,a1});for(let a=a0;a<=a1;a+=3){const q=a*Math.PI/180;pts.push([x+r*Math.cos(q),y-r*Math.sin(q)])}};
+ const tx=(x,y,s)=>{it.push({t:'text',x,y,s})};
+ /* a label goes in the free spot nearest to its anchor: it must not touch a line, another label or the edge of the picture */
+ const place=(ax,ay,s)=>{const w=s.length*8.6+4,h=15;let best=null;
+  [7,14,22].forEach(r=>{for(let a=0;a<360;a+=22.5){const t=a*Math.PI/180,c=Math.cos(t),n=Math.sin(t),cx=ax+c*(r+w/2*Math.abs(c)),cy=ay+n*(r+h/2*Math.abs(n)),X0=cx-w/2,X1=cx+w/2,Y0=cy-h/2,Y1=cy+h/2;let cost=r*.8;
+   pts.forEach(q=>{if(q[0]>X0-1.5&&q[0]<X1+1.5&&q[1]>Y0-1.5&&q[1]<Y1+1.5)cost+=25});
+   rects.forEach(q=>{if(X0<q.x1&&X1>q.x0&&Y0<q.y1&&Y1>q.y0)cost+=4000});
+   if(X0<2||X1>W-2||Y0<8||Y1>H-4)cost+=4000;
+   if(!best||cost<best.cost)best={cost,cx,cy,x0:X0,x1:X1,y0:Y0,y1:Y1}}});
+  rects.push(best);tx(best.cx,best.cy+5,s)};
+ Q.forEach(([x,y],i)=>{if(i<legs.length&&(!o.fan||i===0)||(o.last&&i===legs.length)){ln(x,y,x,y-34,1);tx(x,y-40,'N');rects.push({x0:x-6,x1:x+6,y0:y-52,y1:y-38})}});
+ legs.forEach(([b],i)=>{const[x,y]=Q[o.fan?0:i],[ex,ey]=Q[i+1];ln(x,y,ex,ey);if(!FP)arc(x,y,o.fan?18+i*7:22,90-b,90)});
+ if(o.close)ln(Q[1][0],Q[1][1],Q[2][0],Q[2][1],1);
+ if(o.poly){it.push({t:'poly',pts:Q.slice(1)});Q.slice(1).forEach((q,i)=>{const n=Q[(i+1)%(Q.length-1)+1];sl(q[0],q[1],n[0],n[1])})}
+ if(!o.fan)legs.forEach(([b],i)=>{const[x,y]=Q[i],m=(90-b/2)*Math.PI/180;place(x+22*Math.cos(m),y-22*Math.sin(m),p3(b))});
+ legs.forEach(([b,d,lab],i)=>{const[x,y]=Q[o.fan?0:i],[ex,ey]=Q[i+1];if(lab)place((x+ex)/2,(y+ey)/2,lab)});
+ Q.forEach(([x,y],i)=>place(x,y,(nm[i]||'')+(o.fan&&i>0?' ('+p3(legs[i-1][0])+')':'')));
+ return{diagram:{w:W,h:H,alt,caption:'Bearings are measured clockwise from north. Not drawn to scale.',items:it}}};
 const SPTS=(alt,xl,yl,pts,b,fn)=>({graph:{alt,xmin:b[0],xmax:b[1],ymin:b[2],ymax:b[3],xstep:b[4],ystep:b[5],xlabel:xl,ylabel:yl,series:[{type:'pts',label:'Data',pts}].concat(fn?[{label:'Line of best fit',fn}]:[])}});
 const LN=(alt,fn,p,b)=>({graph:{alt,xmin:0,xmax:b[0],ymin:0,ymax:b[1],xlabel:'x',ylabel:'y',series:[{label:'Line of best fit',fn}],points:p.map(q=>({x:q[0],y:q[1],label:'('+q[0]+', '+q[1]+')',dx:8,dy:18}))}});
 const PR=(alt,pts,y,cap)=>({graph:{alt,xmin:1,xmax:pts.length,ymin:y[0],ymax:y[1],xstep:1,ystep:y[2],xlabel:'Month (1 = January)',ylabel:'Share price ($)',series:[{label:'Share price',pts:pts.map((p,i)=>[i+1,p]),marks:1}],caption:cap}});
@@ -40850,7 +40881,7 @@ const BARS=(alt,lab,val,o)=>{o=o||{};const W=o.w||380,H=o.h||240,l=46,r=o.cum?46
  for(let v=0;v<=ym+1e-9;v+=st)it.push({t:'line',x1:l,y1:sy(v),x2:W-r,y2:sy(v),dash:1},{t:'text',x:l-6,y:sy(v)+4,s:String(v),anchor:'end'});
  val.forEach((v,i)=>{const x0=l+i*bw+g/2,x1=l+(i+1)*bw-g/2,y=sy(v);it.push({t:'poly',fill:1,pts:[[x0,sy(0)],[x0,y],[x1,y],[x1,sy(0)]]},{t:'text',x:(x0+x1)/2,y:sy(0)+16,s:lab[i]})});
  it.push({t:'line',x1:l,y1:t,x2:l,y2:sy(0)},{t:'line',x1:l,y1:sy(0),x2:W-r,y2:sy(0)});
- if(o.yl)it.push({t:'text',x:l,y:12,s:o.yl,anchor:'start'});if(o.xl)it.push({t:'text',x:l+pw/2,y:H-6,s:o.xl});
+ if(o.yl)it.push({t:'text',x:l,y:15,s:o.yl,anchor:'start'});if(o.xl)it.push({t:'text',x:l+pw/2,y:H-6,s:o.xl});
  if(o.cum){const cy=v=>t+ph-v/100*ph,Pt=o.cum.map((v,i)=>[l+(i+.5)*bw,cy(v)]);for(let i=1;i<Pt.length;i++)it.push({t:'line',x1:Pt[i-1][0],y1:Pt[i-1][1],x2:Pt[i][0],y2:Pt[i][1]});Pt.forEach(p=>it.push({t:'circle',x:p[0],y:p[1],r:3,solid:1}));[0,50,100].forEach(v=>it.push({t:'text',x:W-r+6,y:cy(v)+4,s:v+'%',anchor:'start'}))}
  return{diagram:{w:W,h:H,alt,caption:o.cap,items:it}}};
 const BOX=(alt,rows,b,xl,o)=>{o=o||{};const W=380,l=Math.max(64,Math.max(...rows.map(q=>q.name.length))*8+16),r=16,t=14,rh=50,H=t+rows.length*rh+44,sx=v=>l+(v-b[0])/(b[1]-b[0])*(W-l-r),ay=t+rows.length*rh,it=[];
@@ -40873,7 +40904,7 @@ Object.assign(FIGS,{
 const TREE=(alt,a,b)=>{const W=380,st=34,H=30+a.length*b.length*st,it=[],my=H/2;
  a.forEach(([la,pa],i)=>{const ys=b.map((_,j)=>15+(i*b.length+j+.5)*st),yn=ys.reduce((x,y)=>x+y,0)/ys.length;
   it.push({t:'line',x1:14,y1:my,x2:112,y2:yn},{t:'text',x:(14+112)/2-8,y:(my+yn)/2+(yn<my?-6:14),s:pa},{t:'text',x:128,y:yn+5,s:la});
-  b.forEach(([lb,pb],j)=>{it.push({t:'line',x1:144,y1:yn,x2:240,y2:ys[j]},{t:'text',x:192-8,y:(yn+ys[j])/2+(ys[j]<yn?-5:15),s:pb},{t:'text',x:252,y:ys[j]+5,s:la+', '+lb,anchor:'start'})})});
+  b.forEach(([lb,pb],j)=>{it.push({t:'line',x1:144,y1:yn,x2:240,y2:ys[j]},{t:'text',x:144+96*.78,y:yn+(ys[j]-yn)*.78+(ys[j]>yn?16:-6),s:pb},{t:'text',x:252,y:ys[j]+5,s:la+', '+lb,anchor:'start'})})});
  return{diagram:{w:W,h:H,alt,caption:'Probabilities are written on the branches.',items:it}}};
 const G=(alt,xl,yl,b,series,o)=>({graph:Object.assign({alt,xmin:b[0],xmax:b[1],ymin:b[2],ymax:b[3],xstep:b[4],ystep:b[5],xlabel:xl,ylabel:yl,series},o||{})});
 const T2=[['R','3/5'],['B','2/5']],HT=[['H','1/2'],['T','1/2']];
@@ -40921,30 +40952,30 @@ Object.assign(FIGS,{
 const E=(cx,cy,rx,ry,a0,a1,d)=>{const o=[],n=Math.max(2,Math.round((a1-a0)/15));let p=null;for(let i=0;i<=n;i++){const a=(a0+(a1-a0)*i/n)*Math.PI/180,q=[+(cx+rx*Math.cos(a)).toFixed(1),+(cy+ry*Math.sin(a)).toFixed(1)];if(p)o.push({t:'line',x1:p[0],y1:p[1],x2:q[0],y2:q[1],dash:d?1:0});p=q}return o};
 const L=(x1,y1,x2,y2,d)=>({t:'line',x1,y1,x2,y2,dash:d?1:0}),T=(x,y,s,a)=>({t:'text',x,y,s,anchor:a||'middle'}),PG=(pts,f)=>({t:'poly',fill:f?1:0,pts}),RT=(x,y,z)=>({t:'right',x,y,sx:1,sy:-1,z:z||10});
 const DG=(alt,items,w,h,cap)=>({diagram:{w,h,alt,caption:cap||'Not drawn to scale.',items}});
-const CYL=(cx,ty,rx,ry,h,rl,hl)=>[...E(cx,ty,rx,ry,0,360),L(cx-rx,ty,cx-rx,ty+h),L(cx+rx,ty,cx+rx,ty+h),...E(cx,ty+h,rx,ry,0,180),...E(cx,ty+h,rx,ry,180,360,1),L(cx,ty,cx+rx,ty,1),T(cx+rx/2,ty-4,rl),T(cx+rx+10,ty+h/2+5,hl,'start')];
-const SPH=(r,alt)=>DG(alt,[{t:'circle',x:150,y:100,r:70},...E(150,100,70,20,0,180),...E(150,100,70,20,180,360,1),L(150,100,220,100),T(185,92,r)],300,200);
+const CYL=(cx,ty,rx,ry,h,rl,hl)=>[...E(cx,ty,rx,ry,0,360),L(cx-rx,ty,cx-rx,ty+h),L(cx+rx,ty,cx+rx,ty+h),...E(cx,ty+h,rx,ry,0,180),...E(cx,ty+h,rx,ry,180,360,1),L(cx,ty,cx+rx,ty,1),T(cx+rx+10,ty+5,rl,'start'),T(cx+rx+10,ty+h/2+5,hl,'start')];
+const SPH=(r,alt)=>DG(alt,[{t:'circle',x:150,y:100,r:70},...E(150,100,70,20,0,180),...E(150,100,70,20,180,360,1),L(150,100,220,100),T(228,105,r,'start')],300,200);
 Object.assign(FIGS,{
  'm12-mc-01':DG('Cylinder with radius 5 cm and height 12 cm.',CYL(110,40,50,16,120,'5 cm','12 cm'),260,200),
  'm12-sa-01':DG('Closed cylinder with radius 4 cm and height 10 cm.',CYL(110,40,40,14,110,'4 cm','10 cm'),260,190),
  'm12-ex-01':DG('Grain silo: a cylinder of radius 3 m and height 8 m topped by a hemisphere of radius 3 m.',[L(68,78,68,190),L(152,78,152,190),...E(110,190,42,12,0,180),...E(110,190,42,12,180,360,1),...E(110,78,42,12,0,360,1),...E(110,78,42,42,180,360),L(110,78,152,78),T(131,70,'3 m'),T(162,134,'8 m','start')],260,210),
- 'b5-m12-sa-01':DG('Square-based pyramid with base side 6 m and perpendicular height 9 m.',[L(50,150,190,150),L(190,150,250,120),L(250,120,110,120,1),L(110,120,50,150,1),L(150,25,50,150),L(150,25,190,150),L(150,25,250,120),L(150,25,110,120,1),L(150,25,150,135,1),T(158,85,'9 m','start'),T(120,168,'6 m')],300,185),
+ 'b5-m12-sa-01':DG('Square-based pyramid with base side 6 m and perpendicular height 9 m.',[L(50,150,190,150),L(190,150,250,120),L(250,120,110,120,1),L(110,120,50,150,1),L(150,25,50,150),L(150,25,190,150),L(150,25,250,120),L(150,25,110,120,1),L(150,25,150,135,1),L(34,25,34,150),L(28,25,40,25),L(28,150,40,150),T(26,92,'9 m','end'),T(120,168,'6 m')],300,185),
  'b5-m12-sa-02':SPH('7 cm','Sphere with radius 7 cm.'),
  'b6-m12-mc-01':SPH('3 cm','Sphere with radius 3 cm.'),
- 'b5-m12-sa-03':DG('Strip of land 20 m wide. The two parallel sides are 35 m and 47 m.',[PG([[50,170],[280,170],[280,38],[50,72]],1),T(165,190,'20 m'),T(42,125,'35 m','end'),T(288,105,'47 m','start')],350,205),
+ 'b5-m12-sa-03':DG('Strip of land 20 m wide. The two parallel sides are 35 m and 47 m.',[PG([[80,170],[290,170],[290,38],[80,72]],1),T(185,190,'20 m'),T(72,125,'35 m','end'),T(298,105,'47 m','start')],350,205),
  'b5-m12-ex-01':DG('Rectangle 10 m by 6 m with a semicircle of diameter 6 m attached to one 6 m side.',[PG([[40,40],[240,40],[240,160],[40,160]],1),{t:'arc',x:240,y:100,r:60,a0:-90,a1:90},T(140,32,'10 m'),T(32,105,'6 m','end')],330,190,'The semicircle\u2019s diameter is the right-hand 6 m side. Not drawn to scale.'),
- 'b6-m12-sa-01':DG('Trapezium with parallel sides 8 m and 14 m and perpendicular height 5 m.',[PG([[30,150],[290,150],[229,50],[80,50]],1),L(80,50,80,150,1),RT(80,150),T(155,40,'8 m'),T(160,172,'14 m'),T(72,105,'5 m','end')],320,190),
+ 'b6-m12-sa-01':DG('Trapezium with parallel sides 8 m and 14 m and perpendicular height 5 m.',[PG([[30,150],[290,150],[229,50],[80,50]],1),L(80,50,80,150,1),RT(80,150),T(155,40,'8 m'),T(160,172,'14 m'),T(88,105,'5 m','start')],320,190),
  'b6-m12-sa-02':DG('Sector of a circle with radius 6 cm and angle 60 degrees.',[L(60,170,190,170),L(60,170,125,57.4),{t:'arc',x:60,y:170,r:130,a0:0,a1:60},{t:'arc',x:60,y:170,r:28,a0:0,a1:60},T(125,190,'6 cm'),T(104,162,'60°')],230,200),
- 'b6-m12-sa-04':DG('Rectangle 30 m by 20 m with a triangle of base 30 m and height 12 m added on one 30 m side.',[PG([[50,100],[200,100],[200,200],[50,200]],1),PG([[50,100],[200,100],[125,40]],1),L(125,40,125,100,1),T(125,218,'30 m'),T(40,155,'20 m','end'),T(133,75,'12 m','start')],280,230),
+ 'b6-m12-sa-04':DG('Rectangle 30 m by 20 m with a triangle of base 30 m and height 12 m added on one 30 m side.',[PG([[50,100],[200,100],[200,200],[50,200]],1),PG([[50,100],[200,100],[125,40]],1),L(125,40,125,100,1),T(125,218,'30 m'),T(40,155,'20 m','end'),T(133,92,'12 m','start')],280,230),
  'b6-m12-sa-05':DG('Closed rectangular prism measuring 5 cm by 4 cm by 3 cm.',[PG([[40,80],[180,80],[180,160],[40,160]]),L(90,40,230,40),L(230,40,230,120),L(40,80,90,40),L(180,80,230,40),L(180,160,230,120),L(40,160,90,120,1),L(90,40,90,120,1),L(90,120,230,120,1),T(110,178,'5 cm'),T(32,125,'3 cm','end'),T(222,150,'4 cm','start')],300,190),
- 'b6-m12-sa-06':DG('Cross-section of a trench 3.2 m wide, 0.8 m deep on one side and 1.4 m deep on the other.',[PG([[40,40],[290,40],[290,152],[40,104]],1),T(165,32,'3.2 m'),T(32,75,'0.8 m','end'),T(298,100,'1.4 m','start')],350,170),
+ 'b6-m12-sa-06':DG('Cross-section of a trench 3.2 m wide, 0.8 m deep on one side and 1.4 m deep on the other.',[PG([[80,40],[290,40],[290,152],[80,104]],1),T(185,32,'3.2 m'),T(72,75,'0.8 m','end'),T(298,100,'1.4 m','start')],350,170),
  'b7-m12-sa-08':DG('Ladder of length 6 m leaning on a vertical wall with its base 2 m from the wall.',[L(50,20,50,200),L(20,200,200,200),L(110,200,50,30.3),RT(50,200),T(92,118,'6 m','start'),T(80,218,'2 m'),T(42,118,'?','end')],230,230),
  'b7-m12-sa-13':DG('Side view of a pool 25 m long, 1 m deep at the shallow end and 2.5 m deep at the deep end.',[PG([[40,40],[290,40],[290,140],[40,80]],1),T(165,32,'25 m'),T(32,65,'1 m','end'),T(298,95,'2.5 m','start'),T(165,172,'The pool is 10 m wide.')],350,190),
  'b8-m12-sa-01':DG('Circle with diameter 10 m.',[{t:'circle',x:150,y:100,r:80},L(70,100,230,100),T(150,92,'diameter 10 m')],300,200),
- 'b8-m12-mc-01':DG('Right-angled triangle with shorter sides 5 cm and 12 cm. The hypotenuse is unknown.',[PG([[40,170],[240,170],[40,87]],1),RT(40,170),T(30,135,'5 cm','end'),T(140,190,'12 cm'),T(152,118,'?','start')],280,200),
- 'b8-m12-sa-02':DG('Rectangle 12 m by 9 m with one diagonal drawn.',[PG([[40,30],[220,30],[220,165],[40,165]],1),L(40,165,220,30,1),T(130,185,'12 m'),T(32,100,'9 m','end'),T(142,88,'?','start')],270,200),
- 'b8-m12-sa-03':DG('A 2 m pole casts a 3 m shadow. A tree casts a 12 m shadow at the same time.',[PG([[60,170],[120,170],[60,130]],1),RT(60,170),PG([[200,170],[440,170],[200,10]],1),RT(200,170),T(52,155,'pole 2 m','end'),T(90,188,'3 m'),T(192,95,'tree ?','end'),T(320,188,'12 m')],460,200),
- 'b8-m12-sa-04':DG('Trapezium with parallel sides 40 m and 60 m and height 25 m, plus a triangle of base 60 m and height 30 m below the 60 m side.',[PG([[100,30],[260,30],[300,130],[60,130]],1),PG([[60,130],[300,130],[180,250]],1),L(100,30,100,130,1),L(180,130,180,250,1),T(180,22,'40 m'),T(306,135,'60 m','start'),T(92,85,'25 m','end'),T(188,195,'30 m','start')],370,265),
- 'b8-m12-sa-05':DG('Lake 50 m wide with end lengths of 120 m and 80 m.',[PG([[50,170],[280,170],[280,83],[50,40]],1),T(165,190,'50 m'),T(42,105,'120 m','end'),T(288,127,'80 m','start')],350,205)
+ 'b8-m12-mc-01':DG('Right-angled triangle with shorter sides 5 cm and 12 cm. The hypotenuse is unknown.',[PG([[40,170],[240,170],[40,87]],1),RT(40,170),T(50,140,'5 cm','start'),T(140,190,'12 cm'),T(152,118,'?','start')],280,200),
+ 'b8-m12-sa-02':DG('Rectangle 12 m by 9 m with one diagonal drawn.',[PG([[40,30],[220,30],[220,165],[40,165]],1),L(40,165,220,30,1),T(130,185,'12 m'),T(32,100,'9 m','end'),T(112,78,'?','end')],270,200),
+ 'b8-m12-sa-03':DG('A 2 m pole casts a 3 m shadow. A tree casts a 12 m shadow at the same time.',[PG([[110,170],[170,170],[110,130]],1),RT(110,170),PG([[200,170],[440,170],[200,10]],1),RT(200,170),T(102,155,'pole 2 m','end'),T(140,188,'3 m'),T(192,95,'tree ?','end'),T(320,188,'12 m')],460,200),
+ 'b8-m12-sa-04':DG('Trapezium with parallel sides 40 m and 60 m and height 25 m, plus a triangle of base 60 m and height 30 m below the 60 m side.',[PG([[100,30],[260,30],[300,130],[60,130]],1),PG([[60,130],[300,130],[180,250]],1),L(100,30,100,130,1),L(180,130,180,250,1),T(180,22,'40 m'),T(306,135,'60 m','start'),T(108,85,'25 m','start'),T(188,195,'30 m','start')],370,265),
+ 'b8-m12-sa-05':DG('Lake 50 m wide with end lengths of 120 m and 80 m.',[PG([[80,170],[290,170],[290,83],[80,40]],1),T(185,190,'50 m'),T(72,105,'120 m','end'),T(298,127,'80 m','start')],350,205)
 });
 
 /* Figures added so every question that points at a graph or diagram has one (Exam Centre, Practice and Exams all read FIGS through figOf). */
@@ -40964,7 +40995,7 @@ Object.assign(FIGS,{
  'b17-17':BARS('Histogram with two clear peaks, one at the second bar and one at the sixth bar.',['0\u201310','10\u201320','20\u201330','30\u201340','40\u201350','50\u201360','60\u201370','70\u201380'],[2,9,5,2,4,10,6,2],{ymax:12,step:2,hist:1,yl:'Frequency',xl:'Value',w:440}),
  'x-s12-sh2':BARS('Histogram with two distinct peaks, one near 20 and one near 60.',['5\u201315','15\u201325','25\u201335','35\u201345','45\u201355','55\u201365','65\u201375'],[4,11,5,2,6,10,3],{ymax:12,step:2,hist:1,yl:'Frequency',xl:'Value',w:440}),
  'm7-ex-04':{diagram:{w:340,h:210,alt:'Aerial view of a block of land. A straight road runs along the bottom, 100 metres long. Perpendicular distances from the road to the far boundary at 20 metre intervals are 0, 12, 18, 15, 9 and 0 metres.',caption:'Not drawn to scale. Distances are in metres.',items:(()=>{const d=[0,12,18,15,9,0],x=i=>40+i*52,y=v=>165-v*5,it=[{t:'poly',fill:1,pts:d.map((v,i)=>[x(i),y(v)])},{t:'line',x1:x(0),y1:165,x2:x(5),y2:165}];
-  d.forEach((v,i)=>{it.push({t:'line',x1:x(i),y1:165,x2:x(i),y2:171});if(i>0&&i<5)it.push({t:'line',x1:x(i),y1:165,x2:x(i),y2:y(v),dash:1},{t:'text',x:x(i)+5,y:(165+y(v))/2+5,s:v+' m',anchor:'start'})});
+  d.forEach((v,i)=>{it.push({t:'line',x1:x(i),y1:165,x2:x(i),y2:171});if(i>0&&i<5)it.push({t:'line',x1:x(i),y1:165,x2:x(i),y2:y(v),dash:1},{t:'text',x:x(i)+(i>=3?-5:5),y:(165+y(v))/2+5,s:v+' m',anchor:i>=3?'end':'start'})});
   it.push({t:'text',x:(x(0)+x(1))/2,y:190,s:'20 m'},{t:'text',x:(x(2)+x(3))/2,y:204,s:'Road frontage 100 m'});return it})()}},
  'm6-mc-10':TRI('Triangle with sides 14 cm and 9 cm enclosing a 48 degree angle.',['A','B','C'],['14 cm','9 cm',''],['','','48\u00B0']),
  'm6-sa-10':TRI('Triangle ABC with angle A 42 degrees, angle B 65 degrees, side a 11.5 cm and side b unknown.',['A','B','C'],['11.5 cm','b',''],['42\u00B0','65\u00B0','']),
@@ -41261,7 +41292,7 @@ const MXQ_CSS=`
 .mxq sup{font-size:.7em;line-height:0}.mxq .mu{color:var(--mu)}.mxq .sm{font-size:13px}
 .mxq .qf{margin:6px 0 14px}
 .mxq .rsx h3{margin:20px 0 4px;font-size:16px}.mxq .rsi{border:1px solid var(--ln);border-radius:12px;background:var(--sf);padding:10px 14px;margin:10px 0}.mxq .rsi p{margin:6px 0 0}.mxq .rsi ul{margin:8px 0 0;padding-left:20px}.mxq .rsi .gr{margin-top:10px}
-.mxq .gr{margin:0;max-width:560px;--fi:#141a30;--fm:#566080;--fl:#cdd4e6;--fp:#fff;color:#141a30;background:#fff;border:1px solid #cdd4e6;border-radius:14px;padding:10px 12px}.mxq .gr svg{display:block;width:100%;height:auto}.mxq .gr figcaption{font-size:13px;color:var(--fm);margin-top:6px}
+.mxq .gr{margin:0;max-width:560px;--fi:#141a30;--fm:#566080;--fl:#cdd4e6;--fp:#fff;color:#141a30;background:#fff;border:1px solid #cdd4e6;border-radius:14px;padding:12px 16px}.mxq .gr svg{display:block;overflow:visible;overflow:visible;width:100%;height:auto}.mxq .gr figcaption{font-size:13px;color:var(--fm);margin-top:6px}
 .mxq .gf{fill:var(--fp);stroke:var(--fl)}.mxq .gg{stroke:var(--fl)}.mxq .ga{stroke:var(--fm);stroke-width:1.5}.mxq .gt{fill:var(--fm);font-size:12px}.mxq .gl{fill:var(--fi);font-size:13px}
 .mxq .s0{--sc:var(--c)}.mxq .s1{--sc:var(--fi)}.mxq .s2{--sc:var(--fm)}
 .mxq .sl{fill:none;stroke:var(--sc);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}.mxq .sl.s1{stroke-dasharray:7 5}.mxq .sl.s2{stroke-dasharray:2 5}
@@ -43452,7 +43483,7 @@ const xstat=ok=>{const e=$('#xcsv');if(!e)return;e.style.display=!ok||st('saveSt
 let xAct=0;   /* time of the last keystroke or Pencil stroke: side panels are only redrawn once you have paused */
 const xIdle=()=>!XD&&Date.now()-xAct>2500;
 const xnavS=(()=>{let t=0;const go=()=>{t=0;if(!X.run)return;if(!xIdle()){t=setTimeout(go,800);return}xnav()};return()=>{if(t)return;t=setTimeout(go,800)}})();
-const xsaveD=()=>{clearTimeout(xdeb);const ms={instant:350,normal:2000,relaxed:8000}[st('autoSave')]||350;const go=()=>{if(XD&&XD.cv){xdeb=setTimeout(go,300);return}xstat(xsave())};xdeb=setTimeout(go,ms)};
+const xsaveD=()=>{clearTimeout(xdeb);const IDLE=10000;const go=()=>{const q=IDLE-(Date.now()-xAct);if((XD&&XD.cv)||q>0){xdeb=setTimeout(go,XD&&XD.cv?1000:Math.max(500,q));return}xstat(xsave())};xAct=Math.max(xAct,Date.now());xdeb=setTimeout(go,IDLE)};
 const xsaveNow=()=>{clearTimeout(xdeb);if(X.run)xstat(xsave())};
 
 /* ---------- helpers ---------- */
