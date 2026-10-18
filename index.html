@@ -267,7 +267,7 @@ body.no-blur .card,body.no-blur aside{background-color:var(--sf)}
 .cdb b{font-size:30px;line-height:1.1;letter-spacing:-.03em;color:var(--c)}
 #net:empty{display:none}
 .nhost{display:block;--econ-top:var(--hub-top,0px)}
-body.xc-on{overflow:hidden}
+body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflow:hidden;overscroll-behavior:none}#xc,#xcmain,#xcnv,.xc-rsp{overscroll-behavior:contain}
 .fold>summary{list-style:none;cursor:pointer}.fold>summary::-webkit-details-marker{display:none}.fold>summary::after{content:"+";margin-left:auto;font-weight:700;color:var(--mu)}.fold[open]>summary::after{content:"\2212"}body.xc-on #pill{display:none!important}
 #xc{position:fixed;inset:0;z-index:2147483000;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:inherit;line-height:1.5}
 #xc *{box-sizing:border-box}
@@ -43454,7 +43454,7 @@ function xrepaint(aid,from){
 
 /* ---------- distraction-free lock ---------- */
 function xinert(on){if(on){xin=[...document.body.children].filter(e=>e!==xo&&!/^(SCRIPT|STYLE|LINK)$/.test(e.tagName)&&!e.inert);xin.forEach(e=>{e.inert=true})}else{xin.forEach(e=>{e.inert=false});xin=[]}}
-function xopen(){if(!xo){xo=document.createElement('div');xo.id='xc';xo.setAttribute('role','application');xo.setAttribute('aria-label','HSC exam');document.body.appendChild(xo)}document.body.classList.add('xc-on');xinert(false);xinert(true)}
+function xopen(){if(!xo){xo=document.createElement('div');xo.id='xc';xo.setAttribute('role','application');xo.setAttribute('aria-label','HSC exam');xo.addEventListener('touchmove',e=>{try{if(!e.target.closest('#xcmain,#xcnv,.xc-rsp,.xc-rs,textarea,.xc-modal'))e.preventDefault()}catch(_){}},{passive:false});document.body.appendChild(xo)}document.body.classList.add('xc-on');xinert(false);xinert(true)}
 function xfsReq(){if(st('fsExam')===false)return;const d=document.documentElement;if(d.requestFullscreen&&!document.fullscreenElement){xfs=true;d.requestFullscreen().catch(()=>{xfs=false})}}
 function xclose(stay){xpurgeTmp();clearInterval(xti);xfs=false;xinert(false);if(xo){xo.remove();xo=null}document.body.classList.remove('xc-on');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  if(!stay)location.hash==='#exam'?render():go('exam')}
