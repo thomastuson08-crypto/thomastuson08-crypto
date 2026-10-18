@@ -1066,6 +1066,7 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
 #xc #xcpr{display:inline-block;flex:none;min-width:7.8em}
 #xc .xc-clock{min-width:5.4em;text-align:center}
 #xc .xc-foot{flex:none}
+#xc .btn:hover{transform:none;box-shadow:none}#xc .btn.p:hover::after{transform:translateX(-130%)}
 #xcmain{overflow-anchor:none}
 /* 16px minimum stops Safari zooming/panning the page when a field is focused */
 #xc .xc-ta,#xc .xc-fi{font-size:max(16px,1em);resize:none;-webkit-appearance:none;appearance:none;touch-action:manipulation}
@@ -40749,7 +40750,7 @@ const FIGS={
  'm6-mc-01':{tri:{alt:'Right-angled triangle with hypotenuse 10 cm, a 35 degree angle, and the opposite side marked x.',a:'x',c:'10 cm',ang:'35°',caption:'Not drawn to scale.'}},
  'm6-mc-03':TRI('Triangle with sides 8 cm and 11 cm enclosing a 40 degree angle.',['A','B','C'],['11 cm','8 cm',''],['','','40°']),
  'm6-mc-04':TRI('Triangle ABC with angle A 52 degrees, angle B 71 degrees, side a 9.4 cm and side b unknown.',['A','B','C'],['9.4 cm','b',''],['52°','71°','']),
- 'm6-mc-05':TRI('Triangle with sides 7 cm, 9 cm and 12 cm; the angle C opposite the 12 cm side is unknown.',['A','B','C'],['9 cm','7 cm','12 cm'],['','','C']),
+ 'm6-mc-05':TRI('Triangle with sides 7 cm, 9 cm and 12 cm; the angle C opposite the 12 cm side is unknown.',['A','B','C'],['9 cm','7 cm','12 cm'],['','','?']),
  'm6-sa-01':TRI('Triangle ABC with a 12 cm, b 8 cm, angle B 40 degrees and angle A obtuse and unknown.',['A','B','C'],['12 cm','8 cm',''],['?','40°',''],[[120,165],[290,165],[50,60]]),
  'm6-sa-02':TRI('Triangular block of land with boundaries 85 m and 120 m enclosing a 62 degree angle.',['A','B','C'],['85 m','120 m',''],['','','62°']),
  'm6-sa-03':TRI('Triangle PQR with PQ 45 m, QR 62 m, angle Q 110 degrees and PR unknown.',['P','Q','R'],['62 m','PR = ?','45 m'],['','110°',''],[[40,60],[120,165],[270,125]]),
