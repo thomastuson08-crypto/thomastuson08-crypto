@@ -1009,6 +1009,21 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
 @media(prefers-reduced-motion:reduce){.tq-idea.fresh{animation:none}}
 .calm .tq-idea.fresh{animation:none}
 </style>
+<style id="xc-ipad-fix">
+/* iPad exam fixes: the header must never change height (it used to re-wrap every time the save status changed length) */
+#xc .xc-top{flex-wrap:wrap;align-items:center;flex:none}
+#xc .xc-r{flex-wrap:wrap;justify-content:flex-end}
+#xc .xc-r .btn,#xc .xc-r .mu,#xc .xc-clock{white-space:nowrap}
+#xc #xcsv{display:inline-block;flex:none;width:11.5em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+#xc #xcpr{display:inline-block;flex:none;min-width:7.8em}
+#xc .xc-clock{min-width:5.4em;text-align:center}
+#xc .xc-foot{flex:none}
+#xcmain{overflow-anchor:none}
+/* 16px minimum stops Safari zooming/panning the page when a field is focused */
+#xc .xc-ta,#xc .xc-fi{font-size:max(16px,1em);resize:none;-webkit-appearance:none;appearance:none;touch-action:manipulation}
+/* keyboard docked: pin the exam to the visible area so the page cannot be panned away from under the pen */
+#xc.xkb{bottom:auto;height:var(--xvh);top:var(--xvt,0)}
+</style>
 <style id="mobile-fixes">
 /* confirm card: clearer, and stacked full-width buttons on phones */
 .bk-ask{border-color:#e2483f;margin:12px 0 0;scroll-margin:96px 0}
@@ -40932,6 +40947,7 @@ Object.assign(FIGS,{
 const ELEV=(alt,o)=>({diagram:{w:340,h:210,alt,caption:'Not drawn to scale.',items:o}});
 Object.assign(FIGS,{
  'a1-mc-04':G('Two straight lines on a number plane: y = 3x \u2212 2 rising and y = \u2212x + 6 falling.','x','y',[-1,5,-4,10,1,2],[{label:'y = 3x \u2212 2',fn:x=>3*x-2},{label:'y = \u2212x + 6',fn:x=>-x+6}]),
+ 'a1-mc-06':G('Two straight lines on a number plane: y = x + 2 and y = 2x \u2212 1.','x','y',[-1,5,-3,9,1,2],[{label:'y = x + 2',fn:x=>x+2},{label:'y = 2x \u2212 1',fn:x=>2*x-1}]),
  'a1-mc-09':G('Two straight lines on a number plane: y = 4x \u2212 5 rising and y = \u22122x + 7 falling.','x','y',[-1,5,-6,10,1,2],[{label:'y = 4x \u2212 5',fn:x=>4*x-5},{label:'y = \u22122x + 7',fn:x=>-2*x+7}]),
  'a1-ex-05#d':G('Cost against hire time for two companies. Company A charges 50 dollars plus 15 dollars per hour. Company B charges 20 dollars per hour.','h (hours)','C (dollars)',[0,16,0,300,2,50],[{label:'Company A: C = 50 + 15h',fn:h=>50+15*h},{label:'Company B: C = 20h',fn:h=>20*h}]),
  'f1-mc-06':G('Straight line graph of the value of an investment against time. The line starts above zero and rises at a constant rate.','Time (years)','Value ($)',[0,10,0,1600,1,200],[{fn:t=>1000+60*t}]),
@@ -41016,6 +41032,37 @@ addFig('x-s11-e2',{diagram:{w:340,h:230,alt:'Bar graph of annual sales. The vert
   [48000,50000,52000,54000].forEach(v=>it.push({t:'line',x1:70,y1:y(v),x2:320,y2:y(v),dash:1},{t:'text',x:62,y:y(v)+4,s:String(v).replace(/(\d+)(\d{3})$/,'$1 $2'),anchor:'end'}));
   [[100,52000,'Company A'],[210,50000,'Company B']].forEach(([x,v,n])=>it.push({t:'poly',fill:1,pts:[[x,y(48000)],[x,y(v)],[x+70,y(v)],[x+70,y(48000)]]},{t:'text',x:x+35,y:y(48000)+16,s:n}));
   it.push({t:'line',x1:70,y1:y(54000),x2:70,y2:y(48000)},{t:'line',x1:70,y1:y(48000),x2:320,y2:y(48000)},{t:'text',x:70,y:14,s:'Sales ($)',anchor:'start'});return it})()}});
+/* ---- Exam-style figures (added): given data only, no answers ---- */
+const XSC=(alt,xl,yl,pts,b)=>G(alt,xl,yl,b,[{type:'pts',pts}]);
+const XTANK=(alt,l,h,w)=>DG(alt,[PG([[56,80],[196,80],[196,160],[56,160]]),L(106,40,246,40),L(246,40,246,120),L(56,80,106,40),L(196,80,246,40),L(196,160,246,120),L(56,160,106,120,1),L(106,40,106,120,1),L(106,120,246,120,1),T(126,178,l),T(48,125,h,'end'),T(238,150,w,'start')],320,190,'Open-topped tank (no lid)');
+const XCYL=(alt,rl,hl)=>DG(alt,[...CYL(110,40,50,16,120,'',hl),T(170,45,rl,'start')],260,200);
+const XNW=(m,s,pp,alt)=>{const f=NORM(m,s,pp,alt),g=f.graph;g.xmin=m-3.5*s;g.xmax=m+3.5*s;g.ylabel='';return f};
+const XTR=(alt,a,b,cap)=>{const f=TREE(alt,a,b);f.diagram.caption=cap;return f};
+const XRIV=()=>DG('Cross-section of a river 12 m wide. Depths measured every 3 m across are 0 m, 1.2 m, 2.0 m, 1.6 m and 0 m.',[PG([[40,40],[112,88],[184,120],[256,104],[328,40]],1),L(112,40,112,88,1),L(184,40,184,120,1),L(256,40,256,104,1),T(40,32,'0 m'),T(328,32,'0 m'),T(118,66,'1.2 m','start'),T(190,86,'2.0 m','start'),T(250,60,'1.6 m','end'),L(40,146,328,146),L(40,140,40,152),L(112,140,112,152),L(184,140,184,152),L(256,140,256,152),L(328,140,328,152),T(76,166,'3 m'),T(148,166,'3 m'),T(220,166,'3 m'),T(292,166,'3 m'),T(184,190,'Total width 12 m')],370,200,'River cross-section. Not drawn to scale.');
+const XLAND=()=>DG('Block of land with a straight front boundary. Perpendicular offsets of 20 m, 26 m, 30 m and 24 m are measured at 10 m intervals along the front boundary.',[PG([[40,160],[280,160],[280,64],[200,40],[120,56],[40,80]],1),L(120,160,120,56,1),L(200,160,200,40,1),RT(40,160,8),RT(120,160,8),RT(200,160,8),{t:'right',x:280,y:160,sx:-1,sy:-1,z:8},T(40,70,'20 m'),T(120,48,'26 m'),T(200,32,'30 m'),T(280,54,'24 m'),T(80,180,'10 m'),T(160,180,'10 m'),T(240,180,'10 m'),T(160,200,'Front boundary')],330,210);
+const XSTRIP=()=>DG('A single strip 12 m wide with perpendicular offsets of 9.5 m and 14.5 m at its two ends.',[PG([[60,160],[300,160],[300,44],[60,84]],1),RT(60,160,8),{t:'right',x:300,y:160,sx:-1,sy:-1,z:8},T(52,126,'9.5 m','end'),T(308,106,'14.5 m','start'),T(180,182,'12 m')],370,195);
+Object.assign(FIGS,{
+ 'b6-m12-sa-07':XCYL('Cylindrical water tank with radius 1.5 m and height 2 m.','1.5 m','2 m'),
+ 'm7-mc-10':XCYL('Cylindrical tank with radius 1.5 m and height 2.4 m.','1.5 m','2.4 m'),
+ 'm7-ex-10':XTANK('Open-topped rectangular water tank 2.5 m long, 1.2 m wide and 0.8 m high.','2.5 m','0.8 m','1.2 m'),
+ 'm7-sa-16':XRIV(),
+ 'x-m7-t1':XLAND(),
+ 'b7-m12-sa-12':XSTRIP(),
+ 'b19-01':XSC('Scatterplot of the five points (1, 2), (2, 4), (3, 5), (4, 7) and (5, 9).','x','y',[[1,2],[2,4],[3,5],[4,7],[5,9]],[0,6,0,10,1,2]),
+ 'b19-03':XSC('Scatterplot of the age of a car against its value for five cars.','Age (years)','Value ($ thousands)',[[1,24],[2,21],[3,19],[5,14],[8,9]],[0,9,0,28,1,4]),
+ 'b19-04':XSC('Scatterplot of maximum temperature against ice-cream sales for five days.','Maximum temperature (\u00b0C)','Sales ($)',[[20,300],[24,420],[28,510],[32,640],[35,700]],[18,36,200,800,2,100]),
+ 'b12-s2-sa-05':XTR('Tree diagram. Two counters are drawn with replacement. Each draw is red 3/5 or blue 2/5.',[['R','3/5'],['B','2/5']],[['R','3/5'],['B','2/5']],'R = red, B = blue. Probabilities are written on the branches.'),
+ 'b14-s2-sa-06':XTR('Tree diagram. Two counters are drawn with replacement. Each draw is red 4/10 or blue 6/10.',[['R','4/10'],['B','6/10']],[['R','4/10'],['B','6/10']],'R = red, B = blue. Probabilities are written on the branches.'),
+ 'b12-s2-sa-06':XTR('Tree diagram. Two counters are drawn without replacement. The first counter is red 3/5 or blue 2/5. The probabilities for the second counter are left blank.',[['R','3/5'],['B','2/5']],[['R',''],['B','']],'R = red, B = blue. Probabilities for the second counter are not shown.'),
+ 'x-s2-m1':XTR('Tree diagram. Two counters are drawn without replacement. The first counter is red 5/8 or blue 3/8. The probabilities for the second counter are left blank.',[['R','5/8'],['B','3/8']],[['R',''],['B','']],'R = red, B = blue. Probabilities for the second counter are not shown.'),
+ 'b19-05':XSC('Scatterplot of hours of exercise per week against resting heart rate for five people.','Exercise (hours per week)','Resting heart rate (bpm)',[[1,78],[2,74],[4,70],[6,64],[8,60]],[0,9,55,80,1,5]),
+ 'b19-08':XSC('Scatterplot of arm span against height for five students.','Height (cm)','Arm span (cm)',[[150,148],[160,161],[165,166],[172,171],[180,181]],[145,185,145,185,5,5]),
+ 's5-ex-08':NORM(72,8,[56,64,88],'Normal curve with mean 72 and standard deviation 8, with the marks 56, 64 and 88 marked on the axis.'),
+ 's5-sa-08':NORM(64,9,[82],'Normal curve with mean 64 and standard deviation 9, with the mark 82 marked on the axis.'),
+ 's5-sa-10':NORM(165,6,[],'Normal curve of adult heights with mean 165 cm and standard deviation 6 cm.'),
+ 's5-sa-12':XNW(1200,100,[1400],'Normal curve of globe lifetimes with mean 1200 hours and standard deviation 100 hours, with 1400 hours marked.'),
+ 'b19-15':NORM(160,6,[],'Normal curve of heights with mean 160 cm and standard deviation 6 cm.')
+});
 const figOne=f=>f.given?givenBox(f.given):f.graph?graph(f.graph):f.diagram?diagram(f.diagram):f.tbl?tbl(f.tbl):f.tri?tri(f.tri):'';
 const figOf=k=>{const f=FIGS[k];return f?[].concat(f).map(x=>`<div class="qf">${figOne(x)}</div>`).join(''):''};
 const paperGivenCard=()=>`<div class="card" style="margin-top:18px"><h2>Printed in the question, not on this sheet</h2><p class="mu sm" style="margin:0 0 10px">The HSC does not put these on the reference sheet. When it tests them, the paper prints the formula or table inside the question, so you do not need to memorise them. Practice and Exam Centre questions show them in a "Given in the question" box. Stopping-distance questions also state the rule they want you to use.</p>${['fried','young','clark','bacm','bacf','bact','cap'].map(k=>fcard(PAPER_GIVEN[k])).join('')}<p class="mu sm" style="margin:10px 0 0">Annuity (future and present value) tables and the normal-distribution table are also printed with the question that needs them.</p></div>`;
@@ -43365,7 +43412,8 @@ function xsave(){
  try{w();X.bad=0;return true}catch(e){
   for(let i=X.hist.length-1;i>=1;i--){if(X.hist[i].slim)continue;xslim(X.hist[i]);try{w();X.bad=0;return true}catch(_){}}
   X.bad=1;return false}}
-const xstat=ok=>{const e=$('#xcsv');if(!e)return;e.style.display=!ok||st('saveStatus')!==false?'':'none';e.textContent=ok?'All answers saved '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'Warning: could not save (browser storage is full)';e.style.color=ok?'':'#dc2626'};
+const xstat=ok=>{const e=$('#xcsv');if(!e)return;e.style.display=!ok||st('saveStatus')!==false?'':'none';e.title=ok?'':'Your browser storage is full';e.textContent=ok?'Saved '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'Warning: could not save (browser storage is full)';e.style.color=ok?'':'#dc2626'};
+const xnavS=(()=>{let t=0;return()=>{if(t)return;t=setTimeout(()=>{t=0;if(X.run)xnav()},500)}})();
 const xsaveD=()=>{clearTimeout(xdeb);xdeb=setTimeout(()=>xstat(xsave()),{instant:350,normal:2000,relaxed:8000}[st('autoSave')]||350)};
 const xsaveNow=()=>{clearTimeout(xdeb);if(X.run)xstat(xsave())};
 
@@ -43631,12 +43679,12 @@ function xpad(r,q,i,lock){const k=q.id+':'+i,d=xpd(r,k),u=xpu(r,k),dis=lock?' di
  const b=(act,v,t,on)=>`<button type="button" class="btn xc-pb${on?' on':''}" aria-pressed="${!!on}" data-xc="dw${act}" data-k="${k}" data-v="${v}"${dis}>${t}</button>`;
  return `<div class="xc-pad" data-xpad="${k}"><div class="xc-pbar" role="group" aria-label="Answer method">${b('mode','type','Type',d.m==='type')}${b('mode','draw','Draw',d.m==='draw')}</div>`+
   (d.m==='type'
-   ?`<textarea name=hf54-xc-ta class="xc-ta" rows="${Math.min(14,3+q.parts[i].marks)}"${dis} data-xa="${q.id}" data-p="${i}" aria-label="Working for part ${'abcdefgh'[i]}" placeholder="Show your full working here. It is not marked.">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`
+   ?`<textarea name=hf54-xc-ta class="xc-ta" autocorrect="off" autocapitalize="off" spellcheck="false" rows="${Math.min(14,3+q.parts[i].marks)}"${dis} data-xa="${q.id}" data-p="${i}" aria-label="Working for part ${'abcdefgh'[i]}" placeholder="Show your full working here. It is not marked.">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`
    :`<div class="xc-pbar">${b('tool','pen','Pen',u.tool==='pen')}${b('tool','eraser','Eraser',u.tool==='eraser')}${XCOLS.map(c=>`<button type="button" class="xc-sw${u.col===c&&u.tool==='pen'?' on':''}" style="background:${c}" aria-label="Ink colour ${c}" data-xc="dwcol" data-k="${k}" data-v="${c}"${dis}></button>`).join('')}${b('undo','','Undo')}${b('redo','','Redo')}${b('clr','','Clear')}</div>
     <div class="xc-pbar">${['plain','lines','grid'].map(g=>b('bg',g,g[0].toUpperCase()+g.slice(1),d.bg===g)).join('')}${b('fing','',u.fing?'Finger draws':'Pencil only',u.fing)}${b('grow','','+ Space')}</div>
     <div class="xc-pv"><canvas class="xcp-${d.bg}" data-xcv="${k}" style="height:${d.h}px" role="img" aria-label="Drawing area for your working"></canvas></div>
     <div class="mu sm" style="margin:6px 0 12px">${u.fing?'Finger and Pencil both draw.':'Apple Pencil draws; a finger scrolls the page.'} Working is not marked. Your drawing is saved with the exam.</div>`)+
-  `<label class="xc-fa"><span class="mu sm">Final answer (this is what is auto-marked)</span><input name=hf55-xc-fi class="xc-fi" data-xf="${q.id}" data-p="${i}" value="${esc(fv)}"${dis} autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="e.g. 24, y = 4x + 2, A-B-D, or a sentence"></label></div>`}
+  `<label class="xc-fa"><span class="mu sm">Final answer (this is what is auto-marked)</span><input name=hf55-xc-fi class="xc-fi" data-xf="${q.id}" data-p="${i}" value="${esc(fv)}"${dis} autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="e.g. 24, y = 4x + 2, A-B-D, or a sentence"></label></div>`}
 function xpadRefresh(k){const r=X.run,n=xo&&xo.querySelector('[data-xpad="'+k+'"]');if(!r||!n)return;const j=k.lastIndexOf(':'),q=xfind(r.paper,k.slice(0,j));if(!q)return;
  const t=document.createElement('template');t.innerHTML=xpad(r,q,+k.slice(j+1),r.phase!=='writing');n.replaceWith(t.content.firstElementChild);xo.querySelectorAll('canvas[data-xcv]').forEach(xcpaint)}
 function xpadAct(act,k,v){const r=X.run;if(!r||r.phase!=='writing')return;const d=xpd(r,k),u=xpu(r,k);
@@ -43663,26 +43711,44 @@ const xcpt=e=>{const b=XD.cv.getBoundingClientRect(),x=(e.clientX-b.left)/b.widt
   XD.d.st=XD.d.st.filter(s=>!s.pts.some((q,i)=>{const a=s.pts[i-1]||q,dx=q[0]-a[0],dy=q[1]-a[1],L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/L)):0;return Math.hypot(a[0]+t*dx-x,a[1]+t*dy-y)<16/b.width}));
   if(XD.d.st.length!==n){XD.ch=1;XD.u.rd=[]}}
  else XD.s.pts.push([+x.toFixed(4),+y.toFixed(4),+(e.pointerType==='pen'&&e.pressure>0?e.pressure:.5).toFixed(2)])};
-document.addEventListener('pointerdown',e=>{const cv=e.target.closest&&e.target.closest('canvas[data-xcv]');if(!cv||!xo||!X.run)return;
+let xPenT=-1e9;document.addEventListener('pointermove',e=>{if(e.pointerType==='pen')xPenT=e.timeStamp},{passive:true,capture:true});
+document.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')xPenT=e.timeStamp;const cv=e.target.closest&&e.target.closest('canvas[data-xcv]');if(!cv||!xo||!X.run)return;
  const r=X.run,k=cv.dataset.xcv,d=r.dw&&r.dw[k];if(!d)return;const u=xpu(r,k),lock=r.phase!=='writing';
  try{cv.setPointerCapture(e.pointerId)}catch(_){}
- if(e.pointerType==='touch'&&(!u.fing||lock)){XD={sc:$('#xcmain'),id:e.pointerId,y:e.clientY,t:e.timeStamp,v:0};return}
+ if(e.pointerType==='touch'&&XD&&XD.cv&&XD.id!==e.pointerId)return;
+ if(e.pointerType==='touch'&&e.timeStamp-xPenT<1500&&!lock)return;
+ if(e.pointerType==='touch'&&(!u.fing||lock)){if(XD)return;XD={sc:$('#xcmain'),id:e.pointerId,y:e.clientY,t:e.timeStamp,v:0};return}
  if(lock)return;
  e.preventDefault();const er=u.tool==='eraser'||e.buttons===32;XD={cv,d,u,k,id:e.pointerId,er,s:er?null:{c:u.col,w:2.4,pts:[]}};xcpt(e);xcpaint(cv)});
 document.addEventListener('pointermove',e=>{if(!XD||e.pointerId!==XD.id)return;
  if(XD.sc){const dt=Math.max(1,e.timeStamp-XD.t);XD.v=(XD.y-e.clientY)/dt;XD.sc.scrollTop+=XD.y-e.clientY;XD.y=e.clientY;XD.t=e.timeStamp;return}
- (()=>{const c=e.getCoalescedEvents?e.getCoalescedEvents():[];return c.length?c:[e]})().forEach(xcpt);xcpaint(XD.cv)});
+ const n0=XD.s?XD.s.pts.length:0;(()=>{const c=e.getCoalescedEvents?e.getCoalescedEvents():[];return c.length?c:[e]})().forEach(xcpt);if(XD.s&&n0>0)xcseg(XD.cv,XD.s,n0);else xcpaint(XD.cv)});
+function xcseg(cv,s,from){const W=cv.clientWidth,dp=window.devicePixelRatio||1,g=cv.getContext('2d');g.setTransform(dp,0,0,dp,0,0);g.lineCap=g.lineJoin='round';g.strokeStyle=g.fillStyle=s.c;
+ for(let i=Math.max(1,from);i<s.pts.length;i++){const a=s.pts[i-1],b=s.pts[i];g.lineWidth=s.w*(.55+b[2]);g.beginPath();g.moveTo(a[0]*W,a[1]*W);g.lineTo(b[0]*W,b[1]*W);g.stroke()}}
 const xpend=e=>{if(!XD||e.pointerId!==XD.id)return;const D=XD;XD=null;
  if(D.sc){let v=D.v*16;const step=()=>{D.sc.scrollTop+=v;v*=.94;if(Math.abs(v)>.4)requestAnimationFrame(step)};if(Math.abs(v)>2)step();return}
  if(D.s&&D.s.pts.length){D.d.st.push(D.s);D.u.rd=[];D.ch=1}
  xcpaint(D.cv);
- if(D.ch&&X.run){D.d.ar=+(D.cv.clientHeight/Math.max(1,D.cv.clientWidth)).toFixed(3);const sv=$('#xcsv');if(sv){sv.textContent='Saving…';sv.style.color=''}xsaveD();xnav()}};
+ if(D.ch&&X.run){D.d.ar=+(D.cv.clientHeight/Math.max(1,D.cv.clientWidth)).toFixed(3);const sv=$('#xcsv');if(sv){sv.textContent='Saving…';sv.style.color=''}xsaveD();xnavS()}};
 document.addEventListener('pointerup',xpend);document.addEventListener('pointercancel',xpend);
 document.addEventListener('contextmenu',e=>{if(xo&&e.target.closest&&e.target.closest('canvas[data-xcv]'))e.preventDefault()});
+/* iPad keyboard: keep the exam pinned to the visible area and the focused field in view, instead of letting Safari pan the page */
+function xshow(t){const m=$('#xcmain'),vv=window.visualViewport;if(!m||!m.contains(t))return;const mr=m.getBoundingClientRect(),tr=t.getBoundingClientRect(),bot=Math.min(mr.bottom,vv?vv.offsetTop+vv.height:innerHeight)-12;
+ if(tr.bottom>bot){if(tr.height>bot-mr.top-16)m.scrollTop+=tr.top-mr.top-8;else m.scrollTop+=tr.bottom-bot}else if(tr.top<mr.top+8)m.scrollTop-=mr.top+8-tr.top}
+(function(){const vv=window.visualViewport;if(!vv)return;let q=0;
+ const fit=()=>{q=0;if(!xo)return;
+  if(vv.scale<=1.02&&window.innerHeight-vv.height>80){xo.classList.add('xkb');xo.style.setProperty('--xvh',vv.height+'px');xo.style.setProperty('--xvt',vv.offsetTop+'px')}
+  else{xo.classList.remove('xkb');xo.style.removeProperty('--xvh');xo.style.removeProperty('--xvt')}
+  if(window.scrollY||window.scrollX)window.scrollTo(0,0);
+  const a=document.activeElement;if(a&&xo.contains(a)&&/^(TEXTAREA|INPUT)$/.test(a.tagName))xshow(a)};
+ const soon=()=>{if(!q)q=requestAnimationFrame(fit)};
+ vv.addEventListener('resize',soon);vv.addEventListener('scroll',soon);
+ document.addEventListener('focusin',e=>{if(xo&&xo.contains(e.target)&&/^(TEXTAREA|INPUT)$/.test(e.target.tagName)){soon();setTimeout(soon,250);setTimeout(soon,600)}});
+ document.addEventListener('focusout',()=>setTimeout(soon,150))})();
 addEventListener('resize',()=>requestAnimationFrame(()=>{if(xo)xo.querySelectorAll('canvas[data-xcv]').forEach(xcpaint)}));
 document.addEventListener('input',e=>{const t=e.target;if(!xo||!X.run||!t.dataset||t.dataset.xf==null||X.run.phase!=='writing')return;
  const r=X.run;r.fa=r.fa||{};const a=r.fa[t.dataset.xf]=r.fa[t.dataset.xf]||[];a[+t.dataset.p]=t.value;
- const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD();xnav()});
+ const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD();xnavS()});
 /* final answers are checked with the maths module's own marker, exactly as in its Exams tab */
 function xgrade(p,typed){const G=window.HubExam&&HubExam.maths&&HubExam.maths.grade;if(!G||!p||!p.ga||!String(typed||'').trim())return null;try{return G(p.ga,typed,p.gs)}catch(_){return null}}
 function xauto(r){const mk={};if(!r||!r.paper)return mk;
@@ -44413,7 +44479,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!
 document.addEventListener('input',e=>{const t=e.target;if(!xo||!X.run||!t.dataset.xa||X.run.phase!=='writing')return;const r=X.run,q=xfind(r.paper,t.dataset.xa);
  if(q.type==='sa'){const a=r.a[q.id]=r.a[q.id]||q.parts.map(()=>'');a[+t.dataset.p]=t.value}else{r.a[q.id]=t.value;if(!r.pick[q.sec]){r.pick[q.sec]=q.id;const k=$('#xcpk');if(k)k.outerHTML=xpk(r,q)}}
  const w=t.nextElementSibling;if(w&&w.classList.contains('xc-wc'))w.textContent=xwc(t.value)+' words';
- const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD();xnav()});
+ const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD();xnavS()});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset.xm)return;const a=X.hist.find(x=>x.id===t.dataset.a);if(!a||!a.paper)return;const q=xfind(a.paper,t.dataset.xm),v=t.value===''?null:Math.max(0,Math.min(q.marks,Math.round(+t.value)));
  a.mk[q.id]=v;a.tot=xsum(a);xplanSync(a);xput(a);xsave();const sc=xo.querySelector('.xc-res');const y=sc.scrollTop;xres(a.id);xo.querySelector('.xc-res').scrollTop=y});
 document.addEventListener('keydown',e=>{if(xo&&X.run&&$('#xcrs')){if(e.key==='Escape'){xrefClose();e.preventDefault()}return}if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;if(X.run.bs)return;const r=X.run,k=e.key;
@@ -45484,7 +45550,7 @@ if(!dc('migrated')){   /* Phase 4 kept "open on last subject" and "show Continue
  const sh=JSON.parse(JSON.stringify(dc('show')||{}));if(HubSettings.get('study.resumeCard')===false){sh.continue=false;HubSettings.set('dashboard.show',sh)}
  if(HubSettings.get('study.resume')==='last')HubSettings.set('dashboard.landing','last');
  HubSettings.set('study.resume','dashboard');HubSettings.set('study.resumeCard',true);HubSettings.set('dashboard.migrated',true)}
-applyStudy('*');applyDash('*');{const lp=location.hash?'':landing();if(lp)history.replaceState(null,'','#'+lp)}
+applyStudy('*');applyDash('*');{const lp=location.hash?'':landing();if(lp)try{history.replaceState(null,'','#'+lp)}catch(_){}}
 theme();render();pill();xboot();
 if(HubSettings.recovered)toast('Your saved settings could not be read, so the defaults are in use. A copy was kept on this device.',true);
 
