@@ -44,6 +44,40 @@ window.HubA11y=(function(){var A={z:1};
   d.dataset.contrast=hi?'high':c==='more'?'more':'normal';d.dataset.aspace=/^(increased|extra)$/.test(a.spacing)?a.spacing:'normal';d.dataset.focus=/^(strong|max)$/.test(a.focus)?a.focus:'standard';return z};
  return A})();
 addEventListener('resize',HubDevice.tokens);addEventListener('orientationchange',HubDevice.tokens);
+/* Palm guard for Apple Pencil (Maths exam pad + practice pads).
+   The Pencil reports as pointerType "pen" and a resting hand as "touch". The hand usually lands a moment BEFORE the pen tip, so a touch can't be
+   judged only when it arrives: it is judged then, and judged again the instant the Pencil shows up (hovering or touching).
+   palm(id) is true for a touch that is a resting hand and stays true until that touch lifts. guard() stops a moving hand from scrolling the page.
+   A long resting touch that was judged a palm has its click swallowed, so a palm lifting off can't press a button or pick an answer. */
+window.HubPalm=(function(){
+ var P={},T={},pen=-1e9,down=0,ck=null,WIN=2000;
+ function now(){return window.performance&&performance.now?performance.now():Date.now()}
+ function near(t,w){return (down&&t-pen<10000)||t-pen<w}
+ function others(t){for(var k in T){if(t-T[k].t>8000)delete T[k];else return true}return false}
+ function hand(){for(var k in T){T[k].palm=true;T[k].hard=true}}
+ function wipe(){setTimeout(function(){T={}},0)}
+ addEventListener('pointerdown',function(e){var t=now();
+  if(e.pointerType==='pen'){pen=t;down=1;hand();return}
+  if(e.pointerType!=='touch')return;
+  var strict=near(t,400);T[e.pointerId]={t:t,palm:strict||near(t,WIN)||others(t),hard:strict}},true);
+ addEventListener('pointermove',function(e){if(e.pointerType==='pen'){pen=now();hand()}},{capture:true,passive:true});
+ function end(e){var t=now();
+  if(e.pointerType==='pen'){down=0;pen=t;return}
+  if(e.pointerType!=='touch')return;
+  var r=T[e.pointerId],id=e.pointerId;if(r&&r.hard&&e.type==='pointerup'&&t-r.t>300)ck={t:t,x:e.clientX,y:e.clientY};
+  setTimeout(function(){delete T[id]},0)}
+ addEventListener('pointerup',end,true);addEventListener('pointercancel',end,true);
+ addEventListener('touchend',function(e){if(e.touches&&!e.touches.length)wipe()},true);
+ addEventListener('touchcancel',function(e){if(e.touches&&!e.touches.length)wipe()},true);
+ addEventListener('blur',function(){down=0;wipe()});document.addEventListener('visibilitychange',function(){down=0;wipe()});
+ addEventListener('click',function(e){if(!ck)return;var c=ck;if(now()-c.t>600){ck=null;return}
+  if(e.pointerType==='pen'||Math.abs(e.clientX-c.x)>48||Math.abs(e.clientY-c.y)>48)return;
+  ck=null;e.preventDefault();e.stopImmediatePropagation()},true);
+ P.palm=function(id){var r=T[id];return !!(r&&r.palm)};
+ P.guard=function(e){var t=now();if(!near(t,700))return;
+  var c=e.changedTouches||[];for(var i=0;i<c.length;i++)if(c[i].touchType==='stylus')return;
+  if(e.cancelable)e.preventDefault()};
+ return P})();
 (function(){var data=null;try{var j=JSON.parse(localStorage.getItem('hsc-hub-settings-v1'));data=j&&j.data}catch(e){}
 try{HubA11y.apply(data&&data.accessibility)}catch(e){}
 try{HubDevice.apply(data&&data.device)}catch(e){}
@@ -319,6 +353,9 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflo
 .xc-sw{width:32px;height:32px;padding:0;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--ln);cursor:pointer}.xc-sw.on{box-shadow:0 0 0 3px var(--br)}
 .xc-pv{border:1px solid var(--ln);border-radius:14px;overflow:hidden;background:#fff}
 .xc-pv canvas{display:block;width:100%;touch-action:none;cursor:crosshair;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* maths inside the exam: show the MathML only; the plain-text copy (.mfb) is a fallback for browsers without MathML */
+#xc .mfb{display:none}#xc.nomml .mm{display:none}#xc.nomml .mfb{display:inline}
+#xc .mi math,#xc .mb math{font-family:"Cambria Math","STIX Two Math","Latin Modern Math","Noto Sans Math",math,serif}#xc .mi{white-space:nowrap}#xc .mi math{font-size:1.08em}
 .xcp-grid{background-image:linear-gradient(#cfd6ea 1px,transparent 1px),linear-gradient(90deg,#cfd6ea 1px,transparent 1px);background-size:24px 24px}
 .xcp-lines{background-image:linear-gradient(#cfd6ea 1px,transparent 1px);background-size:100% 32px}
 .xc-fa{display:block;margin:6px 0 16px}.xc-fi{width:100%;margin-top:4px;padding:11px 14px;border-radius:12px;border:1px solid var(--ln);background:var(--sf);color:var(--ink);font:inherit}
@@ -41783,16 +41820,19 @@ function mountSubject(host,api,document,root){
   else DR.s.pts.push([x,y,e.pointerType==='pen'&&e.pressure>0?e.pressure:.5])};
  root.addEventListener('pointerdown',e=>{const cv=e.target.closest&&e.target.closest('canvas[data-cv]');if(!cv)return;const xk=cv.dataset.cv.slice(0,2)==='x:',lock=xk?(!ES||ES.ph!=='work'):!!(P&&P.saved);if(lock&&!xk)return;const p=padOf(cv.dataset.cv);
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
-  if(e.pointerType==='touch'&&(!p.fing||lock)){DR={sc:1,id:e.pointerId,y:e.clientY,t:e.timeStamp,v:0};return}
+  if(e.pointerType==='touch'&&!lock&&HubPalm.palm(e.pointerId))return;   /* a resting hand: no drawing, no scrolling */
+  if(e.pointerType==='touch'&&(!p.fing||lock)){DR={sc:1,id:e.pointerId,x0:e.clientX,y0:e.clientY,go:0,y:e.clientY,t:e.timeStamp,v:0};return}
   if(lock)return;
   e.preventDefault();const er=p.tool==='eraser'||e.buttons===32;DR={cv,p,id:e.pointerId,er,s:er?null:{c:p.col,w:2.4,pts:[]}};hit(e);paint(cv)});
  root.addEventListener('pointermove',e=>{if(!DR||e.pointerId!==DR.id)return;
-  if(DR.sc){const dt=Math.max(1,e.timeStamp-DR.t);DR.v=(DR.y-e.clientY)/dt;window.scrollBy(0,DR.y-e.clientY);DR.y=e.clientY;DR.t=e.timeStamp;return}
+  if(DR.sc){if(HubPalm.palm(DR.id)){DR=null;return}
+   if(!DR.go){if(Math.abs(e.clientY-DR.y0)<10&&Math.abs(e.clientX-DR.x0)<10)return;DR.go=1;DR.y=e.clientY;DR.t=e.timeStamp;return}
+   const dt=Math.max(1,e.timeStamp-DR.t);DR.v=(DR.y-e.clientY)/dt;window.scrollBy(0,DR.y-e.clientY);DR.y=e.clientY;DR.t=e.timeStamp;return}
   (()=>{const c=e.getCoalescedEvents?e.getCoalescedEvents():[];return c.length?c:[e]})().forEach(x=>hit(x));paint(DR.cv)});
- const pend=e=>{if(!DR||e.pointerId!==DR.id)return;const d=DR;DR=null;
-  if(d.sc){let v=d.v*16;const step=()=>{window.scrollBy(0,v);v*=.94;if(Math.abs(v)>.4)requestAnimationFrame(step)};if(Math.abs(v)>2)step();return}
-  if(d.s&&d.s.pts.length){d.p.st.push(d.s);d.p.rd=[]}paint(d.cv)};
- root.addEventListener('pointerup',pend);root.addEventListener('pointercancel',pend);
+ const pend=e=>{if(!DR||e.pointerId!==DR.id)return;const d=DR;DR=null;const cx=e.type==='pointercancel';
+  if(d.sc){if(cx||!d.go)return;let v=d.v*16;const step=()=>{window.scrollBy(0,v);v*=.94;if(Math.abs(v)>.4)requestAnimationFrame(step)};if(Math.abs(v)>2)step();return}
+  if(d.s&&d.s.pts.length&&!(cx&&e.pointerType==='touch')){d.p.st.push(d.s);d.p.rd=[]}paint(d.cv)};
+ root.addEventListener('pointerup',pend);root.addEventListener('pointercancel',pend);root.addEventListener('touchmove',HubPalm.guard,{passive:false});
  root.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('canvas[data-cv]'))e.preventDefault()});
  const markSet=(i,m,l)=>`<div class="ms" role="group" aria-label="Marks you award yourself${l?' for part '+esc(l):''}" style="margin-top:12px"><span class="qm">${P.au&&P.au[i]&&P.au[i].got!=null?'Override mark':'Self-mark'}${l?' ('+esc(l)+')':''}</span>${Array.from({length:m+1},(_,v)=>`<button class="chip sm ${P.got[i]===v?'on':''}" aria-pressed="${P.got[i]===v}" data-px="mark" data-i="${i}" data-v="${v}" ${P.saved?'disabled':''}>${v}</button>`).join('')}<span class="mu sm">out of ${m}</span>${P.ov&&P.ov[i]&&P.au&&P.au[i]&&P.au[i].got!=null?`<button class="chip sm" data-px="unov" data-i="${i}" ${P.saved?'disabled':''}>Use auto-mark (${P.au[i].got})</button>`:''}</div>`;
  const autoNote=(i,o)=>{const a=P.au&&P.au[i],typed=((P.fa||[])[i]||'').trim(),ov=P.ov&&P.ov[i];
@@ -43571,7 +43611,7 @@ function xrepaint(aid,from){
 
 /* ---------- distraction-free lock ---------- */
 function xinert(on){if(on){xin=[...document.body.children].filter(e=>e!==xo&&!/^(SCRIPT|STYLE|LINK)$/.test(e.tagName)&&!e.inert);xin.forEach(e=>{e.inert=true})}else{xin.forEach(e=>{e.inert=false});xin=[]}}
-function xopen(){if(!xo){xo=document.createElement('div');xo.id='xc';xo.setAttribute('role','application');xo.setAttribute('aria-label','HSC exam');xo.addEventListener('touchmove',e=>{try{if(!e.target.closest('#xcmain,#xcnv,.xc-rsp,.xc-rs,textarea,.xc-modal'))e.preventDefault()}catch(_){}},{passive:false});document.body.appendChild(xo)}document.body.classList.add('xc-on');xinert(false);xinert(true)}
+function xopen(){if(!xo){xo=document.createElement('div');xo.id='xc';xo.setAttribute('role','application');xo.setAttribute('aria-label','HSC exam');xo.addEventListener('touchmove',e=>{try{if(!e.target.closest('#xcmain,#xcnv,.xc-rsp,.xc-rs,textarea,.xc-modal'))e.preventDefault()}catch(_){}},{passive:false});xo.addEventListener('touchmove',HubPalm.guard,{passive:false});document.body.appendChild(xo)}document.body.classList.add('xc-on');xinert(false);xinert(true)}
 function xfsReq(){if(st('fsExam')===false)return;const d=document.documentElement;if(d.requestFullscreen&&!document.fullscreenElement){xfs=true;d.requestFullscreen().catch(()=>{xfs=false})}}
 function xclose(stay){xpurgeTmp();clearInterval(xti);xfs=false;xinert(false);if(xo){xo.remove();xo=null}document.body.classList.remove('xc-on');if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  if(!stay)location.hash==='#exam'?render():go('exam')}
@@ -43792,23 +43832,24 @@ const xcpt=e=>{const b=XD.cv.getBoundingClientRect(),x=(e.clientX-b.left)/b.widt
   XD.d.st=XD.d.st.filter(s=>!s.pts.some((q,i)=>{const a=s.pts[i-1]||q,dx=q[0]-a[0],dy=q[1]-a[1],L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/L)):0;return Math.hypot(a[0]+t*dx-x,a[1]+t*dy-y)<16/b.width}));
   if(XD.d.st.length!==n){XD.ch=1;XD.u.rd=[]}}
  else XD.s.pts.push([+x.toFixed(4),+y.toFixed(4),+(e.pointerType==='pen'&&e.pressure>0?e.pressure:.5).toFixed(2)])};
-let xPenT=-1e9;document.addEventListener('pointermove',e=>{if(e.pointerType==='pen')xPenT=e.timeStamp},{passive:true,capture:true});
-document.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')xPenT=e.timeStamp;const cv=e.target.closest&&e.target.closest('canvas[data-xcv]');if(!cv||!xo||!X.run)return;
+document.addEventListener('pointerdown',e=>{const cv=e.target.closest&&e.target.closest('canvas[data-xcv]');if(!cv||!xo||!X.run)return;
  const r=X.run,k=cv.dataset.xcv,d=r.dw&&r.dw[k];if(!d)return;const u=xpu(r,k),lock=r.phase!=='writing';
  try{cv.setPointerCapture(e.pointerId)}catch(_){}
  if(e.pointerType==='touch'&&XD&&XD.cv&&XD.id!==e.pointerId)return;
- if(e.pointerType==='touch'&&e.timeStamp-xPenT<1500&&!lock)return;
- if(e.pointerType==='touch'&&(!u.fing||lock)){if(XD)return;XD={sc:$('#xcmain'),id:e.pointerId,y:e.clientY,t:e.timeStamp,v:0};return}
+ if(e.pointerType==='touch'&&!lock&&HubPalm.palm(e.pointerId))return;   /* a resting hand: no drawing, no scrolling */
+ if(e.pointerType==='touch'&&(!u.fing||lock)){if(XD)return;XD={sc:$('#xcmain'),id:e.pointerId,x0:e.clientX,y0:e.clientY,go:0,y:e.clientY,t:e.timeStamp,v:0};return}
  if(lock)return;
  e.preventDefault();const er=u.tool==='eraser'||e.buttons===32;XD={cv,d,u,k,id:e.pointerId,er,s:er?null:{c:u.col,w:2.4,pts:[]}};xcpt(e);xcpaint(cv)});
 document.addEventListener('pointermove',e=>{if(!XD||e.pointerId!==XD.id)return;
- if(XD.sc){const dt=Math.max(1,e.timeStamp-XD.t);XD.v=(XD.y-e.clientY)/dt;XD.sc.scrollTop+=XD.y-e.clientY;XD.y=e.clientY;XD.t=e.timeStamp;return}
+ if(XD.sc){if(HubPalm.palm(XD.id)){XD=null;return}   /* the Pencil showed up: this touch was a palm after all */
+  if(!XD.go){if(Math.abs(e.clientY-XD.y0)<10&&Math.abs(e.clientX-XD.x0)<10)return;XD.go=1;XD.y=e.clientY;XD.t=e.timeStamp;return}   /* wait for a deliberate drag */
+  const dt=Math.max(1,e.timeStamp-XD.t);XD.v=(XD.y-e.clientY)/dt;XD.sc.scrollTop+=XD.y-e.clientY;XD.y=e.clientY;XD.t=e.timeStamp;return}
  const n0=XD.s?XD.s.pts.length:0;(()=>{const c=e.getCoalescedEvents?e.getCoalescedEvents():[];return c.length?c:[e]})().forEach(xcpt);if(XD.s&&n0>0)xcseg(XD.cv,XD.s,n0);else xcpaint(XD.cv)});
 function xcseg(cv,s,from){const W=cv.clientWidth,dp=window.devicePixelRatio||1,g=cv.getContext('2d');g.setTransform(dp,0,0,dp,0,0);g.lineCap=g.lineJoin='round';g.strokeStyle=g.fillStyle=s.c;
  for(let i=Math.max(1,from);i<s.pts.length;i++){const a=s.pts[i-1],b=s.pts[i];g.lineWidth=s.w*(.55+b[2]);g.beginPath();g.moveTo(a[0]*W,a[1]*W);g.lineTo(b[0]*W,b[1]*W);g.stroke()}}
-const xpend=e=>{if(!XD||e.pointerId!==XD.id)return;const D=XD;XD=null;xAct=Date.now();
- if(D.sc){let v=D.v*16;const step=()=>{D.sc.scrollTop+=v;v*=.94;if(Math.abs(v)>.4)requestAnimationFrame(step)};if(Math.abs(v)>2)step();return}
- if(D.s&&D.s.pts.length){D.d.st.push(D.s);D.u.rd=[];D.ch=1}
+const xpend=e=>{if(!XD||e.pointerId!==XD.id)return;const D=XD;XD=null;xAct=Date.now();const cx=e.type==='pointercancel';   /* cancel = iPadOS judged it a palm: no fling, and a finger stroke is thrown away */
+ if(D.sc){if(cx||!D.go)return;let v=D.v*16;const step=()=>{D.sc.scrollTop+=v;v*=.94;if(Math.abs(v)>.4)requestAnimationFrame(step)};if(Math.abs(v)>2)step();return}
+ if(D.s&&D.s.pts.length&&!(cx&&e.pointerType==='touch')){D.d.st.push(D.s);D.u.rd=[];D.ch=1}
  xcpaint(D.cv);
  if(D.ch&&X.run){D.d.ar=+(D.cv.clientHeight/Math.max(1,D.cv.clientWidth)).toFixed(3);const sv=$('#xcsv');if(sv){sv.textContent='Saving…';sv.style.color=''}xsaveD();xnavS()}};
 document.addEventListener('pointerup',xpend);document.addEventListener('pointercancel',xpend);
