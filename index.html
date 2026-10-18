@@ -1073,6 +1073,17 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
 /* keyboard docked: pin the exam to the visible area so the page cannot be panned away from under the pen */
 #xc.xkb{bottom:auto;height:var(--xvh);top:var(--xvt,0)}
 </style>
+<style id="xc-exam-fix2">
+/* exam: Pencil or a long press must never select text or open Copy / Look Up / Translate (typing boxes still work normally) */
+#xc,#xc *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#xc input,#xc textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+#xc ::selection{background:transparent}
+#xc input::selection,#xc textarea::selection{background:rgba(80,130,255,.35)}
+/* nothing from the page behind the exam can show, even if the keyboard makes the exam resize for a moment */
+html:has(body.xc-on),body.xc-on{background:var(--bg,#0b0e1a)!important}
+body.xc-on>*:not(#xc):not([role=dialog]):not(script):not(style):not(link){visibility:hidden!important}
+#xc textarea,#xc input{overscroll-behavior:contain}
+</style>
 <style id="mobile-fixes">
 /* confirm card: clearer, and stacked full-width buttons on phones */
 .bk-ask{border-color:#e2483f;margin:12px 0 0;scroll-margin:96px 0}
@@ -43857,6 +43868,10 @@ document.addEventListener('pointerup',xpend);document.addEventListener('pointerc
 ['keydown','input','compositionupdate'].forEach(k=>document.addEventListener(k,e=>{if(xo&&e.target&&xo.contains(e.target))xAct=Date.now()},{passive:true,capture:true}));
 document.addEventListener('pointerdown',e=>{if(e.pointerType==='pen')xAct=Date.now()},{passive:true,capture:true});
 document.addEventListener('contextmenu',e=>{if(xo&&e.target.closest&&e.target.closest('canvas[data-xcv]'))e.preventDefault()});
+/* a resting palm or finger must never start a text selection or the Copy / Look Up menu anywhere except inside the typing boxes */
+['selectstart','contextmenu'].forEach(k=>document.addEventListener(k,e=>{const t=e.target&&(e.target.nodeType===1?e.target:e.target.parentElement);if(!xo||!t||!xo.contains(t)||t.closest('input,textarea'))return;e.preventDefault()},true));
+/* the tick on the keyboard means "done": close the keyboard (one-line answer boxes only; the working box keeps its normal Return) */
+document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter'||e.isComposing||!xo||!t||t.tagName!=='INPUT'||!xo.contains(t))return;e.preventDefault();t.blur()},true);
 /* iPad keyboard: keep the exam pinned to the visible area and the focused field in view, instead of letting Safari pan the page */
 function xshow(t){const m=$('#xcmain'),vv=window.visualViewport;if(!m||!m.contains(t))return;const mr=m.getBoundingClientRect(),tr=t.getBoundingClientRect(),bot=Math.min(mr.bottom,vv?vv.offsetTop+vv.height:innerHeight)-12;
  if(tr.bottom>bot){if(tr.height>bot-mr.top-16)m.scrollTop+=tr.top-mr.top-8;else m.scrollTop+=tr.bottom-bot}else if(tr.top<mr.top+8)m.scrollTop-=mr.top+8-tr.top}
@@ -48527,9 +48542,13 @@ const TTD=(()=>{
 
  const fig=r=>`<figure class="tt-dg"><svg viewBox="0 0 ${r.w||340} ${r.h}" role="img" aria-label="${X(r.alt)}">${r.svg}</svg><figcaption>${X(r.cap)}</figcaption></figure>`;
  const bad='<p class="tt-dgx">I tried to draw a diagram here but it did not come out right. Ask me to draw it again.</p>';
+ /* radial survey with only 1 or 2 legs: radial() needs 3+, so draw it as a fan of bearings from the centre instead (closed with a dashed line for 2 legs) */
+ function radialFew(s){const Lg=(Array.isArray(s.legs)?s.legs:[]).slice(0,2).map(l=>{if(!Array.isArray(l))return null;const b=cbr(l[0]),d=Math.abs(parseFloat(l[1]));return b==null||!ok(d)||d<=0?null:[b,d,lab(l[2])||(fv(d)+' '+(lab(s.unit)||'m'))]}).filter(Boolean);
+  if(!Lg.length)return null;const cn=lab(s.centre||s.center)||'O',nm=Array.isArray(s.points)&&s.points.length?s.points.map(lab):['A','B'];
+  return bear({type:'bearing',points:[cn].concat(nm),legs:Lg,fan:true,close:Lg.length===2})}
  function draw(j){try{const s=parse(j);if(!s||typeof s!=='object')return bad;
    const ty=String(s.type||'').toLowerCase().replace(/[^a-z]/g,'');let r=null;
-   if(/^(annuit|futurevalue|presentvalue|fvtable|pvtable)/.test(ty))r=atable(s);else if(/^(globe|earth|latlong|latitudelongitude|latitude|longitude)/.test(ty))r=globe(s);else if(/^(twonormal|normals|comparenormal|normalcompare|normalcurves)/.test(ty)||(/^(normal|bell|zscore)/.test(ty)&&Array.isArray(s.curves)&&s.curves.length>=2))r=normal2(s);else if(/^(sampling|systematic|stratified|randomsample|simplerandom)/.test(ty)||(ty==='sample'&&(s.method||s.population||s.strata)))r=sampling(s);else if(/^pareto/.test(ty))r=pareto(s);else if(/^compass/.test(ty))r=compass(s);else if(/^(radial|survey)/.test(ty))r=radial(s);else if(/^(scale|scaledrawing|mapscale|map|plan|siteplan)$/.test(ty))r=scaled(s);else if(/^(flow|maxflow|mincut|networkflow|flownetwork)/.test(ty))r=flowNet(s);else if(/^(cpm|critical|activitynetwork|activity)/.test(ty))r=cpm(s);else if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
+   if(/^(annuit|futurevalue|presentvalue|fvtable|pvtable)/.test(ty))r=atable(s);else if(/^(globe|earth|latlong|latitudelongitude|latitude|longitude)/.test(ty))r=globe(s);else if(/^(twonormal|normals|comparenormal|normalcompare|normalcurves)/.test(ty)||(/^(normal|bell|zscore)/.test(ty)&&Array.isArray(s.curves)&&s.curves.length>=2))r=normal2(s);else if(/^(sampling|systematic|stratified|randomsample|simplerandom)/.test(ty)||(ty==='sample'&&(s.method||s.population||s.strata)))r=sampling(s);else if(/^pareto/.test(ty))r=pareto(s);else if(/^compass/.test(ty))r=compass(s);else if(/^(radial|survey)/.test(ty))r=radial(s)||radialFew(s);else if(/^(scale|scaledrawing|mapscale|map|plan|siteplan)$/.test(ty))r=scaled(s);else if(/^(flow|maxflow|mincut|networkflow|flownetwork)/.test(ty))r=flowNet(s);else if(/^(cpm|critical|activitynetwork|activity)/.test(ty))r=cpm(s);else if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
    if(!r)return bad;if(s.caption){const c=String(s.caption).replace(/\s+/g,' ').trim().slice(0,160);if(c)r.cap=c}return fig(r)}catch(e){return bad}}
  /* cuts a reply into plain-text pieces and diagram pieces: [{t:'text'|'dg', v}] (code fences round a tag are ignored; a half-written tag is dropped) */
  function split(txt){let s=String(txt).replace(/`+\s*(\[\[\s*DIAGRAM[\s\S]*?\]\])\s*`+/gi,'$1'),out=[],last=0,m;RE.lastIndex=0;
@@ -49498,7 +49517,9 @@ async function check(mode){if(!sess)return;if(busy){again=mode;return}busy=true;
      /* it stopped being safe while we saved: do not reload, fall through to the "newer data" path below */}
     try{if(window.__ttLive&&M.ls&&M.ls['hsc-hub-tutor-v1'])window.__ttLive(M.ls['hsc-hub-tutor-v1'])}catch(e){}   /* the page cannot reload right now, but Tutor chats can still arrive live */
     await baseSet(L);setMeta({at,hash:L.hash,behind:true});lastFp=fp0;
-    if(bannerAt!==at){bannerAt=at;banner('Newer progress from another device','Update',()=>check('manual'))}
+    /* Tutor chats already arrive live (above), so a difference that is only chat messages needs no banner. Otherwise show it at most once every 3 minutes, so two devices in use at once do not keep re-triggering it. */
+    {const TK='hsc-hub-tutor-v1',nt=S=>({ls:Object.fromEntries(Object.entries(S.ls||{}).filter(e=>e[0]!==TK)),xh:S.xh,mods:S.mods}),onlyChat=sc(nt(M))===sc(nt(L));
+     if(!onlyChat&&!document.body.classList.contains('xc-on')&&!document.getElementById('xc')&&bannerAt!==at&&Date.now()-(window.__sbBnT||0)>18e4){bannerAt=at;window.__sbBnT=Date.now();banner('Newer progress from another device','Update',()=>check('manual'))}}
     setSt('Newer data from your other device');return}
    await baseSet(L);setMeta({at,hash:L.hash});lastFp=fp0;doneAt('Synced');return}
   setSt('Will retry shortly')
