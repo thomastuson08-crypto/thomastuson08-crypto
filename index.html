@@ -331,6 +331,10 @@ body.xc-on{overflow:hidden}
 .xc-src table{border-collapse:collapse;width:100%}.xc-src td,.xc-src th{border:1px solid var(--ln);padding:5px 9px;text-align:left}
 .xc-pre{white-space:pre-wrap}.xc-vis{margin:8px 0}.xc-vis svg,.xc-stim svg,.xc-bk svg{max-width:100%;height:auto}
 .xc-bk{border:1px solid var(--ln);border-radius:10px;background:var(--sf2);margin:0 0 16px;padding:0 14px}
+.xc-rs{position:fixed;inset:0;z-index:60;background:rgba(10,14,30,.5);display:flex;justify-content:flex-end}
+.xc-rsp{width:min(580px,100%);height:100%;overflow:auto;background:var(--bg);color:var(--ink);border-left:1px solid var(--ln);padding:0 18px 28px;box-shadow:-12px 0 32px -12px rgba(0,0,0,.35)}
+.xc-rsh{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 -18px 6px;padding:12px 18px;background:var(--sf);border-bottom:1px solid var(--ln)}
+.xc-rsh b{font-size:17px}
 .xc-bk>summary{cursor:pointer;font-weight:700;padding:10px 0}.xc-bk[open]>summary{border-bottom:1px solid var(--ln);margin-bottom:12px}
 .xc-cv h2{font-size:17px;margin:26px 0 8px}
 .xc-facts{display:flex;gap:32px;flex-wrap:wrap;margin:16px 0 4px}.xc-facts b{display:block;font:800 32px/1.1 inherit}.xc-facts span{font-size:13px;color:var(--mu)}
@@ -40924,7 +40928,97 @@ Object.assign(FIGS,{
  'b8-m12-sa-05':DG('Lake 50 m wide with end lengths of 120 m and 80 m.',[PG([[50,170],[280,170],[280,83],[50,40]],1),T(165,190,'50 m'),T(42,105,'120 m','end'),T(288,127,'80 m','start')],350,205)
 });
 
-const figOf=k=>{const f=FIGS[k];return f?`<div class="qf">${f.graph?graph(f.graph):f.diagram?diagram(f.diagram):f.tbl?tbl(f.tbl):tri(f.tri)}</div>`:''};
+/* Figures added so every question that points at a graph or diagram has one (Exam Centre, Practice and Exams all read FIGS through figOf). */
+const ELEV=(alt,o)=>({diagram:{w:340,h:210,alt,caption:'Not drawn to scale.',items:o}});
+Object.assign(FIGS,{
+ 'a1-mc-04':G('Two straight lines on a number plane: y = 3x \u2212 2 rising and y = \u2212x + 6 falling.','x','y',[-1,5,-4,10,1,2],[{label:'y = 3x \u2212 2',fn:x=>3*x-2},{label:'y = \u2212x + 6',fn:x=>-x+6}]),
+ 'a1-mc-09':G('Two straight lines on a number plane: y = 4x \u2212 5 rising and y = \u22122x + 7 falling.','x','y',[-1,5,-6,10,1,2],[{label:'y = 4x \u2212 5',fn:x=>4*x-5},{label:'y = \u22122x + 7',fn:x=>-2*x+7}]),
+ 'a1-ex-05#d':G('Cost against hire time for two companies. Company A charges 50 dollars plus 15 dollars per hour. Company B charges 20 dollars per hour.','h (hours)','C (dollars)',[0,16,0,300,2,50],[{label:'Company A: C = 50 + 15h',fn:h=>50+15*h},{label:'Company B: C = 20h',fn:h=>20*h}]),
+ 'f1-mc-06':G('Straight line graph of the value of an investment against time. The line starts above zero and rises at a constant rate.','Time (years)','Value ($)',[0,10,0,1600,1,200],[{fn:t=>1000+60*t}]),
+ 'b11-f11-mc-01':G('Straight line graph of simple interest earned against time, passing through the origin and rising to 1000 dollars after 10 years.','Time (years)','Interest ($)',[0,10,0,1000,1,100],[{fn:t=>100*t}]),
+ 'b23-09':G('Straight line graph of simple interest earned against time, passing through the origin.','Time (years)','Interest ($)',[0,8,0,480,1,60],[{fn:t=>60*t}]),
+ 'x-s11-r2':G('Straight line through the origin showing running cost in dollars against distance travelled in kilometres.','Distance (km)','Cost ($)',[0,100,0,50,10,10],[{fn:d=>0.5*d}]),
+ 's4-mc-03':SPTS('Scatterplot whose points follow a curved, U-shaped pattern.','x','y',[[1,17],[2,10],[3,5],[4,2],[5,1],[6,3],[7,6],[8,11],[9,18]],[0,10,0,20,1,5]),
+ 'b21-10':SPTS('Scatterplot of fuel used in litres against distance in kilometres. The points rise from left to right.','Distance (km)','Fuel used (L)',[[20,2.1],[35,3.6],[50,5.2],[65,6.4],[80,8.3],[95,9.6]],[0,100,0,12,10,2]),
+ 's5-ex-04':BARS('Histogram of examination marks. The bars rise to a peak near the middle and fall away evenly on both sides, a bell shape.',['0\u201310','10\u201320','20\u201330','30\u201340','40\u201350','50\u201360','60\u201370','70\u201380','80\u201390','90\u2013100'],[1,4,9,17,24,22,15,6,2,0],{ymax:30,step:5,hist:1,yl:'Frequency',xl:'Mark',w:640}),
+ 'b17-17':BARS('Histogram with two clear peaks, one at the second bar and one at the sixth bar.',['0\u201310','10\u201320','20\u201330','30\u201340','40\u201350','50\u201360','60\u201370','70\u201380'],[2,9,5,2,4,10,6,2],{ymax:12,step:2,hist:1,yl:'Frequency',xl:'Value',w:440}),
+ 'x-s12-sh2':BARS('Histogram with two distinct peaks, one near 20 and one near 60.',['5\u201315','15\u201325','25\u201335','35\u201345','45\u201355','55\u201365','65\u201375'],[4,11,5,2,6,10,3],{ymax:12,step:2,hist:1,yl:'Frequency',xl:'Value',w:440}),
+ 'm7-ex-04':{diagram:{w:340,h:210,alt:'Aerial view of a block of land. A straight road runs along the bottom, 100 metres long. Perpendicular distances from the road to the far boundary at 20 metre intervals are 0, 12, 18, 15, 9 and 0 metres.',caption:'Not drawn to scale. Distances are in metres.',items:(()=>{const d=[0,12,18,15,9,0],x=i=>40+i*52,y=v=>165-v*5,it=[{t:'poly',fill:1,pts:d.map((v,i)=>[x(i),y(v)])},{t:'line',x1:x(0),y1:165,x2:x(5),y2:165}];
+  d.forEach((v,i)=>{it.push({t:'line',x1:x(i),y1:165,x2:x(i),y2:171});if(i>0&&i<5)it.push({t:'line',x1:x(i),y1:165,x2:x(i),y2:y(v),dash:1},{t:'text',x:x(i)+5,y:(165+y(v))/2+5,s:v+' m',anchor:'start'})});
+  it.push({t:'text',x:(x(0)+x(1))/2,y:190,s:'20 m'},{t:'text',x:(x(2)+x(3))/2,y:204,s:'Road frontage 100 m'});return it})()}},
+ 'm6-mc-10':TRI('Triangle with sides 14 cm and 9 cm enclosing a 48 degree angle.',['A','B','C'],['14 cm','9 cm',''],['','','48\u00B0']),
+ 'm6-sa-10':TRI('Triangle ABC with angle A 42 degrees, angle B 65 degrees, side a 11.5 cm and side b unknown.',['A','B','C'],['11.5 cm','b',''],['42\u00B0','65\u00B0','']),
+ 'm6-mc-12':TRI('Triangle ABC with angle A 35 degrees, angle B 80 degrees, side a 8 cm and side b unknown.',['A','B','C'],['8 cm','b',''],['35\u00B0','80\u00B0','']),
+ 'm6-mc-13':TRI('Triangle with sides 5 cm, 6 cm and 7 cm.',['A','B','C'],['5 cm','6 cm','7 cm'],['','','']),
+ 'm6-sa-12':TRI('Triangle ABC with a 10 cm, b 14 cm and angle A 30 degrees. Angle B is obtuse and unknown.',['A','B','C'],['10 cm','14 cm',''],['30\u00B0','?',''],[[50,165],[210,165],[275,55]]),
+ 'm6-mc-16':TRI('Triangle with sides 10 cm and 8 cm enclosing an acute angle, with area 30 square centimetres.',['A','B','C'],['10 cm','8 cm',''],['','','\u03B8']),
+ 'm6-sa-14':TRI('Triangular block of land with boundaries 65 m and 42 m enclosing a 78 degree angle.',['A','B','C'],['65 m','42 m',''],['','','78\u00B0']),
+ 'm6-ex-07':TRI('Triangle ABC with AB 7 cm, BC 10 cm and angle B 65 degrees.',['A','B','C'],['10 cm','','7 cm'],['','65\u00B0','']),
+ 'm6-mc-15':{tri:{alt:'Right-angled triangle: flagpole 12 m high, 30 m of level ground, angle of elevation theta at the observer.',a:'12 m',b:'30 m',ang:'\u03B8',caption:'Not drawn to scale.'}},
+ 'm6-sa-11':ELEV('Observer whose eyes are 1.6 m above level ground stands 60 m from a building. The angle of elevation of the top of the building from the observer is 28 degrees. The height of the building is h.',[
+  {t:'line',x1:20,y1:170,x2:320,y2:170},{t:'line',x1:250,y1:170,x2:250,y2:35},{t:'line',x1:60,y1:170,x2:60,y2:140},{t:'circle',x:60,y:134,r:6,solid:1},
+  {t:'line',x1:60,y1:140,x2:250,y2:140,dash:1},{t:'line',x1:60,y1:140,x2:250,y2:35},{t:'arc',x:60,y:140,r:48,a0:0,a1:29},{t:'text',x:123,y:131,s:'28\u00B0'},
+  {t:'text',x:48,y:160,s:'1.6 m',anchor:'end'},{t:'text',x:155,y:190,s:'60 m'},{t:'text',x:262,y:105,s:'h',anchor:'start'}]),
+ 'm6-sa-13':ELEV('Vertical cliff 60 m high. A boat is out at sea. The angle of depression from the top of the cliff to the boat is 22 degrees.',[
+  {t:'line',x1:60,y1:70,x2:60,y2:170},{t:'line',x1:20,y1:170,x2:330,y2:170},{t:'line',x1:60,y1:70,x2:307,y2:170,dash:1},{t:'line',x1:60,y1:70,x2:240,y2:70,dash:1},
+  {t:'arc',x:60,y:70,r:52,a0:-22,a1:0},{t:'text',x:128,y:90,s:'22\u00B0'},{t:'text',x:46,y:125,s:'60 m',anchor:'end'},{t:'circle',x:307,y:170,r:5,solid:1},{t:'text',x:307,y:194,s:'Boat'}]),
+ 'm6-sa-09':BEAR('Boat sails 18 km from the start S on a true bearing of 040 degrees to P, then 25 km on a true bearing of 110 degrees to F.','SPF',[[40,18,'18 km'],[110,25,'25 km']]),
+ 'm6-sa-15':BEAR('Lookout A with town B 12 km away on a true bearing of 030 degrees and town C 9 km away on a true bearing of 100 degrees.','ABC',[[30,12,'12 km'],[100,9,'9 km']],{fan:1,close:1}),
+ 'm6-ex-08':BEAR('Bushwalker at P with tower T 8 km away on a true bearing of 060 degrees and hut Q 5 km away on a true bearing of 140 degrees.','PTQ',[[60,8,'8 km'],[140,5,'5 km']],{fan:1,close:1}),
+ 'm6-ex-09':BEAR('Lookout L with boat A 3.2 km away on a true bearing of 075 degrees and boat B 4.5 km away on a true bearing of 160 degrees.','LAB',[[75,3.2,'3.2 km'],[160,4.5,'4.5 km']],{fan:1,close:1})
+});
+/* ===== EXAM-STYLE EXTRAS (added): the pictures, tables and formulas the real HSC prints WITH a question.
+   Nothing here is on the reference sheet. addFig() lets one question carry several figures; figOf() below draws them in order. ===== */
+const addFig=(k,f)=>{FIGS[k]=FIGS[k]?[].concat(FIGS[k],f):f};
+const PAPER_GIVEN={
+ fried:{name:"Fried's formula (child's dose, age in months)",formula:'\\text{dose} = \\frac{\\text{age in months} \\times \\text{adult dose}}{150}'},
+ young:{name:"Young's formula (child's dose, age in years)",formula:'\\text{dose} = \\frac{\\text{age in years} \\times \\text{adult dose}}{\\text{age in years} + 12}'},
+ clark:{name:"Clark's formula (child's dose, weight in kg)",formula:'\\text{dose} = \\frac{\\text{weight in kg} \\times \\text{adult dose}}{70}'},
+ bacm:{name:'Blood alcohol content, male',formula:'\\text{BAC}_{\\text{male}} = \\frac{10N - 7.5H}{6.8M}',vars:[{sym:'N',mean:'number of standard drinks'},{sym:'H',mean:'hours of drinking'},{sym:'M',mean:'mass of the person',unit:'kg'}]},
+ bacf:{name:'Blood alcohol content, female',formula:'\\text{BAC}_{\\text{female}} = \\frac{10N - 7.5H}{5.5M}',vars:[{sym:'N',mean:'number of standard drinks'},{sym:'H',mean:'hours of drinking'},{sym:'M',mean:'mass of the person',unit:'kg'}]},
+ bact:{name:'Time for BAC to fall to zero',formula:'\\text{time} = \\frac{\\text{BAC}}{0.015}',note:'BAC falls by about 0.015 each hour. Time is in hours.'},
+ cap:{name:'Capture-recapture (population estimate)',formula:'N = \\frac{M \\times n}{m}',vars:[{sym:'N',mean:'estimated population'},{sym:'M',mean:'number caught, tagged and released the first time'},{sym:'n',mean:'size of the second sample'},{sym:'m',mean:'number of tagged animals in the second sample'}]}
+};
+const givenBox=g=>`<p class="mu sm" style="margin:0 0 6px"><b>Given in the question</b></p>${fcard(g)}`;
+const fvf=(r,n)=>((1+r)**n-1)/r,pvf=(r,n)=>(1-(1+r)**-n)/r;
+const ANNT=(kind,rates,per)=>{const f=kind==='pv'?pvf:fvf;return{tbl:{caption:(kind==='pv'?'Present':'Future')+' value interest factors for an annuity of $1 per period',head:['Periods',...rates.map(r=>r+'% per period')],rows:per.map(p=>[String(p),...rates.map(r=>f(r/100,p).toFixed(4))]),num:rates.map((_,i)=>i+1)}}};
+const win=n=>{const a=Math.max(1,n-3),o=[];for(let p=a;p<a+7;p++)o.push(p);return o};
+[['fried','b10-a1-sa-13','b10-a1-sa-14','b13-a1-sa-07'],['young','b10-a1-sa-15','b10-a1-sa-16','b13-a1-sa-08'],['clark','b10-a1-sa-17','b10-a1-sa-18','b13-a1-sa-09'],['cap','m7-sa-03','m7-sa-09','b12-s11-sa-01']]
+ .forEach(([g,...ids])=>ids.forEach(id=>addFig(id,{given:PAPER_GIVEN[g]})));
+[['f5-mc-02','fv',[2],8],['f5-sa-01','fv',[4],10],['f5-sa-02','fv',[1.5],20],['f5-sa-03','pv',[5],6],['f5-ex-01','fv',[0.5],12],['f5-ex-02','fv',[5],8],['f5-ex-03','pv',[4,6],15],
+ ['f5-ex-04','fv',[0.5],36],['f5-mc-05','pv',[5],10],['f5-ex-05','fv',[6],10],['f5-mc-06','fv',[2],4],['f5-sa-05','pv',[4],10],['f5-mc-08','fv',[1],12],['f5-mc-09','pv',[4],5],['f5-ex-07','fv',[5],6],['f5-sa-07','fv',[3],8]]
+ .forEach(([id,k,r,n])=>addFig(id,ANNT(k,r,win(n))));
+addFig('f5-sa-04',ANNT('fv',[1],[10,20,30]));
+addFig('s5-sa-09',{tbl:{caption:'Proportion of z-scores less than z',head:['\\(z\\)','0.6','0.7','0.8','0.9','1.0'],rows:[['Proportion','0.7257','0.7580','0.7881','0.8159','0.8413']],num:[1,2,3,4,5]}});
+addFig('f2-ex-03',{tbl:{caption:"Mia's credit card statement, 1 June to 30 June",head:['Date','Description','Amount'],rows:[['1 June','Opening balance','$0'],['3 June','Purchase','$640'],['15 June','Purchase','$210'],['25 June','Payment','−$300']],num:[2]}});
+addFig('a1-sa-01',{tbl:{caption:'Values for two straight lines',head:['\\(x\\)','0','1','2','3'],rows:[['Line 1: \\(y = 3x - 2\\)','−2','1','4','7'],['Line 2: \\(y = -x + 6\\)','6','5','4','3']],num:[1,2,3,4]}});
+addFig('s4-sa-09',{tbl:{caption:'Practice hours and score',head:['Hours of practice, \\(x\\)','1','2','3','4','5'],rows:[['Score, \\(y\\)','12','15','19','22','26']],num:[1,2,3,4,5]}});
+addFig('s4-sa-12',{tbl:{caption:'Age and value of a machine',head:['Age, \\(x\\) (years)','2','4','6','8','10'],rows:[['Value, \\(y\\) (hundreds of dollars)','30','26','23','17','14']],num:[1,2,3,4,5]}});
+addFig('b10-a2-mc-02',{tbl:{head:['\\(x\\)','1','2','3'],rows:[['\\(y\\)','4','8','12']],num:[1,2,3]}});
+addFig('n1-sa-02',{tbl:{caption:'Direct roads from each town',head:['Town','Joined to'],rows:[['\\(A\\)','\\(B\\), \\(C\\)'],['\\(B\\)','\\(A\\), \\(D\\)'],['\\(C\\)','\\(A\\), \\(D\\)'],['\\(D\\)','\\(B\\), \\(C\\), \\(E\\)'],['\\(E\\)','\\(D\\)']]}});
+addFig('n1-sa-06',{tbl:{caption:'A tick shows a direct road between two towns',head:['','\\(A\\)','\\(B\\)','\\(C\\)','\\(D\\)'],rows:[['\\(A\\)','','✓','✓',''],['\\(B\\)','✓','','✓',''],['\\(C\\)','✓','✓','','✓'],['\\(D\\)','','','✓','']]}});
+addFig('n1-sa-05',{tbl:{caption:'Travel time in minutes along each road (a dash means no direct road)',head:['','\\(P\\)','\\(Q\\)','\\(R\\)','\\(S\\)'],rows:[['\\(P\\)','–','12','20','–'],['\\(Q\\)','12','–','9','15'],['\\(R\\)','20','9','–','11'],['\\(S\\)','–','15','11','–']],num:[1,2,3,4]}});
+addFig('n1-sa-07',{tbl:{caption:'Travel time in minutes between towns (a dash means no direct road)',head:['','\\(P\\)','\\(Q\\)','\\(R\\)','\\(S\\)'],rows:[['\\(P\\)','–','5','8','–'],['\\(Q\\)','5','–','2','7'],['\\(R\\)','8','2','–','4'],['\\(S\\)','–','7','4','–']],num:[1,2,3,4]}});
+addFig('n1-ex-02',{tbl:{caption:'Direct travel time in minutes (a dash means no direct route)',head:['','\\(A\\)','\\(B\\)','\\(C\\)','\\(D\\)'],rows:[['\\(A\\)','–','15','25','–'],['\\(B\\)','15','–','10','20'],['\\(C\\)','25','10','–','12'],['\\(D\\)','–','20','12','–']],num:[1,2,3,4]}});
+addFig('n2-sa-08',NET({alt:'Weighted network with vertices A to E. AB 2, AC 5, BC 3, BD 6, CD 4, CE 7, DE 1.',v:{A:[40,120],B:[140,45],C:[140,195],D:[250,70],E:[320,175]},e:[['A','B',2],['A','C',5],['B','C',3],['B','D',6],['C','D',4],['C','E',7],['D','E',1]]}));
+addFig('x-n21-m2',NET({alt:'Road map of four towns. AB 12 km, BC 8 km, CD 15 km, AD 20 km.',v:{A:[60,50],B:[300,50],C:[300,190],D:[60,190]},e:[['A','B',12],['B','C',8],['C','D',15],['A','D',20]],caption:'Road map of four towns. Distances are in kilometres.'}));
+addFig('n3-mc-04',NET({alt:'Activity network. X comes first, then Y and Z, then W.',v:{X:[40,120],Y:[150,50],Z:[150,190],W:[260,120]},e:[['X','Y'],['X','Z'],['Y','W'],['Z','W']],dir:1,w:300,caption:'Each circle is an activity. Arrows show which activities must finish first.'}));
+addFig('x-n3-c2',ACT('Activity network. A takes 3 days. B (4 days) and C (2 days) both follow A. D (5 days) follows B and C.',{A:[3],B:[4,'A'],C:[2,'A'],D:[5,'B','C']}));
+addFig('m6-mc-11',BEAR('Town A with town B on a true bearing of 125 degrees from A. North is marked at both towns.','AB',[[125,10,'']],{last:1}));
+addFig('b15-06',TRI('Triangle ABC with sides a 7 cm, b 8 cm and c 13 cm. Angle C is obtuse and unknown.',['A','B','C'],['7 cm','8 cm','13 cm'],['','','?'],[[40,175],[300,175],[170,110]]));
+addFig('b22-08',BARS('Column graph of fatal crashes by cause: speeding 38, fatigue 24, alcohol 22, distraction 16.',['Speeding','Fatigue','Alcohol','Distraction'],[38,24,22,16],{ymax:40,step:10,yl:'Fatal crashes',xl:'Cause',w:400,cap:'Fatal crashes in a region, by cause.'}));
+addFig('x-s12-cmp2',BOX('Parallel box-plots of scores. Group A: Q1 62, median 70. Group B: median 55, Q3 60.',[{name:'Group A',min:48,q1:62,med:70,q3:78,max:90},{name:'Group B',min:30,q1:42,med:55,q3:60,max:72}],[20,100,10],'Score',{cap:'Not drawn to scale.'}));
+addFig('x-s12-int2',BOX('Parallel box-plots for Group X and Group Y. Group Y has the wider box.',[{name:'Group X',min:20,q1:35,med:45,q3:55,max:70},{name:'Group Y',min:10,q1:25,med:45,q3:65,max:80}],[0,100,10],'Score',{cap:'Not drawn to scale.'}));
+addFig('b7-m12-sa-11',{diagram:{w:280,h:180,alt:'L-shaped block made of a 20 m by 10 m rectangle and a 12 m by 8 m rectangle joined above its left end.',caption:'Not drawn to scale.',items:[
+ {t:'poly',fill:1,pts:[[60,24],[144,24],[144,80],[200,80],[200,150],[60,150]]},{t:'line',x1:60,y1:80,x2:144,y2:80,dash:1},
+ {t:'text',x:102,y:16,s:'12 m'},{t:'text',x:152,y:56,s:'8 m',anchor:'start'},{t:'text',x:130,y:168,s:'20 m'},{t:'text',x:208,y:119,s:'10 m',anchor:'start'}]}});
+addFig('x-s11-e2',{diagram:{w:340,h:230,alt:'Bar graph of annual sales. The vertical axis starts at 48 000 dollars. Company A is 52 000 dollars and Company B is 50 000 dollars, so A looks about twice as tall as B.',caption:'Annual sales ($). Note where the vertical axis starts.',items:(()=>{const y=v=>186-(v-48000)/6000*150,it=[];
+  [48000,50000,52000,54000].forEach(v=>it.push({t:'line',x1:70,y1:y(v),x2:320,y2:y(v),dash:1},{t:'text',x:62,y:y(v)+4,s:String(v).replace(/(\d+)(\d{3})$/,'$1 $2'),anchor:'end'}));
+  [[100,52000,'Company A'],[210,50000,'Company B']].forEach(([x,v,n])=>it.push({t:'poly',fill:1,pts:[[x,y(48000)],[x,y(v)],[x+70,y(v)],[x+70,y(48000)]]},{t:'text',x:x+35,y:y(48000)+16,s:n}));
+  it.push({t:'line',x1:70,y1:y(54000),x2:70,y2:y(48000)},{t:'line',x1:70,y1:y(48000),x2:320,y2:y(48000)},{t:'text',x:70,y:14,s:'Sales ($)',anchor:'start'});return it})()}});
+const figOne=f=>f.given?givenBox(f.given):f.graph?graph(f.graph):f.diagram?diagram(f.diagram):f.tbl?tbl(f.tbl):f.tri?tri(f.tri):'';
+const figOf=k=>{const f=FIGS[k];return f?[].concat(f).map(x=>`<div class="qf">${figOne(x)}</div>`).join(''):''};
+const paperGivenCard=()=>`<div class="card" style="margin-top:18px"><h2>Printed in the question, not on this sheet</h2><p class="mu sm" style="margin:0 0 10px">The HSC does not put these on the reference sheet. When it tests them, the paper prints the formula or table inside the question, so you do not need to memorise them. Practice and Exam Centre questions show them in a "Given in the question" box. Stopping-distance questions also state the rule they want you to use.</p>${['fried','young','clark','bacm','bacf','bact','cap'].map(k=>fcard(PAPER_GIVEN[k])).join('')}<p class="mu sm" style="margin:10px 0 0">Annuity (future and present value) tables and the normal-distribution table are also printed with the question that needs them.</p></div>`;
 
 /* AUTO-MARK (pure). grade(o,typed,stem) marks the typed FINAL ANSWER against the model answer, so the student never has to self-mark.
    Returns null when nothing was typed, otherwise {ok:true|'part'|false|null, got, of, kind, conf, hit:[], miss:[], note}.
@@ -41115,6 +41209,7 @@ const MXQ_CSS=`
 .mxq .mbar{border-top:.07em solid currentColor;padding-top:.1em}.mxq .merr{color:#e2483f;text-decoration:underline dashed}
 .mxq sup{font-size:.7em;line-height:0}.mxq .mu{color:var(--mu)}.mxq .sm{font-size:13px}
 .mxq .qf{margin:6px 0 14px}
+.mxq .rsx h3{margin:20px 0 4px;font-size:16px}.mxq .rsi{border:1px solid var(--ln);border-radius:12px;background:var(--sf);padding:10px 14px;margin:10px 0}.mxq .rsi p{margin:6px 0 0}.mxq .rsi ul{margin:8px 0 0;padding-left:20px}.mxq .rsi .gr{margin-top:10px}
 .mxq .gr{margin:0;max-width:560px;--fi:#141a30;--fm:#566080;--fl:#cdd4e6;--fp:#fff;color:#141a30;background:#fff;border:1px solid #cdd4e6;border-radius:14px;padding:10px 12px}.mxq .gr svg{display:block;width:100%;height:auto}.mxq .gr figcaption{font-size:13px;color:var(--fm);margin-top:6px}
 .mxq .gf{fill:var(--fp);stroke:var(--fl)}.mxq .gg{stroke:var(--fl)}.mxq .ga{stroke:var(--fm);stroke-width:1.5}.mxq .gt{fill:var(--fm);font-size:12px}.mxq .gl{fill:var(--fi);font-size:13px}
 .mxq .s0{--sc:var(--c)}.mxq .s1{--sc:var(--fi)}.mxq .s2{--sc:var(--fm)}
@@ -41333,7 +41428,7 @@ function mountSubject(host,api,document,root){
  const sheetList=()=>{const q=SQ.trim().toLowerCase(),L=sIndex().filter(x=>(!S.qs||S.saved[x.id])&&(!q||hay(x).includes(q)));
   if(!L.length)return`<div class="card sec">${emp('No matches',S.qs?'No saved reference-sheet formulas match.':'Try another word or symbol.')}</div>`;
   return HSC_SHEET.sections.map(s=>{const R=L.filter(x=>x.mod===s.h);return R.length?`<h2 style="margin:26px 0 0">${esc(s.h)}</h2>${R.map(x=>sheetRow(x,1)).join('')}`:''}).join('')};
- const sheetPage=()=>`<div class="card"><h2>${esc(HSC_SHEET.title)}</h2><p class="mu sm" style="margin:0 0 12px">${esc(HSC_SHEET.source)}. Transcribed from the sheet you supplied, in the order it is printed. Like the exam sheet it gives no explanations; open a card's topic notes for those. Check it against the original PDF before relying on it. This sheet has no annuity table: exam questions print the table they need. The Annuities notes show how to read one.</p><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="sq" class="sel" type="search" placeholder="Search the reference sheet" aria-label="Search the reference sheet" value="${esc(SQ)}" style="flex:1 1 240px"><button class="chip ${S.qs?'on':''}" data-qs aria-pressed="${!!S.qs}">Saved (${Object.keys(S.saved).length})</button></div></div><div id="sres">${sheetList()}</div>`;
+ const sheetPage=()=>`<div class="card"><h2>${esc(HSC_SHEET.title)}</h2><p class="mu sm" style="margin:0 0 12px">${esc(HSC_SHEET.source)}. Transcribed from the sheet you supplied, in the order it is printed. Like the exam sheet it gives no explanations; open a card's topic notes for those. Check it against the original PDF before relying on it. This sheet has no annuity table: exam questions print the table they need. The Annuities notes show how to read one.</p><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><input id="sq" class="sel" type="search" placeholder="Search the reference sheet" aria-label="Search the reference sheet" value="${esc(SQ)}" style="flex:1 1 240px"><button class="chip ${S.qs?'on':''}" data-qs aria-pressed="${!!S.qs}">Saved (${Object.keys(S.saved).length})</button></div></div><div id="sres">${sheetList()}</div>${paperGivenCard()}`;
 
  /* ---------- Practice (Phase 5) ---------- */
  /* ---------- Formulas tab: grouped by module, searchable, each formula with when-to-use and one worked example, saveable, Memorise vs Given on the sheet ---------- */
@@ -42173,8 +42268,11 @@ function mountSubject(host,api,document,root){
   let n=0;const qI=I.map(e=>xq(e,++n)),qII=II.map(e=>xq(e,++n)),secs=[];
   if(qI.length)secs.push({id:'I',title:'Section I',sub:'Multiple choice · '+sum(I)+' marks · allow about '+EXAM.guideI+' minutes',qs:qI});
   if(qII.length)secs.push({id:'II',title:'Section II',sub:'Written response · '+sum(II)+' marks · allow about '+(EXAM.workMin-EXAM.guideI)+' minutes',qs:qII});
-  return{title:'Standard Mathematics',reading:EXAM.readMin*60,minutes:EXAM.workMin,warn:[600,300],sections:secs}},grade(o,typed,stem){return grade(o,typed,stem)}};
+  return{title:'Standard Mathematics',refsheet:1,reading:EXAM.readMin*60,minutes:EXAM.workMin,warn:[600,300],sections:secs}},grade(o,typed,stem){return grade(o,typed,stem)}};
  
+ window.HubExam.maths.sheet=function(){examCss();
+  const it=x=>'<div class="rsi"><b>'+esc(x.name)+'</b>'+(x.text?'<p>'+rich(x.text)+'</p>':'')+(x.lines||[]).map(mb).join('')+(x.graph?graph(x.graph):'')+(x.list?'<ul>'+x.list.map(y=>'<li>'+rich(y)+'</li>').join('')+'</ul>':'')+(x.note?'<p class="mu sm">'+rich(x.note)+'</p>':'')+'</div>';
+  return XW('<div class="rsx">'+HSC_SHEET.sections.map(sc=>'<h3>'+esc(sc.h)+'</h3>'+sc.items.map(it).join('')).join('')+'</div>')};
  if(S.ls==='ref')S.ls='notes';   /* the Learn 'Formulas and reference' page was merged into the Formulas tab */
  {const ok=new Set(sIndex().concat(fmIndex(),mtIndex()).map(x=>x.id));let gone=0;Object.keys(S.saved).forEach(k=>{if(!ok.has(k)){delete S.saved[k];gone++}});if(gone)save()}   /* saves of cards that no longer exist would inflate the Saved count */
  epResume();
@@ -43378,7 +43476,7 @@ function xcover(){const p=xpre.paper,s=sub(xpre.subj),tot=xtotalP(p);
  <div class="xc-facts">${p.reading?`<div><b>${xmin(p.reading)}</b><span>reading time</span></div>`:''}<div><b>${xmin(p.minutes*60)}</b><span>writing time</span></div><div><b>${tot}</b><span>total marks</span></div></div>
  <h2>Paper structure</h2>${p.sections.map(sec=>`<div class="xc-cs"><b>${esc(sec.title)}</b><span>${sec.sub}</span>${sec.note?`<em>${sec.note}</em>`:''}</div>`).join('')}
  <h2>Before you begin</h2><ul class="xc-inst">${p.reading?`<li>Reading time comes first. You can read the whole paper, but writing is switched off until it ends.</li>`:''}<li>The clock cannot be paused. The paper is submitted automatically when writing time ends.</li>
- <li>You can move between questions and sections in any order, and flag questions to come back to.</li><li>Answers are saved automatically as you work.</li><li>There are no hints, notes or study tools during the exam. Marks and feedback appear after you submit.</li></ul>
+ <li>You can move between questions and sections in any order, and flag questions to come back to.</li><li>Answers are saved automatically as you work.</li>${p.refsheet?'<li>The HSC reference sheet is printed with the real paper, so it is available here too. Use the Reference sheet button at the top of the screen.</li>':''}<li>There are no hints, notes or study tools during the exam. Marks and feedback appear after you submit.</li></ul>
  <p style="display:flex;gap:10px;margin:24px 0"><button class="btn p" data-xc="begin">Begin exam</button><button class="btn" data-xc="cancelpre">Cancel</button></p></div></div>`}
 function xbegin(){if(!xpre)return;const p=xpre.paper,now=Date.now();
  X.run={id:'x'+now,subj:xpre.subj,vr:xpre.vr,paper:p,phase:p.reading?'reading':'writing',rEnd:now+(p.reading||0)*1000,wEnd:now+((p.reading||0)+p.minutes*60)*1000,ws:now+(p.reading||0)*1000,a:{},dw:{},fa:{},pick:{},fl:{},wn:{},cur:xall(p)[0].id};
@@ -43387,7 +43485,14 @@ function xresume(fs){const r=X.run;if(!r)return;if(fs===true)xfsReq();
  {const t=S.run;if(t&&t.paused==null&&!t.over){t.paused=Math.max(0,t.end-Date.now());save();pill();toast('Study timer paused while the exam runs, so the time is not counted twice.',true)}}xopen();xrun();xtick();clearInterval(xti);xti=setInterval(xtick,500)}
 
 /* ---------- running exam ---------- */
-function xrun(){const r=X.run;xo.innerHTML=`<div class="xc-top"><div class="xc-tl"><button class="btn xc-qb" data-xc="qlist" aria-label="Open question list">☰ Questions</button><div><b>${esc(r.paper.title)}</b><div class="mu sm" id="xcph"></div></div></div><div class="xc-clock" id="xccl" role="timer" aria-live="off">--:--</div><div class="xc-r"><span class="mu sm" id="xcsv"${st('saveStatus')===false?' style="display:none"':''}>Answers save automatically</span><span class="mu sm" id="xcpr"></span><button class="btn" data-xc="brk" id="xcbb">Rest break</button><button class="btn" data-xc="exit">Exit</button><button class="btn p" data-xc="submit">Submit exam</button></div></div><div id="xcfs"></div><div id="xcbn" aria-live="assertive"></div><div class="xc-body"><nav id="xcnv" aria-label="Question navigation"></nav><section id="xcmain" tabindex="-1"></section></div><div class="xc-foot"><button class="btn" data-xc="prev">← Previous</button><span class="xc-fm"><button class="btn" data-xc="flag" id="xcfl">⚑ Flag for review</button><span class="mu sm xc-keys">← → move · A–D answer · F flag</span></span><button class="btn" data-xc="next">Next →</button></div>`;xnav();xmain();xfsBar()}
+/* Reference sheet: the subject draws it (HubExam.<subject>.sheet), the Hub only shows it in a panel over the paper. The exam clock keeps running. */
+function xrefClose(){const o=$('#xcrs');if(o)o.remove();const b=$('#xcrf');if(b)b.focus()}
+function xrefOpen(){const r=X.run;if(!r||!xo||$('#xcrs'))return;
+ xensure(r.subj).then(()=>{const E=window.HubExam&&HubExam[r.subj];if(!E||typeof E.sheet!=='function'||!X.run||$('#xcrs'))return;
+  const o=document.createElement('div');o.id='xcrs';o.className='xc-rs';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Reference sheet');
+  o.innerHTML='<div class="xc-rsp"><div class="xc-rsh"><b>HSC reference sheet</b><button class="btn" data-xc="refclose" id="xcrx">Close</button></div>'+E.sheet()+'</div>';
+  o.addEventListener('click',e=>{if(e.target===o)xrefClose()});xo.appendChild(o);const c=$('#xcrx');if(c)c.focus()}).catch(()=>xbanner('The reference sheet could not be loaded.'))}
+function xrun(){const r=X.run;xo.innerHTML=`<div class="xc-top"><div class="xc-tl"><button class="btn xc-qb" data-xc="qlist" aria-label="Open question list">☰ Questions</button><div><b>${esc(r.paper.title)}</b><div class="mu sm" id="xcph"></div></div></div><div class="xc-clock" id="xccl" role="timer" aria-live="off">--:--</div><div class="xc-r"><span class="mu sm" id="xcsv"${st('saveStatus')===false?' style="display:none"':''}>Answers save automatically</span><span class="mu sm" id="xcpr"></span>${r.paper.refsheet?'<button class="btn" data-xc="refsheet" id="xcrf">Reference sheet</button>':''}<button class="btn" data-xc="brk" id="xcbb">Rest break</button><button class="btn" data-xc="exit">Exit</button><button class="btn p" data-xc="submit">Submit exam</button></div></div><div id="xcfs"></div><div id="xcbn" aria-live="assertive"></div><div class="xc-body"><nav id="xcnv" aria-label="Question navigation"></nav><section id="xcmain" tabindex="-1"></section></div><div class="xc-foot"><button class="btn" data-xc="prev">← Previous</button><span class="xc-fm"><button class="btn" data-xc="flag" id="xcfl">⚑ Flag for review</button><span class="mu sm xc-keys">← → move · A–D answer · F flag</span></span><button class="btn" data-xc="next">Next →</button></div>`;xnav();xmain();xfsBar()}
 function xbanner(t,keep){const b=$('#xcbn');if(!b)return;b.innerHTML=`<div class="xc-bn">${t}</div>`;clearTimeout(xbanner.t);if(!keep)xbanner.t=setTimeout(()=>{const c=$('#xcbn');if(c)c.innerHTML=''},9000)}
 function xfsBar(){const b=$('#xcfs');if(!b)return;b.innerHTML=(xfs&&st('fsReminder')!==false&&X.run&&!document.fullscreenElement&&document.documentElement.requestFullscreen)?`<div class="xc-bn xc-fsb">Full screen has ended. The exam clock is still running. <button class="btn" data-xc="fs">Return to full screen</button></div>`:''}
 /* ===== Rest breaks inside the exam =====
@@ -44296,7 +44401,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!
   save();xrepaint()}
  else if(!r||!xo)return;
  else if(a==='go')xgo(t.dataset.q);else if(a==='prev')xstep(-1);else if(a==='next')xstep(1);
- else if(a==='qlist'){const n=$('#xcnv');if(n)n.classList.add('open')}else if(a==='qclose'){const n=$('#xcnv');if(n)n.classList.remove('open')}
+ else if(a==='refsheet'){xrefOpen()}else if(a==='refclose'){xrefClose()}else if(a==='qlist'){const n=$('#xcnv');if(n)n.classList.add('open')}else if(a==='qclose'){const n=$('#xcnv');if(n)n.classList.remove('open')}
  else if(a==='opt'&&r.phase==='writing'){r.a[t.dataset.q]=+t.dataset.v;xsaveD();xnav();xmain(true)}
  else if(a==='pick'&&r.phase==='writing'){const q=xfind(r.paper,t.dataset.q);r.pick[q.sec]=q.id;xsaveD();xnav();xmain(true)}
  else if(a.slice(0,2)==='dw')xpadAct(a.slice(2),t.dataset.k,t.dataset.v);
@@ -44311,7 +44416,7 @@ document.addEventListener('input',e=>{const t=e.target;if(!xo||!X.run||!t.datase
  const s=$('#xcsv');if(s){s.textContent='Saving…';s.style.color=''}xsaveD();xnav()});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset.xm)return;const a=X.hist.find(x=>x.id===t.dataset.a);if(!a||!a.paper)return;const q=xfind(a.paper,t.dataset.xm),v=t.value===''?null:Math.max(0,Math.min(q.marks,Math.round(+t.value)));
  a.mk[q.id]=v;a.tot=xsum(a);xplanSync(a);xput(a);xsave();const sc=xo.querySelector('.xc-res');const y=sc.scrollTop;xres(a.id);xo.querySelector('.xc-res').scrollTop=y});
-document.addEventListener('keydown',e=>{if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;if(X.run.bs)return;const r=X.run,k=e.key;
+document.addEventListener('keydown',e=>{if(xo&&X.run&&$('#xcrs')){if(e.key==='Escape'){xrefClose();e.preventDefault()}return}if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;if(X.run.bs)return;const r=X.run,k=e.key;
  if(k==='ArrowRight'){xstep(1);e.preventDefault()}else if(k==='ArrowLeft'){xstep(-1);e.preventDefault()}
  else if(k.length===1&&k.toLowerCase()==='f'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
  else if(/^[a-d]$/i.test(k)){const q=xfind(r.paper,r.cur),i=k.toLowerCase().charCodeAt(0)-97;if(q&&q.type==='mc'&&r.phase==='writing'&&q.options[i]!=null){r.a[q.id]=i;xsaveD();xnav();xmain(true)}}});
