@@ -879,7 +879,8 @@ body.calm :is(.tk-b,.tk-b::before,.tk-b i,.pl-lit,#scd,#scd>div,.sc-g div,#wpop,
 #ptr i{width:30px;height:30px;border-radius:50%;border:3px solid color-mix(in srgb,var(--br) 25%,transparent);border-top-color:var(--br);box-sizing:border-box;opacity:0;transform:scale(.6) rotate(0);transition:opacity .15s}
 #ptr.go i{background:color-mix(in srgb,var(--br) 14%,transparent)}
 #ptr.spin i{animation:ptrs .8s linear infinite}
-@keyframes ptrs{from{rotate:0deg}to{rotate:360deg}}
+@keyframes ptrs{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+#ptr i{will-change:transform,opacity;backface-visibility:hidden}
 body.ptr-on main{position:relative;will-change:transform}
 body.ptr-snap main{transition:transform .38s cubic-bezier(.2,.9,.25,1.15)}
 body.ptr-snap #ptr{transition:transform .38s cubic-bezier(.2,.9,.25,1.15)}
@@ -1083,6 +1084,14 @@ body.tr-full .tr-hud{top:calc(14px + env(safe-area-inset-top,0px)/var(--uz,1))}b
 html:has(body.xc-on),body.xc-on{background:var(--bg,#0b0e1a)!important}
 body.xc-on>*:not(#xc):not([role=dialog]):not(script):not(style):not(link){visibility:hidden!important}
 #xc textarea,#xc input{overscroll-behavior:contain}
+</style>
+<style id="xc-ask-css">
+#xc .xc-ask{margin:8px 0 10px;padding:10px 14px;border:1px solid var(--ln);border-radius:12px;background:var(--sf)}
+#xc .xc-ask ol{margin:6px 0 0;padding-left:22px}
+#xc .xc-ask li{margin:6px 0}
+#xc .xc-ask label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+#xc .xc-ask input{width:22px;height:22px;margin:1px 0 0;flex:none;accent-color:var(--br,#6b4cf6)}
+#xc .xc-ack:checked+span{opacity:.55;text-decoration:line-through}
 </style>
 <style id="mobile-fixes">
 /* confirm card: clearer, and stacked full-width buttons on phones */
@@ -42421,10 +42430,24 @@ function mountSubject(host,api,document,root){
  const xmodel=o=>XW((o.answer?ans(o.answer):'')+wsteps(o.working));
  const xlinks=t=>[NOTES[t.id]?{t:'Notes: '+t.title,w:'#learn/'+t.id,g:'Maths notes'}:null,{t:'Practise '+t.title,w:'#practice/topic/'+t.id,g:'Maths practice'}].filter(Boolean);
  const xga=o=>o&&o.answer&&o.answer.value!=null?{marks:o.marks,answer:o.answer}:null;
+ /* "This part asks for": a long stem is broken into its separate asks (shown as a tick list; marks and marking are unchanged) */
+ const XVB='Calculate|Find|State|Explain|Determine|Show|Describe|Draw|Hence|Use|Write|Name|Identify|Sketch|Solve|Evaluate|Justify|Comment|Compare|Round|Complete|Construct|Estimate|Predict|Interpret|Simplify|Expand|Factorise|Convert|Suggest|Give|List|Outline|Assess|Decide|Verify|Prove|Express|Work out|Rearrange|Plot|Compute|Discuss',XVR=new RegExp('^(?:'+XVB+')\\b'),XQR=/^(?:What|How|Which|Why|When|Is|Are|Does|Do|Can|Will|Would|Should|Who)\b/,xIsAsk=t=>XVR.test(t)||XQR.test(t);
+ const xSplitAsk=t=>{const m=/^((?:Hence,?\s+)?(?:Work out|[A-Z][a-z]+))\s+(.*)$/.exec(t);if(!m||!XVR.test(t))return[t];const vb=m[1].replace(/,$/,''),rest=m[2].replace(/[.?!]\s*$/,'');
+  const out=[];rest.split(/(?:,\s*(?:and\s+)?|\s+and\s+)(?=the\s|its\s|their\s|then\s)/).map(x=>x.trim()).filter(Boolean).forEach(p=>{const mm=new RegExp('^(.*?)(?:,\\s*(?:and\\s+)?|\\s+and\\s+)((?:'+XVB+')\\b.*)$').exec(p);if(mm)out.push(mm[1],mm[2]);else out.push(p)});
+  if(out.length<2||out.some(p=>p.split(/\s+/).length<2))return[t];
+  return out.map(p=>(XVR.test(p)?p:vb+' '+p).replace(/^./,c=>c.toUpperCase()).replace(/[.?!]?$/,'.'))};
+ const xAsks=stem=>{try{stem=String(stem||'');
+  const rm=[...stem.matchAll(/(?:^|\s)\((i{1,3}|iv|v)\)\s/g)];
+  if(rm.length>=2&&rm[0][1]==='i'&&rm[1][1]==='ii'){const st=rm.map(m=>m.index+(m[0].charAt(0)==='('?0:1));return st.map((a,k)=>stem.slice(a,k+1<st.length?st[k+1]:undefined).trim().replace(/^\((?:i{1,3}|iv|v)\)\s*/,'')).filter(Boolean)}
+  const S=[],re=/[.?!]\s+(?=[A-Z\\(\\\\$])/g;let last=0,m;while((m=re.exec(stem))){S.push(stem.slice(last,m.index+1));last=m.index+m[0].length}S.push(stem.slice(last));
+  const fi=S.findIndex(x=>xIsAsk(x.trim()));if(fi<0)return[];const A=[];
+  S.slice(fi).forEach(x=>{x=x.trim();if(xIsAsk(x))A.push(...xSplitAsk(x));else if(A.length)A[A.length-1]+=' '+x});
+  return A.length>=2&&A.length<=6&&A.every(a=>a.split(/\s+/).length>=3)?A:[]}catch(e){return[]}};
+ const xAskH=stem=>xAsks(stem).map(a=>XW(rich(a)));
  const xq=(e,n)=>{const q=e.q,t=e.t,base={id:q.id,lb:String(n),marks:q.marks,topic:t.title,topics:[t.title],links:xlinks(t),draw:1},fig=figOf(q.id);
   if(q.type==='mc')return Object.assign(base,{type:'mc',stim:fig?XW(fig):'',q:XW(para(q.stem)),options:q.options.map(o=>XW(rich(o.text))),correct:Math.max(0,q.options.findIndex(o=>o.id===q.correct)),exp:XW(wsteps(q.working))});
-  if(q.type==='short')return Object.assign(base,{type:'sa',stim:fig?XW(fig):'',parts:[{marks:q.marks,q:XW(xin(q.stem)),pts:xpts(q.marking),model:xmodel(q),ga:xga(q),gs:q.stem}]});
-  return Object.assign(base,{type:'sa',stim:XW(para(q.stem)+fig),parts:q.parts.map(p=>({marks:p.marks,q:XW(xin(p.stem)+figOf(q.id+'#'+p.label)),pts:xpts(p.marking),model:xmodel(p),ga:xga(p),gs:q.stem+' '+p.stem}))})};
+  if(q.type==='short')return Object.assign(base,{type:'sa',stim:fig?XW(fig):'',parts:[{marks:q.marks,q:XW(xin(q.stem)),ask:xAskH(q.stem),pts:xpts(q.marking),model:xmodel(q),ga:xga(q),gs:q.stem}]});
+  return Object.assign(base,{type:'sa',stim:XW(para(q.stem)+fig),parts:q.parts.map(p=>({marks:p.marks,q:XW(xin(p.stem)+figOf(q.id+'#'+p.label)),ask:xAskH(p.stem),pts:xpts(p.marking),model:xmodel(p),ga:xga(p),gs:q.stem+' '+p.stem}))})};
  window.HubExam=window.HubExam||{};
  window.HubExam.maths={build(o){
   examCss();
@@ -43712,7 +43735,7 @@ function xmain(keep){const r=X.run,q=xfind(r.paper,r.cur),el=$('#xcmain');if(!q|
  if(sec.booklet)h+=`<details class="xc-bk" open><summary>${sec.bookTitle||'Reference material'}</summary>${sec.booklet}</details>`;
  if(q.stim)h+=`<div class="xc-stim">${q.stim}</div>`;
  if(q.type==='mc')h+=`<div class="xc-qt">${q.q}</div>`+q.options.map((o,i)=>`<button class="xc-opt ${r.a[q.id]===i?'on':''}" ${dis} data-xc="opt" data-q="${q.id}" data-v="${i}"><b>${'ABCD'[i]}</b><span>${o}</span></button>`).join('')+xwk(r,q,lock);
- else if(q.type==='sa'){const a=r.a[q.id]||[];h+=q.parts.map((p,i)=>`<div class="xc-pt">(${'abcdefgh'[i]}) ${p.q} <span class="mu sm">[${p.marks} mark${p.marks>1?'s':''}]</span></div>${q.draw?xpad(r,q,i,lock):`<textarea name=hf51-xc-ta class="xc-ta" rows="${Math.min(14,3+p.marks)}" ${dis} data-xa="${q.id}" data-p="${i}" aria-label="Answer part ${'abcdefgh'[i]}">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`}`).join('')}
+ else if(q.type==='sa'){const a=r.a[q.id]||[];h+=q.parts.map((p,i)=>`<div class="xc-pt">(${'abcdefgh'[i]}) ${p.q} <span class="mu sm">[${p.marks} mark${p.marks>1?'s':''}]</span></div>${xAskList(q,i,p)}${q.draw?xpad(r,q,i,lock):`<textarea name=hf51-xc-ta class="xc-ta" rows="${Math.min(14,3+p.marks)}" ${dis} data-xa="${q.id}" data-p="${i}" aria-label="Answer part ${'abcdefgh'[i]}">${esc(a[i]||'')}</textarea><div class="xc-wc">${xwc(a[i])} words</div>`}`).join('')}
  else h+=`<div class="xc-qt">${xmk(q)}</div><textarea name=hf52-xc-ta class="xc-ta" rows="${q.rows||20}" ${dis} data-xa="${q.id}" aria-label="Written answer">${esc(r.a[q.id]||'')}</textarea><div class="xc-wc">${xwc(r.a[q.id])} words</div>`;
  el.innerHTML=h+'</div>';el.scrollTop=keep===true?y:0;el.querySelectorAll('canvas[data-xcv]').forEach(xcpaint);xtick()}
 function xgo(id){const r=X.run;if(!r)return;r.cur=id;xsaveD();const n=$('#xcnv');if(n)n.classList.remove('open');xnav();xmain()}
@@ -43793,6 +43816,10 @@ function xrev0(a,b){const q=b.q,it=b.it;if(!q)return`<div class="xc-rv"><b>${esc
 
 
 /* ---------- working section on multiple-choice questions that involve calculations (Exam Centre) ---------- */
+const XASK=new Set();
+function xAskList(q,i,p){if(!p||!p.ask||p.ask.length<2)return'';
+ return`<div class="xc-ask"><div class="mu sm"><b>This part asks you to:</b></div><ol>${p.ask.map((a,k)=>{const key=q.id+':'+i+':'+k;return`<li><label><input type="checkbox" class="xc-ack" data-ak="${key}"${XASK.has(key)?' checked':''}> <span>${a}</span></label></li>`}).join('')}</ol></div>`}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('xc-ack')){if(t.checked)XASK.add(t.dataset.ak);else XASK.delete(t.dataset.ak)}});
 const xCalc=(r,q)=>{if(!q||q.type!=='mc')return false;if(r.subj==='maths')return true;if(!/^(economics|business)$/.test(r.subj))return false;
  const t=[q.q,q.stim].concat(q.options||[]).join(' ').replace(/<[^>]*>/g,' ');
  return /calculat/i.test(t)||(/\d/.test(t)&&/[%$]|percent|per cent|ratio|break-?even|margin|rate|index|profit|revenue|cost|price|growth|average|mean|multiplier|total/i.test(t))};
@@ -44637,7 +44664,10 @@ addEventListener('pagehide',xsaveNow);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)xsaveNow()});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&xo&&X.run)xfsBar();else{const b=$('#xcfs');if(b)b.innerHTML=''}});
 /* an exam left running is picked up again on load; one whose time has run out is submitted for you */
-function xboot(){const r=X.run;if(!r)return;if(!r.bs&&Date.now()>=r.wEnd){xsubmit(true,true);render();return}xresume()}
+function xboot(){const r=X.run;if(!r)return;let nores=false;try{nores=sessionStorage.getItem('hsc-sb-nores')==='1';sessionStorage.removeItem('hsc-sb-nores')}catch(e){}
+ if(!r.bs&&Date.now()>=r.wEnd){xsubmit(true,true);render();return}
+ if(nores)return;   /* reloaded by an account sync: the exam stays paused and can be resumed from the Exams page */
+ xresume()}
 
 
 /* ===== Phase 9: Data & Backup =====
@@ -47120,7 +47150,7 @@ if(typeof render==='function')render();
    short excerpts and keeps them in memory. Each question finds the best-matching excerpts on this device (no network) and sends only those, with
    the chat, to the AI provider and key set in Settings > AI Setup. Nothing is stored except the chat itself (localStorage 'hsc-hub-tutor-v1'). */
 (function(){try{
-const SK='hsc-hub-tutor-v1',MAXMSG=40;
+const SK='hsc-hub-tutor-v1',MAXMSG=300;   /* storage cap per subject; the AI is still only sent the last 16 turns */
 const NAMES={english:'Standard English',economics:'Economics',business:'Business Studies',history:'Modern History',maths:'Standard Mathematics',hub:'Hub guides'};
 const FOCUS={
  english:'Standard English, with Paper 1 (Common Module, unseen texts) and Paper 2 (Module A Language, Identity and Culture; Module B Close Study of Literature; Module C The Craft of Writing) treated equally. Never assume Paper 1: work on the paper or module the student names or has pinned; the texts in the Hub (Billy Elliot, New Accents by Ouyang Yu, Home by Miriam Wei Wei Lo, The Curious Incident of the Dog in the Night-Time, The Pedestrian, The Surfer); the technique bank and the 8-step analysis method; command words; thesis and structure; evidence (short exact quotes or moments), technique then effect then link to the question.',
@@ -47258,7 +47288,9 @@ try{const o=JSON.parse(localStorage.getItem(SK));if(o&&typeof o==='object'){if([
  else if(Array.isArray(o.msgs)){const a=okm(o.msgs);if(a.length)CH[T.subj]=a}}}catch(e){}
 const tts=m=>{if(!m||typeof m.d!=='number')return'';const d=new Date(m.d);if(isNaN(d))return'';const same=d.toDateString()===new Date().toDateString();return'<div class="tt-ts">'+(same?'':d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+', ')+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+'</div>'};   /* shown to the minute; the full millisecond time stays stored for ordering */
 /* live Tutor update: when another device's chats arrive but the page cannot reload yet (you are typing, or the keyboard is open), add them straight into the open chat. Add-only, except chats cleared on purpose (clr). */
-window.__ttLive=raw=>{try{const o=JSON.parse(raw);if(!o||typeof o!=='object')return false;let ch=false;const SUBS=['all','english','economics','business','history','maths'];
+window.__ttBusy=()=>!!T.busy;   /* a Tutor reply is still being written: nothing may reload the page now or it is lost */
+window.__ttLive=raw=>{try{if(T.busy||location.hash.slice(1).split('/')[0]==='tutor')return false;   /* never rewrite a chat you are looking at or waiting on; it arrives on the next sync apply */
+ const o=JSON.parse(raw);if(!o||typeof o!=='object')return false;let ch=false;const SUBS=['all','english','economics','business','history','maths'];
  if(o.clr&&typeof o.clr==='object')SUBS.forEach(k=>{const t=+o.clr[k]||0;if(t>(CLR[k]||0)){CLR[k]=t;ch=true}});
  SUBS.forEach(k=>{const inc=Array.isArray(o.chats&&o.chats[k])?o.chats[k]:[],cur=CH[k]||[],z=CLR[k]||0,key=x=>x.id!=null?'i:'+x.id:'j:'+JSON.stringify(x),seen=new Set(),all=[];
   for(const x of cur.concat(inc)){if(!x||typeof x!=='object'||(x.r!=='u'&&x.r!=='a')||typeof x.t!=='string')continue;if(z&&!(typeof x.d==='number'&&x.d>z))continue;const q=key(x);if(seen.has(q))continue;seen.add(q);all.push(x)}
@@ -48918,13 +48950,14 @@ async function run(){if(T.busy||!T.msgs.length||T.msgs[T.msgs.length-1].r!=='u')
   const KF=keepFor(sj),last=ch[ch.length-1].t,us=ch.slice(0,-1).filter(m=>m.r==='u'),QZ=/\b(?:quiz|test) me\b|\bask me (?:a |some )?(?:few )?questions?\b/i;let hits,q=last,cfv=1,gate='covered',wrong='';
   const rest=last.replace(new RegExp(QZ.source,'gi'),' ').replace(/\b\d+\b|short|few|more|questions?|this|that|it/gi,' '),prior=()=>{for(let i=us.length-1;i>=0;i--)if(tok(us[i].t).length>=1&&!QZ.test(us[i].t))return us[i].t;return''};
   if(QZ.test(last)&&tok(rest).length<1){const p=prior();hits=p?await hsearch(C,p,sj,10):sample(C,sj,6)}
-  else{if(tok(last).length<3){const p=prior();if(p)q=p+' '+last;if(T.paper&&PAPERS[T.paper]&&sj==='english')q+=' '+PAPERS[T.paper][2]}if(KF&&KF.kw)q+=' '+KF.kw;hits=await hsearch(C,q,sj,10);cfv=hits.conf;
+  else{if(tok(last).length<3){const p=prior();if(p)q=p+' '+last;{const la=[...ch].reverse().find(m=>m.r==='a'&&!m.sw);if(la)q+=' '+la.t.replace(/\s+/g,' ').slice(0,300)}if(T.paper&&PAPERS[T.paper]&&sj==='english')q+=' '+PAPERS[T.paper][2]}if(KF&&KF.kw)q+=' '+KF.kw;hits=await hsearch(C,q,sj,10);cfv=hits.conf;
    if(T.rw!==false&&!hits.sem&&(!hits.length||hits[0].cov<.6||hits.length<4)){const kw=await as(()=>expand(q));if(kw){const r2=search(C,q+' '+kw,sj,10);if(r2.conf>=.6)cfv=Math.max(cfv,Math.min(r2.conf,GATES[T.gm][1]-.01));const mm=new Map();[...hits,...r2].forEach(h=>{const o=mm.get(h.c.id);if(!o||h.s>o.s)mm.set(h.c.id,h)});hits=[...mm.values()].sort((x,y)=>y.s-x.s).slice(0,10)}}}
   /* three-way gate: covered -> send notes; weak -> send notes + warn the AI; not covered -> send no notes. Quiz, study-skills and planning messages, and pure chat, are never gated. */
   const FMTQ=FMTINT.test(last)&&EXAMW.test(last+' '+(us.length?us[us.length-1].t:''))&&as(()=>formatSubjects(last)).length>0;
    if(!QZ.test(last)&&!EXEMPT.test(last)&&!FMTQ&&tok(q).length>0){const GL=GATES[T.gm][0],GH=GATES[T.gm][1];gate=cfv>=GH?'covered':cfv>=GL?'weak':'none';if(KF&&gate==='none')gate='weak';   /* with the picture attached, a vague follow-up is not refused for missing notes */
-   if(sj!=='all'){const ra=search(C,q,'all',9),cnt={};ra.slice(0,3).forEach(h=>{if(SUBIDS.includes(h.c.subj))cnt[h.c.subj]=(cnt[h.c.subj]||0)+1});const o=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
-    if(o&&o!==sj&&ra.conf>=.9&&ra.conf-cfv>=.3)wrong=o}
+   const inConv=ch.slice(0,-1).some(m=>m.r==='a'&&!m.sw),shortReply=inConv&&(tok(last).length<8||last.trim().length<45);
+   if(sj!=='all'&&tok(last).length>=3&&!shortReply){const ra=search(C,q,'all',9),cnt={};ra.slice(0,3).forEach(h=>{if(SUBIDS.includes(h.c.subj))cnt[h.c.subj]=(cnt[h.c.subj]||0)+1});const o=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
+    if(o&&o!==sj&&ra.conf>=.9&&ra.conf-cfv>=(ch.length>=3?.5:.3))wrong=o}
    if(gate==='none'||wrong)hits=[]}
   try{const hs=as(()=>ttsubOfHits(hits));if(hs){LASTSUB=hs;window.__ttEng=effSub()}}catch(e){}
    const hist=merge(ch.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t.slice(0,m.r==='a'?1800:3000)})));
@@ -49222,9 +49255,9 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
  var canStart=function(e){return !busy&&!(window.HubSettings&&HubSettings.get('accessibility.pullRefresh')===false)&&e.touches.length===1&&main.dataset.view==='dash'&&(window.scrollY||document.documentElement.scrollTop)<=0&&!document.body.classList.contains('nav')&&ok(e.target)};
  function mk(){if(!ind){ind=document.createElement('div');ind.id='ptr';ind.setAttribute('aria-hidden','true');ind.innerHTML='<i></i>'}var r=main.getBoundingClientRect();ind.style.left=r.left+'px';ind.style.width=r.width+'px';ind.style.top=(r.top-64)+'px';ind.style.transform='';ind.firstChild.style.opacity=0;if(ind.parentNode!==document.body)document.body.appendChild(ind)}
  function set(v){d=v;main.style.transform=v?'translate3d(0,'+v+'px,0)':'';if(ind){ind.style.transform='translate3d(0,'+v+'px,0)';var p=Math.min(1,v/TH),i=ind.firstChild;i.style.opacity=p;if(!busy)i.style.transform='scale('+(.6+.4*p)+') rotate('+(p*270)+'deg)'}}
- function end(){document.body.classList.remove('ptr-on','ptr-snap');main.style.transform='';main.style.willChange='';if(ind&&ind.parentNode)ind.remove();d=0;busy=false}
+ function end(){document.body.classList.remove('ptr-on','ptr-snap');main.style.transform='';main.style.willChange='';if(ind&&ind.parentNode)ind.remove();d=0;busy=false;on=false;armed=false}
  function snap(then){document.body.classList.add('ptr-snap');set(0);setTimeout(function(){end();if(then)then()},400)}
- addEventListener('touchstart',function(e){on=false;armed=false;if(!canStart(e))return;y0=e.touches[0].clientY;x0=e.touches[0].clientX;on=true},{passive:true});
+ addEventListener('touchstart',function(e){if(ind&&ind.parentNode&&!busy&&!document.body.classList.contains('ptr-snap'))end();on=false;armed=false;if(!canStart(e))return;y0=e.touches[0].clientY;x0=e.touches[0].clientX;on=true},{passive:true});
  addEventListener('touchmove',function(e){
   if(!on||busy)return;
   var t=e.touches[0],dy=t.clientY-y0,dx=t.clientX-x0;
@@ -49233,7 +49266,7 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
   var v=MAXD*(1-Math.exp(-dy*.55/MAXD));
   var was=ind&&ind.classList.contains('go');
   set(v);
-  var now=v>=TH;ind.classList.toggle('go',now);ind.classList.toggle('spin',now);
+  var now=v>=TH;if(now!==!!was){ind.classList.toggle('go',now);ind.classList.toggle('spin',now)}
   if(now&&!was&&navigator.vibrate)try{navigator.vibrate(8)}catch(_){}
  },{passive:false});
  function release(){
@@ -49243,12 +49276,16 @@ addEventListener('hashchange',()=>{if(S.sub)tn()});setInterval(()=>{if(S.sub)tn(
    busy=true;document.body.classList.add('ptr-snap');set(TH*.85);ind.classList.add('spin');ind.firstChild.style.opacity=1;ind.firstChild.style.transform='scale(1) rotate(270deg)';
    var t0=Date.now();
    try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration)navigator.serviceWorker.getRegistration().then(function(r){if(r)r.update().catch(function(){})}).catch(function(){})}catch(_){}
-   var done=function(){var wait=Math.max(0,600-(Date.now()-t0));setTimeout(function(){try{if(typeof render==='function'){render()}}catch(err){console.warn('refresh',err)}requestAnimationFrame(function(){requestAnimationFrame(function(){snap()})})},wait)};
-   done();
+   var rendered=false,doRender=function(){if(rendered)return;rendered=true;requestAnimationFrame(function(){setTimeout(function(){try{if(typeof render==='function'){render()}}catch(err){console.warn('refresh',err)}},0)})};
+   var done=function(){var wait=Math.max(0,500-(Date.now()-t0));setTimeout(function(){if(busy)snap(doRender);else doRender()},wait)};
+   done();setTimeout(function(){if(busy){end();doRender()}},2500);   /* safety: never leave the spinner stuck */   /* safety: never leave the spinner stuck */
   }else snap();
  }
  addEventListener('touchend',release,{passive:true});
  addEventListener('touchcancel',release,{passive:true});
+ addEventListener('scroll',function(){if(ind&&ind.parentNode&&!on&&(window.scrollY||document.documentElement.scrollTop||0)>2)end()},{passive:true});
+ document.addEventListener('visibilitychange',function(){if(document.hidden)end()});addEventListener('pageshow',function(){end()});
+ setInterval(function(){if(!on&&!busy&&ind&&ind.parentNode&&!document.body.classList.contains('ptr-snap'))end()},1500);   /* a spinner left over from a missed touch-end is cleared */
 })();
 </script>
 <script>
@@ -49444,6 +49481,7 @@ const applyLocal=async(M,safe)=>{const ls=Object.assign({},M.ls);
  {const mine=jget(HK),rm=P(ls[HK]);   /* this device's own name, theme, look, calm, fx, goal, ea stay as they are here */
   if(mine&&typeof mine==='object'&&!Array.isArray(mine)&&rm&&typeof rm==='object'&&!Array.isArray(rm)){DEVF.forEach(f=>{if(f in mine)rm[f]=mine[f];else delete rm[f]});ls[HK]=JSON.stringify(rm)}}
  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&!keep(k)&&k.indexOf('hsc-sb-')!==0&&!(k in ls))ls[k]=localStorage.getItem(k)}   /* per-device keys stay as they are here */
+ try{sessionStorage.setItem('hsc-sb-nores','1')}catch(e){}   /* this reload is a sync: stay where you are, do not reopen a running exam */
  await HubBackup.restore({app:'hsc-hub',v:2,at:Date.now(),kind:'sync',ls,xh:Array.isArray(M.xh)?M.xh:[],mods:M.mods||{}},{nosafe:!safe})};
 
 /* small UI helpers */
@@ -49483,7 +49521,9 @@ const leaveBlocked=()=>{try{const e=new Event('beforeunload',{cancelable:true});
 const boxHasText=()=>[...document.querySelectorAll('textarea')].some(t=>!!t.value&&t.value.trim()!==''&&(t.offsetWidth>0||t.offsetHeight>0||t.getClientRects().length>0));
 const recentAp=()=>{const a=jget(AP),t=Date.now();return Array.isArray(a)?a.filter(x=>typeof x==='number'&&t-x<18e4):[]};
 const noteAp=()=>{const a=recentAp();a.push(Date.now());jset(AP,a)};
-const canApply=mode=>{if(mode==='login'||mode==='manual')return true;
+const ttWait=()=>{try{return !!(window.__ttBusy&&window.__ttBusy())}catch(e){return false}};
+const canApply=mode=>{if(ttWait())return false;   /* a sync reload mid-reply wipes the reply and anything not yet saved */
+ if(mode==='login'||mode==='manual')return true;
  if(recentAp().length>=3||mockRunning()||boxHasText()||leaveBlocked())return false;
  return mode==='load'||(!document.hidden&&!timerRunning()&&!typing()&&(mode==='show'||Date.now()-lastAct>10000))};
 const setMeta=o=>{meta=Object.assign({uid:sess.uid,lt:meta.lt,safeAt:meta.safeAt},o);saveMeta()};
@@ -49519,7 +49559,7 @@ async function check(mode){if(!sess)return;if(busy){again=mode;return}busy=true;
     await baseSet(L);setMeta({at,hash:L.hash,behind:true});lastFp=fp0;
     /* Tutor chats already arrive live (above), so a difference that is only chat messages needs no banner. Otherwise show it at most once every 3 minutes, so two devices in use at once do not keep re-triggering it. */
     {const TK='hsc-hub-tutor-v1',nt=S=>({ls:Object.fromEntries(Object.entries(S.ls||{}).filter(e=>e[0]!==TK)),xh:S.xh,mods:S.mods}),onlyChat=sc(nt(M))===sc(nt(L));
-     if(!onlyChat&&!document.body.classList.contains('xc-on')&&!document.getElementById('xc')&&bannerAt!==at&&Date.now()-(window.__sbBnT||0)>18e4){bannerAt=at;window.__sbBnT=Date.now();banner('Newer progress from another device','Update',()=>check('manual'))}}
+     if(!onlyChat&&!document.body.classList.contains('xc-on')&&!document.getElementById('xc')&&bannerAt!==at&&Date.now()-(window.__sbBnT||0)>18e4){bannerAt=at;window.__sbBnT=Date.now()}}
     setSt('Newer data from your other device');return}
    await baseSet(L);setMeta({at,hash:L.hash});lastFp=fp0;doneAt('Synced');return}
   setSt('Will retry shortly')
