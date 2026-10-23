@@ -47834,7 +47834,7 @@ const TTD=(()=>{
  const lab=v=>String(v==null?'':v).replace(/\s+/g,' ').trim().slice(0,28);
  const num=(v,d)=>{const n=parseFloat(v);return isFinite(n)?n:d};
  const f1=n=>(+n).toFixed(1).replace(/\.0$/,'');
- const parse=j=>{j=String(j).replace(/[\u201C\u201D]/g,'"');try{return JSON.parse(j)}catch(e){try{return JSON.parse(j.replace(/,\s*([}\]])/g,'$1'))}catch(e2){return null}}};
+ const parse=j=>{j=String(j).replace(/[\u201C\u201D]/g,'"');const tp=x=>{try{return JSON.parse(x)}catch(e){return undefined}};let r=tp(j);if(r!==undefined)return r;const a=j.replace(/,\s*([}\]])/g,'$1');r=tp(a);if(r!==undefined)return r;/* repair pass: money written as 12,000 or $12000 inside the JSON */const b=a.replace(/(:\s*|"\s*,\s*|\[\s*)(\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?|\$\d+(?:\.\d+)?)(?=\s*[\]},])/g,(m,q,n)=>q+n.replace(/[$,]/g,''));r=tp(b);return r===undefined?null:r};
  /* drawing helpers (screen coordinates, y points down; angles are in degrees measured anticlockwise as on paper) */
  const L=(a,b,dash)=>`<line class="k${dash?' d':''}" x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}"/>`;
  const PG=(pts,fill)=>`<polygon class="k${fill?' f':''}" points="${pts.map(p=>f1(p[0])+','+f1(p[1])).join(' ')}"/>`;
@@ -48938,32 +48938,51 @@ const TTD=(()=>{
  const s44=v=>String(v==null?'':v).replace(/\s+/g,' ').trim().slice(0,44);
  const amt=v=>{if(v==null)return null;if(typeof v==='number')return ok(v)?v:null;const t=String(v).trim();if(!t||/^(x|\?|unknown)$/i.test(t))return null;const n=parseFloat(t.replace(/[^0-9.]/g,''));return isFinite(n)?(/^\(.*\)$|^[-−]/.test(t)?-n:n):null};
  const mny=v=>v==null?'?':(v<0?'(':'')+'$'+Math.abs(Math.round(v*100)/100).toLocaleString('en-AU',{maximumFractionDigits:2})+(v<0?')':'');
- const itm=a=>(Array.isArray(a)?a:[]).slice(0,8).map(it=>Array.isArray(it)?[lab(it[0]),amt(it[1])]:(it&&typeof it==='object'?[lab(it.name||it.label),amt(it.amount!=null?it.amount:it.value)]:null)).filter(it=>it&&it[0]);
+ const itm=a=>{if(a&&typeof a==='object'&&!Array.isArray(a))a=Object.keys(a).map(k=>[k,a[k]]);return(Array.isArray(a)?a:[]).slice(0,12).map(it=>Array.isArray(it)?[lab(it[0]),amt(it[1])]:(it&&typeof it==='object'?[lab(it.name||it.label||it.account||it.item||it.title),amt(it.amount!=null?it.amount:it.value!=null?it.value:it.balance!=null?it.balance:it.total)]:null)).filter(it=>it&&it[0])};
  const sm=a=>a.some(x=>x[1]==null)?null:a.reduce((t,x)=>t+x[1],0);
  const ad=(...v)=>v.some(x=>x==null)?null:v.reduce((t,x)=>t+x,0);
  const ng=v=>v==null?null:-v;
  const pk=(o,...k)=>{for(const x of k)if(o&&o[x]!=null)return o[x];return[]};
  const rowsOf=(h,a,sub)=>{const r=[{k:'h',l:h}];a.forEach(x=>r.push({k:'i',l:x[0],v:x[1]}));if(sub&&a.length>1)r.push({k:'s',l:sub,v:sm(a)});return r};
- function stmt(title,sub,rows,cap){const W=360,L=14,R=W-14,o=[];let y=24;
-  o.push(TL(W/2,y,title||'Statement','p'));y+=16;if(sub){o.push(TL(W/2,y,sub,'n'));y+=14}y+=6;
-  const al=[];
-  rows.forEach(r=>{const u=r.v==null?' g':'';
-   if(r.k==='sp'){y+=8;return}
-   if(r.k==='h'){y+=6;o.push(TL(L,y+12,r.l,'g','start'));y+=18;return}
-   if(r.k==='i'){o.push(TL(L+14,y+12,r.l,'q','start'),TL(R,y+12,mny(r.v),'q'+u,'end'));al.push(r.l+' '+mny(r.v));y+=19;return}
-   if(r.k==='s'){o.push(`<line class="ax z" x1="${R-92}" y1="${y+1}" x2="${R}" y2="${y+1}"/>`,TL(L+14,y+14,r.l,'q','start'),TL(R,y+14,mny(r.v),'q'+u,'end'));al.push(r.l+' '+mny(r.v));y+=21;return}
-   o.push(`<line class="ax" x1="${L}" y1="${y+1}" x2="${R}" y2="${y+1}"/>`,TL(L,y+16,r.l,'p','start'),TL(R,y+16,mny(r.v),'p'+u,'end'),`<line class="ax" x1="${R-92}" y1="${y+22}" x2="${R}" y2="${y+22}"/>`);al.push(r.l+' '+mny(r.v));y+=28});
-  return{w:W,h:y+8,svg:o.join(''),alt:(title||'Statement')+(sub?' '+sub:'')+'. '+al.join('; '),cap}}
- function bsheet(s){const A=s.assets||{},B=s.liabilities||{},E=Array.isArray(s.equity)?s.equity:pk(s.equity,'items');
-  const ca=itm(pk(A,'current')),na=itm(pk(A,'noncurrent','nonCurrent','non-current')),cl=itm(pk(B,'current')),nl=itm(pk(B,'noncurrent','nonCurrent','non-current')),eq=itm(E);
-  if(!(ca.length+na.length)||!(cl.length+nl.length+eq.length))return null;
-  const ta=ad(sm(ca),sm(na)),tl=ad(sm(cl),sm(nl)),te=sm(eq),tle=ad(tl,te);const r=[{k:'h',l:'ASSETS'}];
-  if(ca.length)r.push(...rowsOf('Current assets',ca,'Total current assets'));if(na.length)r.push(...rowsOf('Non-current assets',na,'Total non-current assets'));
+ function stmt(title,sub,rows,cap){const W=360,L=16,R=W-16,o=[],al=[];let y=28;
+  /* statement look: title, accent rule, tinted section bands, hairline dotted rows, accounting underlines (single under subtotals, double under final totals), brackets in red */
+  const nv=v=>v==null?' g':(v<0?' neg':''),dbl=l=>/^(TOTAL ASSETS|TOTAL LIABILITIES|TOTAL OWNER|LIABILITIES \+|NET PROFIT|NET LOSS|CASH AT END)/.test(l);
+  o.push(TL(W/2,y,title||'Statement','st-t'));y+=16;if(sub){o.push(TL(W/2,y,sub,'st-s'));y+=4}
+  o.push(`<line class="st-hr" x1="${W/2-20}" y1="${y+8}" x2="${W/2+20}" y2="${y+8}"/>`);y+=24;
+  rows.forEach((r,n)=>{
+   if(r.k==='sp'){y+=12;return}
+   if(r.k==='h'&&r.l===r.l.toUpperCase()&&/[A-Z]/.test(r.l)){o.push(TL(L+2,y+13,r.l,'st-h1','start'),`<line class="st-h1l" x1="${L}" y1="${y+20}" x2="${R}" y2="${y+20}"/>`);y+=30;return}
+   if(r.k==='h'){if(n)y+=4;o.push(`<rect class="st-band" x="${L}" y="${y}" width="${R-L}" height="22" rx="6"/><rect class="st-bar" x="${L}" y="${y+3}" width="3" height="16" rx="1.5"/>`,TL(L+12,y+15,r.l,'st-h','start'));y+=28;return}
+   if(r.k==='i'){o.push(TL(L+14,y+14,r.l,'st-l','start'),TL(R-8,y+14,mny(r.v),'st-v'+nv(r.v),'end'),`<line class="st-dot" x1="${L+14}" y1="${y+22}" x2="${R-8}" y2="${y+22}"/>`);al.push(r.l+' '+mny(r.v));y+=24;return}
+   if(r.k==='s'){o.push(`<line class="st-ul" x1="${R-104}" y1="${y+2}" x2="${R-8}" y2="${y+2}"/>`,TL(L+14,y+18,r.l,'st-sl','start'),TL(R-8,y+18,mny(r.v),'st-sv'+nv(r.v),'end'));al.push(r.l+' '+mny(r.v));y+=30;return}
+   const d=dbl(r.l);y+=4;
+   o.push(`<rect class="st-band${d?'2':''}" x="${L}" y="${y}" width="${R-L}" height="34" rx="8"/>`,TL(L+12,y+22,r.l,'st-tl','start'),TL(R-10,y+22,mny(r.v),'st-tv'+nv(r.v),'end'));
+   if(d)o.push(`<line class="st-ul" x1="${R-112}" y1="${y+26.5}" x2="${R-10}" y2="${y+26.5}"/><line class="st-ul" x1="${R-112}" y1="${y+29.5}" x2="${R-10}" y2="${y+29.5}"/>`);
+   al.push(r.l+' '+mny(r.v));y+=42});
+  return{w:W,h:y+4,svg:o.join(''),alt:(title||'Statement')+(sub?' '+sub:'')+'. '+al.join('; '),cap,cls:'st'}}
+ function bsheet(s){
+  /* tolerant of the shapes the Tutor sometimes writes: current/noncurrent under assets and liabilities (any common spelling), the same groups at the top level, a flat list, {name:amount} maps, and equity as a list, a map or {items:[...]} */
+  const nk=k=>String(k).toLowerCase().replace(/[^a-z]/g,''),
+   fk=(o,re)=>{if(!o||typeof o!=='object'||Array.isArray(o))return undefined;const k=Object.keys(o).find(q=>re.test(nk(q)));return k===undefined?undefined:o[k]},
+   un=v=>v&&typeof v==='object'&&!Array.isArray(v)&&v.items!=null?v.items:v,
+   CU=/^(current|shortterm)/,NC=/^(noncurrent|longterm|fixed|nc)/,
+   part=(sec,tc,tn)=>{let c,n,f=[];
+    if(Array.isArray(sec))f=itm(sec);
+    else if(sec&&typeof sec==='object'){c=fk(sec,CU);n=fk(sec,NC);if(c===undefined&&n===undefined)f=itm(un(sec))}
+    if(c===undefined)c=fk(s,tc);if(n===undefined)n=fk(s,tn);
+    return{c:itm(un(c)),n:itm(un(n)),f}},
+   A=part(fk(s,/^assets?$/),/^currentassets?$/,/^(noncurrent|longterm|fixed)assets?$/),
+   B=part(fk(s,/^liabilit(y|ies)$/),/^currentliabilit(y|ies)$/,/^(noncurrent|longterm)liabilit(y|ies)$/),
+   eq=itm(un(fk(s,/^(equity|ownersequity|ownerequity|shareholdersequity|netassets)$/)));
+  const ca=A.c,na=A.n,fa=A.f,cl=B.c,nl=B.n,fl=B.f;
+  if(!(ca.length+na.length+fa.length)||!(cl.length+nl.length+fl.length+eq.length))return null;
+  const ta=ad(sm(ca),sm(na),sm(fa)),tl=ad(sm(cl),sm(nl),sm(fl)),te=sm(eq),tle=ad(tl,te);const r=[{k:'h',l:'ASSETS'}];
+  if(ca.length)r.push(...rowsOf('Current assets',ca,'Total current assets'));if(na.length)r.push(...rowsOf('Non-current assets',na,'Total non-current assets'));fa.forEach(x=>r.push({k:'i',l:x[0],v:x[1]}));
   r.push({k:'T',l:'TOTAL ASSETS',v:ta},{k:'sp'},{k:'h',l:'LIABILITIES'});
-  if(cl.length)r.push(...rowsOf('Current liabilities',cl,'Total current liabilities'));if(nl.length)r.push(...rowsOf('Non-current liabilities',nl,'Total non-current liabilities'));
+  if(cl.length)r.push(...rowsOf('Current liabilities',cl,'Total current liabilities'));if(nl.length)r.push(...rowsOf('Non-current liabilities',nl,'Total non-current liabilities'));fl.forEach(x=>r.push({k:'i',l:x[0],v:x[1]}));
   r.push({k:'T',l:'TOTAL LIABILITIES',v:tl},{k:'sp'});
-  if(eq.length)r.push(...rowsOf("OWNER'S EQUITY",eq,null));r.push({k:'T',l:"TOTAL OWNER'S EQUITY",v:te},{k:'T',l:"LIABILITIES + OWNER'S EQUITY",v:tle});
-  const cap=ta!=null&&tle!=null?(Math.abs(ta-tle)<.005?"Assets = Liabilities + Owner's equity, so the balance sheet balances.":'Assets and (liabilities + equity) do not match here.'):'Assets = Liabilities + Owner’s equity. Work out the amount marked ?.';
+  if(eq.length)r.push(...rowsOf("OWNER'S EQUITY",eq,null));r.push({k:'T',l:"TOTAL OWNER'S EQUITY",v:te},{k:'T',l:"LIABILITIES + EQUITY",v:tle});
+  const cap=ta!=null&&tle!=null?(Math.abs(ta-tle)<.005?"Assets = Liabilities + Owner's equity, so the balance sheet balances. \u2713":'Assets and (liabilities + equity) do not match here.'):'Assets = Liabilities + Owner’s equity. Work out the amount marked ?.';
   return stmt(s44(s.title)||'Balance sheet',s44(s.date||s.period),r,cap)}
  function istmt(s){const sa=itm(s.revenue||s.sales),cg=itm(s.cogs||s.costofgoodssold),ot=itm(s.other||s.otherincome),ex=itm(s.expenses);
   if(!sa.length)return null;const ts=sm(sa),tc=sm(cg),gp=cg.length?ad(ts,ng(tc)):ts,to=sm(ot),ti=ot.length?ad(gp,to):gp,te=sm(ex),np=ex.length?ad(ti,ng(te)):ti;
@@ -49060,8 +49079,8 @@ const TTD=(()=>{
     if(/^(u|ushape|cost)$/.test(ty)){const m=pt(c.min);if(!m)return null;const o=[],kl=(a[1]-m[1])/Math.pow(Math.max(1,m[0]-a[0]),2),kr=(b[1]-m[1])/Math.pow(Math.max(1,b[0]-m[0]),2);for(let i=0;i<=40;i++){const x=a[0]+(b[0]-a[0])*i/40,d=x-m[0];o.push([x,m[1]+(d<0?kl:kr)*d*d])}return o}
     if(/^(convex|concave|bezier)$/.test(ty)||pt(c.control)){const k=pt(c.control)||(ty==='concave'?[Math.max(a[0],b[0]),Math.max(a[1],b[1])]:[Math.min(a[0],b[0]),Math.min(a[1],b[1])]);return bez(a,b,k)}
     return[a,b]};
-  const cv=[],ids={};
-  C.forEach((c,i)=>{if(!c||typeof c!=='object')return;const P=mk(c);if(!P)return;const id=String(c.name||c.id||c.label||'C'+i),col=c.c!=null?Math.abs(num(c.c,i))%4:i%4,e={id,P,col,lab:lab(c.label!=null?c.label:id)};cv.push(e);ids[id]=P;ids[e.lab]=ids[e.lab]||P;
+  const cv=[],ids={},LB=[];
+  C.forEach((c,i)=>{if(!c||typeof c!=='object')return;const P=mk(c);if(!P)return;const id=String(c.name||c.id||c.label||'C'+i),col=c.c!=null?Math.abs(num(c.c,i))%4:i%4,e={id,P,col,lab:lab(c.label!=null?c.label:id)};{const t0=String(c.type||c.kind||'').toLowerCase().replace(/[^a-z]/g,''),vr=lab(c.val!=null?c.val:c.value!=null?c.value:c.price!=null?c.price:c.yl!=null?c.yl:c.xl),vl=vr||e.lab,fb=!vr;if(vl&&/^h(oriz|$)/.test(t0))e.av={k:'y',v:cl(c.at!=null?c.at:c.y),t:vl,fb};else if(vl&&/^v(ert|$)/.test(t0))e.av={k:'x',v:cl(c.at!=null?c.at:c.x),t:vl,fb}}cv.push(e);ids[id]=P;ids[e.lab]=ids[e.lab]||P;
    const sh=c.shift;if(sh){let dx=0,dy=0;const by=num(c.by,14);if(Array.isArray(sh)){dx=num(sh[0],0);dy=num(sh[1],0)}else{const w=String(sh).toLowerCase();dx=/right/.test(w)?by:/left/.test(w)?-by:0;dy=/up/.test(w)?by:/down/.test(w)?-by:0}
     if(dx||dy){const Q=P.map(p=>[p[0]+dx,p[1]+dy]),sl=lab(c.shiftLabel||e.lab+'\u2032');cv.push({id:id+'*',P:Q,col,lab:sl,dash:1,from:P,dir:(dx>0?'right':dx<0?'left':'')+(dx&&dy?' and ':'')+(dy>0?'up':dy<0?'down':''),base:e.lab});ids[id+'*']=Q;ids[sl]=Q}}});
   if(!cv.length)return null;
@@ -49076,19 +49095,40 @@ const TTD=(()=>{
   const ar=(Array.isArray(s.areas)?s.areas:[]).slice(0,4).map(a=>{const Z=(a&&Array.isArray(a.pts)?a.pts:[]).map(n=>PT[n]);return Z.length>2&&Z.every(Boolean)?{Z,lab:lab(a.label),c:num(a.c,0)?1:0}:null}).filter(Boolean);
   const o=[],X=p=>f1(px(p[0])),Y=p=>f1(py(p[1])),P2=p=>X(p)+','+Y(p),tt=s44(s.title),oy=tt?20:0,xa=s44(s.xaxis||s.xlabel),ya=s44(s.yaxis||s.ylabel);
   o.push('<defs><clipPath id="ecl"><rect x="48" y="12" width="300" height="200"/></clipPath></defs>');
-  ar.forEach(a=>{o.push(`<polygon class="sh${a.c?' c1':''}" points="${a.Z.map(P2).join(' ')}"/>`);if(a.lab){const m=[a.Z.reduce((t,p)=>t+p[0],0)/a.Z.length,a.Z.reduce((t,p)=>t+p[1],0)/a.Z.length];o.push(TL(px(m[0]),py(m[1])+4,a.lab,'q'))}});
+  const AL=[];ar.forEach(a=>{o.push(`<polygon class="sh${a.c?' c1':''}" points="${a.Z.map(P2).join(' ')}"/>`);if(a.lab){const m=[a.Z.reduce((t,p)=>t+p[0],0)/a.Z.length,a.Z.reduce((t,p)=>t+p[1],0)/a.Z.length];AL.push({x:px(m[0]),y:py(m[1])+4,t:a.lab,c:'q',a:'middle',g:'in',ar:1})}});
   o.push('<line class="ax" x1="50" y1="210" x2="344" y2="210"/><line class="ax" x1="50" y1="210" x2="50" y2="16"/><polygon class="ah" points="342,205 342,215 350,210"/><polygon class="ah" points="45,20 55,20 50,10"/>',TL(44,224,'0','n','end'));
   o.push('<g clip-path="url(#ecl)">'+cv.map(e=>`<path class="k${e.dash?' d':''} s${e.col}" d="${e.P.map((p,i)=>(i?'L':'M')+X(p)+' '+Y(p)).join('')}"/>`).join('')+'</g>');
   cv.forEach(e=>{const n=e.P.length,E=[cl(e.P[n-1][0]),cl(e.P[n-1][1])],Q=e.P[n-2],ux=px(E[0])-px(Q[0]),uy=py(E[1])-py(Q[1]),l=Math.hypot(ux,uy)||1,u=[ux/l,uy/l];
    let x=px(E[0])+u[0]*9,y=py(E[1])+u[1]*9+4,an=u[0]>.3?'start':u[0]<-.3?'end':'middle';if(Math.abs(u[1])<.15){x=px(E[0])-4;y=py(E[1])-6;an='end'}
-   o.push(TL(Math.max(10,Math.min(350,x)),Math.max(16,Math.min(222,y)),e.lab,'q',an));
+   if(!(e.av&&e.av.fb))LB.push({x:Math.max(10,Math.min(350,x)),y:Math.max(16,Math.min(222,y)),t:e.lab,c:'q',a:an,g:'in',cid:e.id});if(e.av)LB.push(e.av.k==='y'?{x:44,y:py(e.av.v)+4,t:e.av.t,c:'q g',a:'end',g:'y'}:{x:px(e.av.v),y:224,t:e.av.t,c:'q g',a:'middle',g:'x'});
    if(e.from){const m=Math.floor(e.P.length/2),a=e.from[m],b=e.P[m],dx=px(b[0])-px(a[0]),dy=py(b[1])-py(a[1]),d=Math.hypot(dx,dy)||1,v=[dx/d,dy/d],ex=px(b[0])-v[0]*3,ey=py(b[1])-v[1]*3;
     o.push(`<line class="ax" x1="${X(a)}" y1="${Y(a)}" x2="${f1(ex-v[0]*5)}" y2="${f1(ey-v[1]*5)}"/><polygon class="ah h" points="${f1(ex)},${f1(ey)} ${f1(ex-v[0]*8-v[1]*4)},${f1(ey-v[1]*8+v[0]*4)} ${f1(ex-v[0]*8+v[1]*4)},${f1(ey-v[1]*8-v[0]*4)}"/>`)}});
-  pts.forEach(p=>{if(p.xl)o.push(`<line class="k d" x1="${X(p.z)}" y1="${Y(p.z)}" x2="${X(p.z)}" y2="210"/>`,TL(px(p.z[0]),224,p.xl,'q'));if(p.yl)o.push(`<line class="k d" x1="${X(p.z)}" y1="${Y(p.z)}" x2="50" y2="${Y(p.z)}"/>`,TL(44,py(p.z[1])+4,p.yl,'q','end'))});
-  pts.forEach(p=>{if(p.dot)o.push(`<circle class="pt" cx="${X(p.z)}" cy="${Y(p.z)}" r="4.5"/>`);if(p.lab)o.push(TL(px(p.z[0])+7,py(p.z[1])-8,p.lab,'q g','start'))});
-  if(xa)o.push(TL(198,242,xa,'n'));if(ya)o.push(`<text class="n" x="12" y="111" text-anchor="middle" transform="rotate(-90 12 111)">${ya.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>`);
+  pts.forEach(p=>{if(p.xl){o.push(`<line class="k d" x1="${X(p.z)}" y1="${Y(p.z)}" x2="${X(p.z)}" y2="210"/>`);LB.push({x:px(p.z[0]),y:224,t:p.xl,c:'q g',a:'middle',g:'x'})}if(p.yl){o.push(`<line class="k d" x1="${X(p.z)}" y1="${Y(p.z)}" x2="50" y2="${Y(p.z)}"/>`);LB.push({x:44,y:py(p.z[1])+4,t:p.yl,c:'q g',a:'end',g:'y'})}});
+  pts.forEach(p=>{if(p.dot)o.push(`<circle class="pt" cx="${X(p.z)}" cy="${Y(p.z)}" r="4.5"/>`);if(p.lab)LB.push({x:px(p.z[0])+7,y:py(p.z[1])-8,t:p.lab,c:'q g',a:'start',g:'in',pt:[px(p.z[0]),py(p.z[1])]})});
+  /* labels: each one is tried in several spots and kept where it overlaps no other label, no dot and (as far as possible) no other curve. Axis labels that repeat (a point's price on top of its line's price) are drawn once. */
+  AL.forEach(b=>LB.push(b));
+  const seen={},LBF=LB.filter(b=>{if(b.g==='in')return true;const k=b.g+'|'+b.t+'|'+Math.round(b.g==='y'?b.y:b.x);if(seen[k])return false;seen[k]=1;return true});
+  const bxo=b=>{const w=b.t.length*(/g/.test(b.c)?7.4:6.8);return b.a==='end'?[b.x-w,b.x]:b.a==='start'?[b.x,b.x+w]:[b.x-w/2,b.x+w/2]},bx=b=>{const h=bxo(b);return[h[0],h[1],b.y-10,b.y+3]},
+   ov=(A,B,m)=>A[0]<B[1]+m&&B[0]<A[1]+m&&A[2]<B[3]+m&&B[2]<A[3]+m,
+   den=P=>{const r=[];for(let i=0;i<P.length-1;i++){const u=[px(P[i][0]),py(P[i][1])],v=[px(P[i+1][0]),py(P[i+1][1])],n=Math.max(1,Math.ceil(Math.hypot(v[0]-u[0],v[1]-u[1])/3));for(let k=0;k<=n;k++)r.push([u[0]+(v[0]-u[0])*k/n,u[1]+(v[1]-u[1])*k/n])}return r},
+   DN=cv.map(e=>({id:e.id,P:den(e.P)})),DOTS=pts.filter(p=>p.dot).map(p=>[px(p.z[0]),py(p.z[1])]),
+   OF={in:[[0,0],[0,-13],[0,13],[-14,0],[14,0],[0,-26],[0,26],[-14,-13],[14,-13],[-14,13],[14,13],[-28,0],[28,0],[-28,-13],[28,-13],[-28,13],[28,13],[0,-39],[0,39]],y:[[0,0],[0,-13],[0,13],[0,-26],[0,26]],x:[[0,0],[0,13],[0,26]]},
+   OA=[[0,0],[0,-13],[0,13],[-20,0],[20,0],[0,-26],[0,26],[-24,13],[24,13],[-24,-13],[24,-13],[0,-40],[0,40],[-40,0],[40,0]],
+   PC=[[7,-8,'start'],[0,-10,'middle'],[9,4,'start'],[7,14,'start'],[-7,-8,'end'],[-9,4,'end'],[-7,14,'end'],[0,18,'middle'],[16,-16,'start'],[-16,-16,'end'],[16,16,'start'],[-16,16,'end']];
+  let xr=0;const placed=[];
+  LBF.forEach(b=>{let best=null;
+   const C=b.pt?PC.map((d,i)=>({x:b.pt[0]+d[0],y:b.pt[1]+d[1],a:d[2],w:i*3,dy:0})):(b.ar?OA:OF[b.g]).map(d=>({x:b.x+d[0],y:b.y+d[1],a:b.a,w:Math.abs(d[0])+Math.abs(d[1]),dy:d[1]}));
+   for(const c of C){const t={x:c.x,y:c.y,t:b.t,c:b.c,a:c.a,g:b.g,cid:b.cid};if(t.y<14||t.y>(b.g==='x'?250:224)||t.x<4||t.x>356)continue;
+    const B=bx(t);let sc=c.w;placed.forEach(q=>{if(ov(B,bx(q),2))sc+=1000});
+    if(b.g==='in'){DN.forEach(k=>{if(k.id!==b.cid&&k.P.some(q=>q[0]>B[0]-3&&q[0]<B[1]+3&&q[1]>B[2]-2&&q[1]<B[3]+2))sc+=b.pt?25:b.ar?8:120});DOTS.forEach(d=>{if(ov(B,[d[0]-5,d[0]+5,d[1]-5,d[1]+5],0))sc+=300})}
+    if(!best||sc<best.sc)best={sc,t,dy:c.dy}}
+   if(best){b.x=best.t.x;b.y=best.t.y;b.a=best.t.a;if(b.g==='x'&&best.dy)xr=Math.max(xr,best.dy/13)}placed.push(b)});
+  LBF.forEach(b=>o.push(TL(b.x,b.y,b.t,b.c,b.a)));
+  /* make room on the left so price labels never run into the y-axis title */
+  const ox=Math.max(0,Math.ceil(Math.max(0,...LBF.filter(b=>b.g==='y').map(b=>b.t.length*7.4))-22));
+  if(xa)o.push(TL(198,242+13*xr,xa,'n'));if(ya)o.push(`<text class="n" x="${12-ox}" y="111" text-anchor="middle" transform="rotate(-90 ${12-ox} 111)">${ya.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>`);
   const sd=cv.filter(e=>e.from).map(e=>e.base+' shifts '+e.dir+' to '+e.lab);
-  return{w:360,h:252+oy,svg:(tt?TL(180,14,tt,'p'):'')+(oy?`<g transform="translate(0,${oy})">`:'<g>')+o.join('')+'</g>',
+  return{w:360+ox,h:252+oy+13*xr,svg:(tt?TL((360+ox)/2,14,tt,'p'):'')+`<g transform="translate(${ox},${oy})">`+o.join('')+'</g>',
    alt:'Economics diagram'+(tt?': '+tt:'')+'. Curves: '+cv.map(e=>e.lab).join(', ')+'.'+(sd.length?' '+sd.join('; ')+'.':'')+(pts.filter(p=>p.lab).length?' Points: '+pts.filter(p=>p.lab).map(p=>p.lab).join(', ')+'.':''),
    cap:(sd.length?sd.join('. ')+'. ':'')+'Not drawn to scale.'}}
  /* ---- Economics phase 2: data-driven cards (Lorenz curve and Gini, formula cards, balance of payments, trend charts).
@@ -49299,8 +49339,52 @@ const TTD=(()=>{
   o.push(`<path class="k" d="M14 ${rs-0}L14 ${b3+20}"/>`,TL(W/2,y+10,'CAD = BOGS + net primary + net secondary','n'));
   return{w:W,h:y+22,svg:o.join(''),alt:'Balance of payments structure: current account (balance on goods and services, net primary income, net secondary income), capital and financial accounts (capital account, financial account), and net errors and omissions.'+(hk?' One part is highlighted.':''),
    cap:'The current account and the capital and financial accounts mirror each other: a current account deficit is financed by a net inflow on the financial account.'}}
+ /* ---- tariff with numbers: drawn to scale from the figures given. Prices and quantities sit on the axes, the two deadweight loss triangles and the revenue box are shaded,
+    and the answers stay hidden (the student calculates them) unless the Tutor sets "answer":true. ---- */
+ function tariffd(s){
+  const g=(...k)=>{for(const x of k){if(s[x]!=null){const n=amt(s[x]);if(n!=null)return n}}return null};
+  let pw=g('pw','worldprice'),tf=g('tariff','t'),ptv=g('pt','tariffprice'),qs0=g('qs0'),qd0=g('qd0'),qs1=g('qs1'),qd1=g('qd1');
+  const pt=ptv!=null?ptv:(pw!=null&&tf!=null?pw+tf:null);
+  if([pw,pt,qs0,qd0,qs1,qd1].some(v=>v==null))return null;
+  if(qs0>qs1&&qd0<qd1){[qs0,qs1]=[qs1,qs0];[qd0,qd1]=[qd1,qd0]}   /* before and after the wrong way round */
+  const t=+(pt-pw).toFixed(6);
+  if(!(pw>0&&t>0&&qs0>=0&&qs1>qs0&&qd1>=0&&qd0>qd1&&qd0>qs0&&qd1>=qs1))return null;
+  const bs=(qs1-qs0)/t,bd=(qd1-qd0)/t,Pe=pw+(qd0-qs0)/(bs-bd),Qe=qs0+bs*(Pe-pw),
+   ymax=scale(0,Math.max(pt*1.7,Math.min(Pe*1.12,pt*4)),4).hi,xmax=scale(0,Math.max(qd0,Math.min(Qe,qd0*1.5))*1.1,4).hi,
+   tt=s44(s.title),P={l:58,r:338,t:tt?38:20,b:(tt?38:20)+190},ans=s.answer===true||/^(true|yes)$/i.test(String(s.answer)),
+   sx=q=>P.l+q/xmax*(P.r-P.l),sy=v=>P.b-v/ymax*(P.b-P.t),X=q=>f1(sx(q)),Y=v=>f1(sy(v)),o=[],$=v=>'$'+fm(v);
+  const clip=(a,b)=>{const lim=[(0-a)/b,(xmax-a)/b].sort((m,n)=>m-n),lo=Math.max(0,lim[0]),hi=Math.min(ymax,lim[1]);return lo<hi?[[a+b*lo,lo],[a+b*hi,hi]]:null},
+   LS=clip(qs0-bs*pw,bs),LD=clip(qd0-bd*pw,bd);
+  if(!LS||!LD)return null;
+  const A=[qs0,pw],B=[qd0,pw],C=[qs1,pt],D=[qd1,pt],E=[qs1,pw],F=[qd1,pw],poly=(pp,c)=>`<polygon class="sh${c?' c1':''}" points="${pp.map(p=>X(p[0])+','+Y(p[1])).join(' ')}"/>`,
+   rev=t*(qd1-qs1),d1=.5*t*(qs1-qs0),d2=.5*t*(qd0-qd1),dwl=d1+d2,csl=.5*(qd0+qd1)*t,psg=.5*(qs0+qs1)*t;
+  o.push(poly([A,C,E]),poly([B,D,F]),poly([C,D,F,E],1));
+  o.push(`<path class="ax" d="M${P.l} ${P.t}V${P.b}H${P.r}"/><polygon class="ah" points="${P.r},${P.b-5} ${P.r},${P.b+5} ${P.r+8},${P.b}"/><polygon class="ah" points="${P.l-5},${P.t} ${P.l+5},${P.t} ${P.l},${P.t-8}"/>`);
+  o.push(`<line class="k s2" x1="${P.l}" y1="${Y(pw)}" x2="${P.r}" y2="${Y(pw)}"/><line class="k s3" x1="${P.l}" y1="${Y(pt)}" x2="${P.r}" y2="${Y(pt)}"/>`,
+   `<path class="k s0" d="M${X(LD[0][0])} ${Y(LD[0][1])}L${X(LD[1][0])} ${Y(LD[1][1])}"/><path class="k s1" d="M${X(LS[0][0])} ${Y(LS[0][1])}L${X(LS[1][0])} ${Y(LS[1][1])}"/>`);
+  [A,B,C,D].forEach(q=>o.push(`<line class="k d" x1="${X(q[0])}" y1="${Y(q[1])}" x2="${X(q[0])}" y2="${P.b}"/>`));
+  [A,B,C,D].forEach(q=>o.push(`<circle class="pt" cx="${X(q[0])}" cy="${Y(q[1])}" r="4.5"/>`));
+  /* prices on the vertical axis, quantities on the horizontal axis */
+  [[pw,'q'],[pt,'q']].forEach(a=>o.push(`<line class="ax" x1="${P.l-4}" y1="${Y(a[0])}" x2="${P.l}" y2="${Y(a[0])}"/>`,TL(P.l-8,sy(a[0])+4,$(a[0]),'q g','end')));
+  o.push(TL(P.r-2,sy(pt)-6,'Pw + t','q','end'),TL(P.r-2,sy(pw)+14,'Pw','q','end'));
+  const qx=[...new Set([qs0,qs1,qd1,qd0].filter(v=>v>0))].sort((m,n)=>m-n);let last=-99,row2=false,flip=false;
+  qx.forEach(q=>{const x=sx(q);flip=x-last<24?!flip:false;if(flip)row2=true;last=x;o.push(`<line class="ax" x1="${f1(x)}" y1="${P.b}" x2="${f1(x)}" y2="${P.b+4}"/>`,TL(x,P.b+15+(flip?13:0),fm(q),'q g'))});
+  if(!(qs0>0))o.push(TL(P.l-6,P.b+15,'0','n','end'));
+  const xa=s44(s.xaxis||s.xlabel)||'Quantity',ya=s44(s.yaxis||s.ylabel)||'Price ($)',ym=(P.t+P.b)/2;
+  o.push(TL((P.l+P.r)/2,P.b+(row2?45:33),xa,'n'),`<text class="n" x="12" y="${f1(ym)}" text-anchor="middle" transform="rotate(-90 12 ${f1(ym)})">${ya.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text>`);
+  /* curve names at their upper ends */
+  const nm=(L,t,col)=>{const e=L[1],x=sx(e[0]),y=sy(e[1]),r=x>P.r-16;o.push(TL(Math.min(x+(r?-6:6),P.r+4),Math.max(12,y+(r?-6:-3)),t,'q g',r?'end':'start'))};
+  nm(LS,'S');nm(LD,'D');
+  /* shaded areas */
+  const ar=(pp,l1,l2)=>{const cx=pp.reduce((a,q)=>a+q[0],0)/pp.length,cy=pp.reduce((a,q)=>a+q[1],0)/pp.length;o.push(TL(sx(cx),sy(cy)+(l2?0:4),l1,'q'));if(l2)o.push(TL(sx(cx),sy(cy)+14,l2,'q g'))};
+  ar([A,C,E],'DWL',ans?$(d1):'');ar([B,D,F],'DWL',ans?$(d2):'');ar([C,D,F,E],'Revenue',ans?$(rev):'');
+  const imp0=qd0-qs0,imp1=qd1-qs1,
+   alt='Tariff diagram drawn to scale'+(tt?': '+tt:'')+'. World price '+$(pw)+', price with the tariff '+$(pt)+' (a tariff of '+$(t)+' a unit). Domestic supply rises from '+fm(qs0)+' to '+fm(qs1)+' and domestic demand falls from '+fm(qd0)+' to '+fm(qd1)+', so imports fall from '+fm(imp0)+' to '+fm(imp1)+'.'+(ans?' Tariff revenue '+$(rev)+'; deadweight loss '+$(d1)+' + '+$(d2)+' = '+$(dwl)+'.':''),
+   cap=ans?'Imports fall from '+fm(imp0)+' to '+fm(imp1)+'. Tariff revenue = '+$(t)+' \u00D7 '+fm(imp1)+' = '+$(rev)+'. Deadweight loss = \u00BD \u00D7 '+$(t)+' \u00D7 '+fm(qs1-qs0)+' + \u00BD \u00D7 '+$(t)+' \u00D7 '+fm(qd0-qd1)+' = '+$(d1)+' + '+$(d2)+' = '+$(dwl)+'. Consumers lose '+$(csl)+', producers gain '+$(psg)+', government gains '+$(rev)+'.':'Drawn to scale from the figures given. Shaded: the two deadweight loss triangles (DWL) and the tariff revenue box.';
+  return{w:360,h:P.b+(row2?58:46),svg:(tt?TL(180,17,tt,'p'):'')+o.join(''),alt,cap}}
  function bizDraw(ty,s){
   if(/^(econ|econgraph|economics|economicsgraph|economicsdiagram|econdiagram)$/.test(ty))return econ(s);
+  if(/^(tariff|tariffdiagram|tariffgraph)$/.test(ty))return tariffd(s);
   if(/^(circular|circularflow|circularflowofincome|flowofincome)$/.test(ty))return circ(s);
   if(/^(businesscycle|cycle|economiccycle)$/.test(ty))return bcycle(s);
   if(/^(jcurve|jcurveeffect)$/.test(ty))return jcurve(s);
@@ -49320,16 +49404,17 @@ const TTD=(()=>{
   return null}
 
 
- const fig=r=>`<figure class="tt-dg"><svg viewBox="0 0 ${r.w||340} ${r.h}" role="img" aria-label="${X(r.alt)}">${r.svg}</svg><figcaption>${X(r.cap)}</figcaption></figure>`;
+ const fig=r=>`<figure class="tt-dg${r.cls?' '+r.cls:''}"><svg viewBox="0 0 ${r.w||340} ${r.h}" role="img" aria-label="${X(r.alt)}">${r.svg}</svg><figcaption>${X(r.cap)}</figcaption></figure>`;
  const bad='<p class="tt-dgx">I tried to draw a diagram here but it did not come out right. Ask me to draw it again.</p>';
  /* radial survey with only 1 or 2 legs: radial() needs 3+, so draw it as a fan of bearings from the centre instead (closed with a dashed line for 2 legs) */
  function radialFew(s){const Lg=(Array.isArray(s.legs)?s.legs:[]).slice(0,2).map(l=>{if(!Array.isArray(l))return null;const b=cbr(l[0]),d=Math.abs(parseFloat(l[1]));return b==null||!ok(d)||d<=0?null:[b,d,lab(l[2])||(fv(d)+' '+(lab(s.unit)||'m'))]}).filter(Boolean);
   if(!Lg.length)return null;const cn=lab(s.centre||s.center)||'O',nm=Array.isArray(s.points)&&s.points.length?s.points.map(lab):['A','B'];
   return bear({type:'bearing',points:[cn].concat(nm),legs:Lg,fan:true,close:Lg.length===2})}
- function draw(j){try{const s=parse(j);if(!s||typeof s!=='object')return bad;
+ const badLog=(j,e)=>{try{console.warn('Tutor diagram could not be drawn:',e&&e.message?e.message:(e||'unrecognised shape'),String(j).slice(0,800))}catch(_){}return bad};
+ function draw(j){try{const s=parse(j);if(!s||typeof s!=='object')return badLog(j,'not valid JSON');
    const ty=String(s.type||'').toLowerCase().replace(/[^a-z]/g,'');let r=null;
    r=bizDraw(ty,s);if(r){}else if(/^(annuit|futurevalue|presentvalue|fvtable|pvtable)/.test(ty))r=atable(s);else if(/^(globe|earth|latlong|latitudelongitude|latitude|longitude)/.test(ty))r=globe(s);else if(/^(twonormal|normals|comparenormal|normalcompare|normalcurves)/.test(ty)||(/^(normal|bell|zscore)/.test(ty)&&Array.isArray(s.curves)&&s.curves.length>=2))r=normal2(s);else if(/^(sampling|systematic|stratified|randomsample|simplerandom)/.test(ty)||(ty==='sample'&&(s.method||s.population||s.strata)))r=sampling(s);else if(/^pareto/.test(ty))r=pareto(s);else if(/^compass/.test(ty))r=compass(s);else if(/^(radial|survey)/.test(ty))r=radial(s)||radialFew(s);else if(/^(scale|scaledrawing|mapscale|map|plan|siteplan)$/.test(ty))r=scaled(s);else if(/^(flow|maxflow|mincut|networkflow|flownetwork)/.test(ty))r=flowNet(s);else if(/^(cpm|critical|activitynetwork|activity)/.test(ty))r=cpm(s);else if(/^(twoway|contingency)/.test(ty))r=twoway(s);else if(/^(sample|outcomes)/.test(ty))r=sample(s);else if(/^(gradient|slope|riserun)/.test(ty))r=gradient(s);else if(/^(solidnet|surfacenet|netof)/.test(ty))r=nets(s);else if(/^(numberline|inequality)/.test(ty))r=nline(s);else if(/^(cashflow|annuity)/.test(ty))r=cflow(s);else if(/^(units|unitladder|conversion)/.test(ty))r=units(s);else if(/^(solid|cuboid|cube|cylinder|cone|sphere|hemisphere|pyramid|squarepyramid|prism|triangularprism|rectangularprism)$/.test(ty))r=solid(s,ty==='solid'?'':ty);else if(/^(shape|plane|planeshape|area)$/.test(ty))r=shape(s);else if(/^(rectangle|square|parallelogram|trapezium|trapezoid|circle|semicircle|sector|ring|annulus|lshape|composite|compositeshape)$/.test(ty))r=shape(s,ty);else if(/^(offsets|offset|irregular|simpson)/.test(ty))r=offsets(s);else if(/^similar/.test(ty))r=similar(s);else if(/^venn/.test(ty))r=venn(s);else if(/^(tree|probabilitytree)$/.test(ty))r=tree(s);else if(/^dot/.test(ty))r=dotp(s);else if(/^stem/.test(ty))r=stemp(s);else if(/^(ogive|cumulative|cumfreq)/.test(ty))r=ogive(s);else if(/^(pie|sectorgraph)/.test(ty))r=pie(s);else if(/^time/.test(ty))r=tzone(s);else if(/^right/.test(ty))r=right(s);else if(/^tri/.test(ty))r=tri(s);else if(/^bear/.test(ty))r=bear(s);else if(/^elev/.test(ty))r=elev(s,false);else if(/^dep/.test(ty))r=elev(s,true);else if(/^(graph|scatter|curve|line|plot)/.test(ty))r=graph(s);else if(/^(normal|bell|zscore)/.test(ty))r=normal(s);else if(/^net/.test(ty))r=netw(s);else if(/^(bar|column)/.test(ty))r=bars(s,false);else if(/^hist/.test(ty))r=bars(s,true);else if(/^(box|whisker)/.test(ty))r=boxp(s);
-   if(!r)return bad;if(s.caption){const c=String(s.caption).replace(/\s+/g,' ').trim().slice(0,160);if(c)r.cap=c}return fig(r)}catch(e){return bad}}
+   if(!r)return badLog(j,'type "'+ty+'" missing or items not recognised');if(s.caption){const c=String(s.caption).replace(/\s+/g,' ').trim().slice(0,160);if(c)r.cap=c}return fig(r)}catch(e){return badLog(j,e)}}
  /* cuts a reply into plain-text pieces and diagram pieces: [{t:'text'|'dg', v}] (code fences round a tag are ignored; a half-written tag is dropped) */
  function split(txt){let s=String(txt).replace(/`+\s*(\[\[\s*DIAGRAM[\s\S]*?\]\])\s*`+/gi,'$1'),out=[],last=0,m;RE.lastIndex=0;
   while((m=RE.exec(s))){out.push({t:'text',v:s.slice(last,m.index)},{t:'dg',v:draw(m[1])});last=m.index+m[0].length}
@@ -49342,10 +49427,10 @@ const ecoRule=()=>(T.subj==='economics'||T.subj==='all')?`
 DIAGRAMS (Economics): when the student asks you to draw, show or sketch ANY economics graph or diagram, or when a picture would help, never describe it in text or ASCII art. Draw it with ONE line, [[DIAGRAM {json}]], type "econ". You only describe the shapes on a 0 to 100 grid (0,0 is the bottom left); the Hub draws them and works out where curves cross, so every equilibrium and area is exact. Never type coordinates of a crossing yourself.
 Fields: "title", "xaxis" and "yaxis" (axis labels), "curves", "points", "areas".
 CURVES, each {"name":"D","label":"D1",...}. Types: "demand" (falling line), "supply" (rising line), "line" (with "from":[x,y],"to":[x,y]), "h" (horizontal, "at":y), "v" (vertical, "at":x), "convex" (bowed in towards the origin, from top left to bottom right: Phillips curve, AD, hyperbola), "concave" (bowed out: PPF), "u" ("from":[x,y],"min":[x,y],"to":[x,y]: cost curves), "bezier" (from, to and "control":[x,y]: Lorenz curve) and "curve" ("points":[[x,y],...] with 4 to 8 points: J-curve, business cycle, anything else). "shift":"right|left|up|down" (optional "by":14, "shiftLabel":"D2") adds a dashed shifted copy named D* and an arrow. Presets "demand" and "supply" need no coordinates. Up to 7 curves.
-POINTS: {"id":"E1","label":"E1","of":["D","S"],"xl":"Q1","yl":"P1"} puts a dot where two curves cross (use "D*" for a shifted copy) and "xl"/"yl" add dashed guides with axis labels. {"id":"A","label":"A","at":[30,30]} is a fixed point. {"id":"M","on":"S","atx":"E2.x"} is the point on curve S at the x (or "aty" the y) of another point. "dot":false hides the dot.
+POINTS: {"id":"E1","label":"E1","of":["D","S"],"xl":"Q1","yl":"P1"} puts a dot where two curves cross (use "D*" for a shifted copy) and "xl"/"yl" add dashed guides with axis labels. {"id":"A","label":"A","at":[30,30]} is a fixed point. {"id":"M","on":"S","atx":"E2.x"} is the point on curve S at the x (or "aty" the y) of another point. "dot":false hides the dot. Show every figure from the question on the axes: give "h" and "v" curves a "val" label (for example {"name":"Pw","type":"h","at":30,"val":"$5"}) and put the price or quantity in "xl" and "yl" on points (for example "xl":"200","yl":"$10"). A student must be able to see every number a question asks about. Every "h" and "v" line is also marked on its axis (with its "val", or its name if it has none), so give each one a short "label" such as Pw or Pw+t.
 AREAS: {"pts":["a","b","c"],"label":"DWL"} shades a polygon through point ids ("c":1 for a second colour).
 1. Market shift: [[DIAGRAM {"type":"econ","title":"Iron ore market","xaxis":"Quantity","yaxis":"Price ($)","curves":[{"name":"D","type":"demand","label":"D1","shift":"right","shiftLabel":"D2"},{"name":"S","type":"supply"}],"points":[{"id":"E1","label":"E1","of":["D","S"],"xl":"Q1","yl":"P1"},{"id":"E2","label":"E2","of":["D*","S"],"xl":"Q2","yl":"P2"}]}]]
-2. Tariff: [[DIAGRAM {"type":"econ","title":"Tariff","xaxis":"Quantity","yaxis":"Price ($)","curves":[{"name":"D","type":"demand"},{"name":"S","type":"supply"},{"name":"Pw","type":"h","at":30,"label":"Pw"},{"name":"Pt","type":"h","at":45,"label":"Pw+t"}],"points":[{"id":"a","of":["Pw","S"],"xl":"Qs1"},{"id":"b","of":["Pw","D"],"xl":"Qd1"},{"id":"c","of":["Pt","S"],"xl":"Qs2"},{"id":"d","of":["Pt","D"],"xl":"Qd2"},{"id":"e","at":["c.x","a.y"],"dot":false},{"id":"f","at":["d.x","b.y"],"dot":false}],"areas":[{"pts":["a","c","e"],"label":"DWL"},{"pts":["b","d","f"],"label":"DWL"},{"pts":["c","d","f","e"],"label":"Revenue","c":1}]}]]
+2. Tariff sketch (no numbers; if the question gives numbers use the numeric tariff card, item 13): [[DIAGRAM {"type":"econ","title":"Tariff","xaxis":"Quantity","yaxis":"Price ($)","curves":[{"name":"D","type":"demand"},{"name":"S","type":"supply"},{"name":"Pw","type":"h","at":30,"label":"Pw"},{"name":"Pt","type":"h","at":45,"label":"Pw+t"}],"points":[{"id":"a","of":["Pw","S"],"xl":"Qs1"},{"id":"b","of":["Pw","D"],"xl":"Qd1"},{"id":"c","of":["Pt","S"],"xl":"Qs2"},{"id":"d","of":["Pt","D"],"xl":"Qd2"},{"id":"e","at":["c.x","a.y"],"dot":false},{"id":"f","at":["d.x","b.y"],"dot":false}],"areas":[{"pts":["a","c","e"],"label":"DWL"},{"pts":["b","d","f"],"label":"DWL"},{"pts":["c","d","f","e"],"label":"Revenue","c":1}]}]]
 3. PPF with growth: [[DIAGRAM {"type":"econ","xaxis":"Good X","yaxis":"Good Y","curves":[{"name":"PPF","type":"concave","from":[8,86],"to":[86,8],"shift":[10,10],"shiftLabel":"PPF2"}],"points":[{"id":"A","label":"A","at":[40,40]},{"id":"B","label":"B","at":[24,24]}]}]]
 The same shapes work for AD/AS (xaxis "Real GDP", yaxis "Price level", AD as "convex" or "demand", SRAS as "supply"), the Phillips curve, the AUD exchange rate (yaxis "AUD price in USD"), the labour market, externalities (MPC and MSC as supply-type lines, D as MPB), subsidies, quotas, cost curves and anything custom. Label curves with the names used in the HUB NOTES diagrams. Draw at most two diagrams in a reply, then explain the picture in words step by step: which curve moves and why, the old and new equilibrium, and what happens to price and quantity, using the wording of the HUB NOTES.
 DATA CARDS (Economics): the Hub also draws these from figures given in the question or in the HUB NOTES. Give only the figures. The Hub does every calculation, so never work out the answer first, never invent figures, and never contradict the card afterwards; refer to its numbers in words.
@@ -49359,13 +49444,14 @@ FLOW AND STRUCTURE DIAGRAMS (Economics): the Hub also draws these. Give only wor
 10. J-curve: [[DIAGRAM {"type":"jcurve","stage":"price"}]]  "stage" is start (the depreciation), price (short run, balance worsens), turning, or volume (longer run, balance improves).
 11. Monetary policy transmission: [[DIAGRAM {"type":"transmission","direction":"rise","highlight":"exchange"}]]  "direction" is rise or cut (the cash rate). It draws cash rate, market rates, the three channels (borrowing, exchange rate, asset prices) and aggregate demand with every word flipped correctly for the direction. "highlight" is cash, market, borrowing, exchange, assets or ad.
 12. Balance of payments structure: [[DIAGRAM {"type":"bopstructure","highlight":"financial"}]]  Draws the branches: current account (BOGS, net primary income, net secondary income), capital and financial accounts, and net errors and omissions. "highlight" is current, goods, primary, secondary, capital, financial or errors. For the figures use the "bop" card instead.
+13. Tariff with numbers: [[DIAGRAM {"type":"tariff","title":"Tariff on imported steel","pw":5,"tariff":5,"qs0":100,"qd0":500,"qs1":200,"qd1":400}]]  USE THIS whenever a tariff question gives numbers or asks for a calculation (revenue, deadweight loss, change in imports, who gains or loses). "pw" is the world price and "tariff" the tax per unit (or give "pt", the price with the tariff). "qs0" and "qd0" are the quantities supplied and demanded at home at the world price (before the tariff); "qs1" and "qd1" are the same after the tariff. Give plain numbers, never an answer. The Hub draws it to scale with the prices and quantities on the axes, shades the two deadweight loss triangles and the revenue box, and hides the results so the student can work them out; add "answer":true only when you are showing the worked solution, and the Hub then prints the revenue, deadweight loss and working. Never state a tariff result that the card does not show.
 Use "econ" with "curve" points for any other flow or cycle shape. 
 HOW TO USE DIAGRAMS TO TEACH (Economics): ${T.mode==='guide'?`PREDICT FIRST. When a question needs a shift or a change (a market shock, a tax or tariff, a policy move, a depreciation, a change in the cash rate), do NOT draw the answer yet. Draw ONLY the starting position with no shift (for a market: the demand and supply curves, E1 and its P1 and Q1; for AD/AS: the starting equilibrium; for the cycle or J-curve: the unmarked curve), say what happened in the story in one line, and ask ONE question: which curve shifts, and which way? Wait for the student. Then say what they got right or what to fix, and draw the diagram again with the shift, the new equilibrium and the labels. If they are stuck, give a hint in stages before showing it. If the student just asks you to draw something, or asks for the answer, draw it straight away.`:`In explain mode draw the finished diagram straight away with the shift, the new equilibrium and the labels, then walk through it step by step.`}
 INTERPRETATION RULE: a graph or card is only half an answer. After ANY diagram or data card, make the student say what it means for the economy: ${T.mode==='guide'?'ask "What does this mean for the economy?" as your next question and wait for their answer':'finish with one short question such as "What does this mean for the economy?"'}. A good interpretation names what happened to price, quantity, income, jobs, prices or the exchange rate (whichever the picture shows), says who gains or loses, and links it to an economic objective or the question being asked. Give feedback on their answer against the figures the Hub drew, never against numbers you made up. For a data card (Lorenz, formula, balance of payments, trend), ask them to state the direction or size in words first ("is inequality higher or lower than the comparison, and how can you tell?") before you comment on the result.
 Elasticity needs no new type: draw two demand curves of different steepness with the "econ" type, or use a "formula" card of kind "ped" for the calculation.`:'';
 const bizRule=()=>(T.subj==='business'||T.subj==='all')?`
 DIAGRAMS (Business Studies): never write a balance sheet, income statement, cash flow statement or financial table as plain text. Draw it with ONE line, [[DIAGRAM {json}]], the same way as other diagrams. Give only the items and the amounts: the Hub adds up every total, so never add totals yourself, and make your own working agree with what the Hub shows. Use whole dollars as plain numbers. Use "x" for an amount the student has to work out (every total that depends on it shows ?), then give the answer in words after they try.
-1. Balance sheet: [[DIAGRAM {"type":"balancesheet","title":"Mia's Cafe","date":"as at 30 June 2026","assets":{"current":[["Cash",12000],["Accounts receivable",8000],["Inventory",15000]],"noncurrent":[["Equipment",40000]]},"liabilities":{"current":[["Accounts payable",9000]],"noncurrent":[["Bank loan",30000]]},"equity":[["Owner's capital",30000],["Retained profits",6000]]}]]  Make the numbers balance: total assets = total liabilities + owner's equity. Up to 8 items in each group.
+1. Balance sheet: [[DIAGRAM {"type":"balancesheet","title":"Mia's Cafe","date":"as at 30 June 2026","assets":{"current":[["Cash",12000],["Accounts receivable",8000],["Inventory",15000]],"noncurrent":[["Equipment",40000]]},"liabilities":{"current":[["Accounts payable",9000]],"noncurrent":[["Bank loan",30000]]},"equity":[["Owner's capital",30000],["Retained profits",6000]]}]]  Make the numbers balance: total assets = total liabilities + owner's equity. Up to 8 items in each group. Use exactly these keys (assets and liabilities each hold "current" and "noncurrent" lists; "equity" is a list), write every amount as a plain number with no commas, $ signs or units (12000, not 12,000), and never add totals as items: the Hub adds them up.
 2. Income statement: [[DIAGRAM {"type":"income","title":"Mia's Cafe","period":"for the year ended 30 June 2026","revenue":[["Sales",250000]],"cogs":[["Cost of goods sold",140000]],"other":[["Interest received",2000]],"expenses":[["Wages",60000],["Rent",24000],["Advertising",8000]]}]]  Leave out "cogs" for a service business and "other" if there is no other income. It works out gross profit and net profit (or net loss).
 3. Cash flow statement: [[DIAGRAM {"type":"cashflowstatement","title":"Mia's Cafe","period":"for the year ended 30 June 2026","operating":[["Receipts from customers",180000],["Payments to suppliers",-110000]],"investing":[["Purchase of equipment",-25000]],"financing":[["Bank loan received",30000]],"opening":15000}]]  Cash coming in is positive and cash going out is negative. "opening" is the cash at the start and is optional.
 4. Financial ratio: [[DIAGRAM {"type":"ratio","kind":"gearing","values":[39000,36000]}]]  "kind" is current (current assets, current liabilities), gearing (total liabilities, total equity: shown as a ratio to 1, like 1.2 : 1), grossprofit (gross profit, sales), netprofit (net profit, sales), roe (net profit, total equity), expense (total expenses, sales) or receivable (sales, accounts receivable: shown as times per year, with the collection period in days). Current ratio and gearing are ratios to 1; the profit and expense ratios are percentages. "values" are the two figures in that order and the Hub works out the answer.
@@ -49602,6 +49688,29 @@ main:has(#tt){max-width:none!important}.tt{max-width:none;width:100%}.tt-box.emp
 .tt-dg .k{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.tt-dg .k.f{fill:color-mix(in srgb,var(--br) 12%,transparent)}.tt-dg .k.d{stroke-dasharray:6 4;stroke-width:1.6;opacity:.75}.tt-dg .k.a{stroke:var(--br);stroke-width:2.4}
 .tt-dg text{fill:currentColor;font-size:15px;font-weight:600;font-family:inherit;paint-order:stroke;stroke:var(--sf);stroke-width:3px;stroke-linejoin:round}.tt-dg text.g{fill:var(--br);font-weight:800}.tt-dg text.p{font-weight:800}.tt-dg text.n{font-weight:500;font-size:12.5px;fill:var(--mu)}
 .tt-dg figcaption{margin-top:4px;padding:0 6px;font-size:12.5px;line-height:1.4;color:var(--mu);text-align:center}
+/* financial statements (balance sheet, income statement, cash flow) */
+.tt-dg.st{padding:18px 14px 12px;border-radius:18px;box-shadow:0 1px 2px rgba(0,0,0,.10),0 14px 32px -18px rgba(0,0,0,.45)}
+.tt-dg.st svg{width:min(470px,92vw)}
+.tt-dg.st text{stroke:none;font-variant-numeric:tabular-nums}
+.tt-dg.st .st-t{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.tt-dg.st .st-s{font-size:12px;font-weight:500;fill:var(--mu)}
+.tt-dg.st .st-hr{stroke:var(--br);stroke-width:3;stroke-linecap:round}
+.tt-dg.st .st-band{fill:color-mix(in srgb,var(--br) 11%,transparent)}
+.tt-dg.st .st-band2{fill:color-mix(in srgb,var(--br) 24%,transparent)}
+.tt-dg.st .st-bar{fill:var(--br)}
+.tt-dg.st .st-h1{font-size:12px;font-weight:800;letter-spacing:.14em}.tt-dg.st .st-h1l{stroke:var(--br);stroke-width:1.6;opacity:.9}
+.tt-dg.st .st-h{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.tt-dg.st .st-l{font-size:12.5px;font-weight:500}
+.tt-dg.st .st-v{font-size:12.5px;font-weight:600}
+.tt-dg.st .st-sl{font-size:12.5px;font-weight:700}
+.tt-dg.st .st-sv{font-size:12.5px;font-weight:800}
+.tt-dg.st .st-tl{font-size:12.5px;font-weight:800;letter-spacing:.03em}
+.tt-dg.st .st-tv{font-size:14.5px;font-weight:800}
+.tt-dg.st .neg{fill:#e0546f}
+.tt-dg.st .g{fill:var(--br);font-weight:800}
+.tt-dg.st .st-dot{stroke:currentColor;stroke-width:1;opacity:.28;stroke-dasharray:1 4;stroke-linecap:round}
+.tt-dg.st .st-ul{stroke:currentColor;stroke-width:1.2;opacity:.85}
+.tt-dg.st figcaption{margin-top:6px;font-size:12px}
 .tt-b .tt-dgx{font-size:13px;color:var(--mu);font-style:italic}
 .tt-b .tt-tbl{overflow-x:auto;margin:0 0 8px}.tt-b .tt-tbl table{border-collapse:collapse;font-size:.92em;min-width:60%}.tt-b .tt-tbl th,.tt-b .tt-tbl td{border:1px solid var(--ln);padding:4px 9px;text-align:left}.tt-b .tt-tbl th{background:var(--bg);font-weight:700}.tt-b .tt-tbl .r{text-align:right;font-variant-numeric:tabular-nums}
 .tt-dg .gr{fill:none;stroke:var(--ln);stroke-width:1}.tt-dg .ax{fill:none;stroke:currentColor;stroke-width:1.5;opacity:.8}.tt-dg .ax.z{stroke-width:1;opacity:.45}
@@ -49855,7 +49964,7 @@ document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest
  else if(v.indexOf('sw:')===0){const m=T.msgs[+v.slice(3)];if(m&&m.sw){const q=String(m.q0||m.q||'');T.subj=m.sw;T.view='chat';T.draft=q;persist();paint(true);const i=Q('#ttIn');if(i){i.value=q;i.style.height='auto';i.style.height=Math.min(180,i.scrollHeight)+'px';try{i.focus({preventScroll:true})}catch(_){}}}}
  else if(v.indexOf('paper:')===0){const k=v.slice(6);T.paper=PAPERS[k]&&T.paper!==k?k:'';T.paperDay=T.paper?dayKey(new Date()):'';persist();paint()}
  else if(v.indexOf('mode:')===0){T.mode=v.slice(5);persist();paint()}
- else if(v==='new'){if(T.busy)return;delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();CLR[T.subj]=Date.now();T.msgs=[];T.err='';persist();paint()}
+ else if(v==='new'){if(T.busy)return;if(T.msgs.length&&!window.confirm('Start a new chat?\n\nWarning: this will permanently delete the current chat and its conversation history. This cannot be undone.'))return;delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();CLR[T.subj]=Date.now();T.msgs=[];T.err='';persist();paint()}
  else if(v==='opts'){OPT=!OPT;paint()}
  else if(v==='attach'){const f=Q('#ttFile');if(f)f.click()}
  else if(v==='keep'){const k=KEEP[T.subj];if(k){k.on=!k.on;paint()}}
