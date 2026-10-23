@@ -49959,12 +49959,28 @@ V.tutor=()=>{readNow();setTimeout(()=>{ttReveal(Q('#ttCtl'));const b=Q('#ttBox')
  window.__ttSubj=T.subj;window.__ttEng=effSub();try{window.__hxTn&&window.__hxTn()}catch(e){}
  const tc=(()=>{try{if(T.subj!=='all'&&JSON.parse(localStorage.getItem('hubx')||'{}').sub){const s=SUBS.find(x=>x[0]===T.subj);return s?s[2]:''}}catch(e){}return ''})();
  return `<div id="tt" class="tt" data-view="${T.view}"${tc?` style="--tc:${tc}"`:''}><div id="ttCtl">${ctlHtml()}</div><div class="tt-box${T.msgs.length||T.view==='quiz'?'':' empty'}" id="ttBox">${boxHtml()}</div><div id="ttFiles">${tfHtml()}</div><div class="tt-comp"><input type="file" id="ttFile" accept="image/*,application/pdf" multiple hidden><button type="button" class="btn tt-clip" data-tt="attach" aria-label="Attach a photo or PDF" title="Attach a photo or PDF">\ud83d\udcce</button><textarea id="ttIn" autocapitalize="sentences" class="tt-in" rows="1" placeholder="Tell me what you are stuck on…" aria-label="Your question">${esc(T.draft)}</textarea><button type="button" class="btn p tt-send" id="ttSend" data-tt="send" ${T.busy?'disabled':''}>${T.busy?'Sending…':'Send'}</button></div><div id="ttFoot">${footHtml()}</div></div>`};
+/* in-page confirm popup for the Tutor (centred, themed; replaces the browser's window.confirm box that drops down from the top) */
+function ttConfirm(title,msg,okTxt,onOk){
+ if(document.getElementById('ttCf'))return;
+ if(!document.getElementById('ttCfCss')){const st=document.createElement('style');st.id='ttCfCss';
+  st.textContent='#ttCf{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}'+
+  '#ttCf .ttcf-b{width:min(420px,100%);box-sizing:border-box;padding:22px 22px 18px;border-radius:20px;background:var(--sf,#1b1b20);color:var(--ink,#ececf1);border:1px solid var(--ln,#34343c);box-shadow:0 24px 60px rgba(0,0,0,.5)}'+
+  '#ttCf h3{margin:0 0 8px;font-size:18px;font-weight:800}#ttCf p{margin:0 0 18px;line-height:1.5;color:var(--mu,#a0a0b0);font-size:14.5px}'+
+  '#ttCf .ttcf-a{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}#ttCf button{font:inherit;font-weight:700;padding:9px 16px;border-radius:12px;border:1px solid var(--ln,#34343c);background:transparent;color:inherit;cursor:pointer}'+
+  '#ttCf button.ttcf-o{background:#d94d6a;border-color:#d94d6a;color:#fff}#ttCf button:focus-visible{outline:2px solid var(--br,#7c8cff);outline-offset:2px}';
+  document.head.appendChild(st)}
+ const o=document.createElement('div');o.id='ttCf';o.setAttribute('role','alertdialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-labelledby','ttCfT');
+ o.innerHTML='<div class="ttcf-b"><h3 id="ttCfT"></h3><p></p><div class="ttcf-a"><button type="button" class="ttcf-c">Cancel</button><button type="button" class="ttcf-o"></button></div></div>';
+ o.querySelector('h3').textContent=title;o.querySelector('p').textContent=msg;o.querySelector('.ttcf-o').textContent=okTxt||'OK';
+ const close=()=>{o.remove();document.removeEventListener('keydown',kd,true)},kd=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}};
+ o.querySelector('.ttcf-c').onclick=close;o.querySelector('.ttcf-o').onclick=()=>{close();onOk&&onOk()};o.addEventListener('click',e=>{if(e.target===o)close()});
+ document.addEventListener('keydown',kd,true);document.body.appendChild(o);o.querySelector('.ttcf-c').focus()}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-tt]');if(!t||t.type==='checkbox')return;const v=t.dataset.tt;
  if(v.indexOf('subj:')===0){T.subj=v.slice(5);persist();paint(true)}
  else if(v.indexOf('sw:')===0){const m=T.msgs[+v.slice(3)];if(m&&m.sw){const q=String(m.q0||m.q||'');T.subj=m.sw;T.view='chat';T.draft=q;persist();paint(true);const i=Q('#ttIn');if(i){i.value=q;i.style.height='auto';i.style.height=Math.min(180,i.scrollHeight)+'px';try{i.focus({preventScroll:true})}catch(_){}}}}
  else if(v.indexOf('paper:')===0){const k=v.slice(6);T.paper=PAPERS[k]&&T.paper!==k?k:'';T.paperDay=T.paper?dayKey(new Date()):'';persist();paint()}
  else if(v.indexOf('mode:')===0){T.mode=v.slice(5);persist();paint()}
- else if(v==='new'){if(T.busy)return;if(T.msgs.length&&!window.confirm('Start a new chat?\n\nWarning: this will permanently delete the current chat and its conversation history. This cannot be undone.'))return;delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();CLR[T.subj]=Date.now();T.msgs=[];T.err='';persist();paint()}
+ else if(v==='new'){if(T.busy)return;const go=()=>{delete KEEP[T.subj];delete MEM.sum[T.subj];memSave();CLR[T.subj]=Date.now();T.msgs=[];T.err='';persist();paint()};if(!T.msgs.length)go();else if(typeof ttConfirm==='function')ttConfirm('Start a new chat?','This will permanently delete the current chat and its conversation history. This cannot be undone.','Delete and start new',go);else if(window.confirm('Start a new chat?\n\nWarning: this will permanently delete the current chat and its conversation history. This cannot be undone.'))go()}
  else if(v==='opts'){OPT=!OPT;paint()}
  else if(v==='attach'){const f=Q('#ttFile');if(f)f.click()}
  else if(v==='keep'){const k=KEEP[T.subj];if(k){k.on=!k.on;paint()}}
