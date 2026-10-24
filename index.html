@@ -306,7 +306,7 @@ body.no-blur .card,body.no-blur aside{background-color:var(--sf)}
 .cdb b{font-size:30px;line-height:1.1;letter-spacing:-.03em;color:var(--c)}
 #net:empty{display:none}
 .nhost{display:block;--econ-top:var(--hub-top,0px)}
-body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflow:hidden;overscroll-behavior:none}#xc,#xcmain,#xcnv,.xc-res,.xc-rsp{overscroll-behavior:contain}
+body.xc-on{overflow:hidden;overscroll-behavior:none}body.xc-on .hx-rp{display:none!important}.xv{margin:12px 0 4px;text-align:center}.xv svg{width:100%;max-width:460px;height:auto;color:var(--ink);overflow:visible}.xv text{fill:currentColor;font:12px Arial,Helvetica,sans-serif}.xv .b{font-weight:700;font-size:14px}.xv .ax,.xv .ln{fill:none;stroke:currentColor;stroke-width:1.6}.xv .d{stroke-dasharray:4 3;stroke-width:1.1;opacity:.75}.xv .c1,.xv .c2,.xv .c3{fill:none;stroke-width:2.4;stroke-linecap:round}.xv .c1{stroke:var(--br)}.xv .c2{stroke:#d97706}.xv .c3{stroke:#dc2626}.xv rect.nb{fill:var(--sf2);stroke:currentColor;stroke-width:1.4}.xv .f1{fill:var(--br)}.xv .f2{fill:#d97706}#xc textarea,#xc input[type=text],#xc input:not([type]){caret-color:var(--ink)}html:has(body.xc-on){overflow:hidden;overscroll-behavior:none}#xc,#xcmain,#xcnv,.xc-res,.xc-rsp{overscroll-behavior:contain}
 .fold>summary{list-style:none;cursor:pointer}.fold>summary::-webkit-details-marker{display:none}.fold>summary::after{content:"+";margin-left:auto;font-weight:700;color:var(--mu)}.fold[open]>summary::after{content:"\2212"}body.xc-on #pill{display:none!important}
 #xc{position:fixed;inset:0;z-index:2147483000;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-family:inherit;line-height:1.5}
 #xc *{box-sizing:border-box}
@@ -323,11 +323,24 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}html:has(body.xc-on){overflo
 #xcmain{flex:1;overflow:auto;padding:22px clamp(16px,calc(4*var(--vw)),48px) 28px}
 .xc-w{max-width:820px;margin:0 auto}
 .xc-ns{margin-bottom:16px}.xc-ns b{display:block;font-size:14px}.xc-ns>span{display:block;font-size:12px;color:var(--mu);margin-bottom:6px}
-.xc-nb{display:flex;flex-wrap:wrap;gap:5px}
-.xc-nb button{min-width:34px;height:32px;padding:0 7px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--ink);font:600 12px inherit;cursor:pointer}
-.xc-nb button.ok{background:var(--sf2);border-color:var(--br)}.xc-nb button.pk{outline:2px solid var(--br)}.xc-nb button.fl{border-color:#d97706;box-shadow:inset 0 -3px #d97706}
-.xc-nb button.cur{background:var(--br);color:var(--on-br,#fff);border-color:var(--br)}
-.xc-leg{font-size:12px;color:var(--mu);margin-top:8px}
+.xc-nb{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0}
+.xc-nb button{position:relative;min-width:42px;height:42px;padding:0 6px;border:1.5px solid var(--ln);border-radius:11px;background:var(--sf2);color:var(--ink);font:600 13px/1 inherit;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color .15s,background .15s,transform .1s}
+.xc-nb button:hover{border-color:var(--mu)}
+.xc-nb button:active{transform:scale(.95)}
+.xc-nb button:focus-visible{outline:2px solid var(--br);outline-offset:2px}
+.xc-nb button.ok{background:color-mix(in srgb,#2fbf86 16%,var(--sf2));border-color:color-mix(in srgb,#2fbf86 75%,var(--sf2))}
+.xc-nb button.fl{border-color:#f59e0b}
+.xc-nb button.cur{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.xc-nb button.pk{outline:2px solid var(--br);outline-offset:2px}
+.xc-nb button.ok::after,.xc-nb button.fl::before{content:"";position:absolute;bottom:max(5px,12%);left:calc(50% - 3px);width:6px;height:6px;border-radius:50%;pointer-events:none}
+.xc-nb button.ok::after{background:#2fbf86}
+.xc-nb button.fl::before{background:#f59e0b}
+.xc-nb button.ok.fl::before{left:calc(50% - 9px)}
+.xc-nb button.ok.fl::after{left:calc(50% + 3px)}
+.xc-nb button.cur.ok::after{background:#16875c}
+.xc-nb button.cur.fl::before{background:#b45309}
+#xc textarea,#xc .xc-ta{cursor:text;caret-color:var(--ink)!important;-webkit-text-fill-color:currentColor}
+.xc-leg{font-size:12px;line-height:1.5;color:var(--mu);margin-top:14px}
 .xc-meta{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);margin-bottom:8px}
 .xc-qt{font-size:18px;font-weight:600;margin:0 0 16px}.xc-mk{white-space:nowrap;font-weight:700;color:var(--mu,inherit);opacity:.85}
 .xc-stim{padding:12px 14px;border:1px solid var(--ln);border-left:4px solid var(--br);border-radius:8px;background:var(--sf);margin:0 0 16px;font-size:15px}
@@ -30482,7 +30495,7 @@ setSection(initialSection());
 
         var mcs = examBuildMcq(MCQ_BANK.length, 'All').sort(byUse('mc', function (it) { return it.data.id; })).slice(0, 20).map(function (it, i) {
           var d = it.data;
-          return { id: 'mc' + d.id, type: 'mc', lb: String(i + 1), marks: 1, topic: d.area, q: d.q, options: d.options, correct: d.correct, exp: d.explanation || '' };
+          return { id: 'mc' + d.id, type: 'mc', lb: String(i + 1), marks: 1, topic: d.area, stim: d.stim || '', q: d.q, options: d.options, correct: d.correct, exp: d.explanation || '' };
         });
         var sas = fresh(function () { return examBuildSa(40, 'All'); }, function (l) { return l.map(function (it) { return 'sa' + it.data.id; }); }).map(function (it) {
           var q = it.data, parts = saParseParts(q), pts = saPointsByLabel(q), mdl = saSplitByLabel(q.modelAnswer);
@@ -44522,7 +44535,7 @@ function xensure(id){if(window.HubExam&&HubExam[id])return Promise.resolve();
   try{if(n.st!=='ready')nativeFinish(s,n);(window.HubExam&&HubExam[id])?ok():no(new Error('This subject has no full paper connected.'))}catch(e){no(e)}}))}
 function xstart(id,vr){if(X.run){xresume(true);return}xmsg='';
  document.querySelectorAll('[data-xc="start"]').forEach(b=>{b.disabled=true;b.style.opacity='.5'});
- Promise.all([xensure(id),xready]).then(()=>{const p=HubExam[id].build({variant:vr,used:xused(id)});
+ Promise.all([xensure(id),xready]).then(()=>{const p=HubExam[id].build({variant:vr,used:xused(id)});try{xAddViz(p,id)}catch(e){}
   if(!p||!p.sections||!p.sections.length||!xall(p).length)throw new Error('No questions could be built for this paper.');
   xpre={subj:id,vr:vr||'',paper:p};xopen();xcover()}).catch(e=>{xmsg='Could not build the paper: '+e.message;xpre=null;if(xo)xclose(true);render()})}
 function xcover(){const p=xpre.paper,s=sub(xpre.subj),tot=xtotalP(p);
@@ -44585,7 +44598,7 @@ function xtick(){const r=X.run;if(!r||!xo||xpre)return;const now=Date.now();xbea
  const rd=$('#xcrdt');if(rd)rd.textContent=xm(left)}
 function xnav(){const r=X.run,el=$('#xcnv');if(!el)return;const its=xitems(r);
  el.innerHTML='<button class="btn xc-nvx" data-xc="qclose">Close list</button>'+r.paper.sections.map(sec=>{const si=its.filter(i=>i.sec.id===sec.id),na=si.filter(i=>i.q&&xhas(r,i.q)).length;
-  return`<div class="xc-ns"><b>${esc(sec.title)}<span class="xc-cnt">${na}/${si.length}</span></b><span>${sec.sub}</span><div class="xc-nb">${sec.qs.map(q=>`<button class="${[q.id===r.cur?'cur':'',xhas(r,q)?'ok':'',r.fl[q.id]?'fl':'',sec.choose&&r.pick[sec.id]===q.id?'pk':''].join(' ')}" data-xc="go" data-q="${q.id}" aria-label="${esc(sec.title)}, ${esc(xttl(q))}${xhas(r,q)?', answered':''}${r.fl[q.id]?', flagged':''}">${q.lb}</button>`).join('')}</div></div>`}).join('')+'<div class="xc-leg">Filled = answered · underline = flagged · ring = your chosen question</div>';
+  return`<div class="xc-ns"><b>${esc(sec.title)}<span class="xc-cnt">${na}/${si.length}</span></b><span>${sec.sub}</span><div class="xc-nb">${sec.qs.map(q=>`<button class="${[q.id===r.cur?'cur':'',xhas(r,q)?'ok':'',r.fl[q.id]?'fl':'',sec.choose&&r.pick[sec.id]===q.id?'pk':''].join(' ')}" data-xc="go" data-q="${q.id}" aria-label="${esc(sec.title)}, ${esc(xttl(q))}${xhas(r,q)?', answered':''}${r.fl[q.id]?', flagged':''}">${q.lb}</button>`).join('')}</div></div>`}).join('')+'<div class="xc-leg">Green dot = answered · amber dot = flagged · filled = this question · outline = chosen question</div>';
  const need=xneeded(r).length,tot=its.length,pr=$('#xcpr');if(pr)pr.textContent=(tot-need)+'/'+tot+' answered';
  const f=$('#xcfl');if(f)f.textContent=r.fl[r.cur]?'⚑ Unflag':'⚑ Flag for review'}
 function xpk(r,q){const sec=r.paper.sections.find(s=>s.id===q.sec);if(!sec.choose)return'';const on=r.pick[sec.id]===q.id;
@@ -44685,9 +44698,98 @@ const XASK=new Set();
 function xAskList(q,i,p){if(!p||!p.ask||p.ask.length<2)return'';
  return`<div class="xc-ask"><div class="mu sm"><b>This part asks you to:</b></div><ol>${p.ask.map((a,k)=>{const key=q.id+':'+i+':'+k;return`<li><label><input type="checkbox" class="xc-ack" data-ak="${key}"${XASK.has(key)?' checked':''}> <span>${a}</span></label></li>`}).join('')}</ol></div>`}
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('xc-ack')){if(t.checked)XASK.add(t.dataset.ak);else XASK.delete(t.dataset.ak)}});
+/* ---------- diagrams for Business and Economics questions that are otherwise only described in words ----------
+   Added to a question's stimulus when the paper is built. Neutral set-ups only: nothing is drawn that would give the answer away. */
+const xvTx=h=>String(h==null?'':h).replace(/<[^>]*>/g,' ').replace(/&[a-z#0-9]+;/gi,' ').replace(/\s+/g,' ').trim();
+const xvWrap=(w,h,label,inner)=>`<div class="xv"><svg viewBox="0 0 ${w} ${h}" style="width:${Math.round(w*(w>320?1.1:1.25))}px" role="img" aria-label="${label}"><defs><marker id="xva" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>${inner}</svg></div>`;
+const xvAx=(xl,yl)=>`<path class="ax" d="M44 14V196H282"/><text x="282" y="226" text-anchor="end">${xl}</text><text x="48" y="10">${yl}</text>`;
+const xvT=(x,y,t,a)=>`<text x="${x}" y="${y}"${a?` text-anchor="${a}"`:''}>${t}</text>`;
+function xvNet(acts,unit){
+ const m={};acts.forEach(a=>m[a.id]=a);const lv={};
+ const L=a=>lv[a.id]!=null?lv[a.id]:(lv[a.id]=a.pre.length?1+Math.max(...a.pre.map(p=>m[p]?L(m[p]):0)):0);acts.forEach(L);
+ const cols=Math.max(...Object.values(lv))+1,rows={};acts.forEach(a=>{(rows[lv[a.id]]=rows[lv[a.id]]||[]).push(a)});
+ const mr=Math.max(...Object.values(rows).map(r=>r.length)),bw=58,bh=42,gx=36,gy=18,lng=[];
+ acts.forEach(a=>a.pre.forEach(p=>{if(m[p]&&lv[a.id]-lv[p]>1)lng.push([p,a.id])}));
+ const W=cols*bw+(cols-1)*gx+20,H=mr*bh+(mr-1)*gy+20+lng.length*10,H0=H-lng.length*10,P={};
+ Object.keys(rows).forEach(c=>{const r=rows[c],h=r.length*bh+(r.length-1)*gy;r.forEach((a,i)=>{P[a.id]={x:10+c*(bw+gx),y:10+(H0-20-h)/2+i*(bh+gy)}})});
+ let s='';acts.forEach(a=>a.pre.forEach(p=>{if(!P[p])return;const f=P[p],t=P[a.id],k=lng.findIndex(e=>e[0]===p&&e[1]===a.id);
+  if(k<0)s+=`<path class="ln" marker-end="url(#xva)" d="M${f.x+bw} ${f.y+bh/2}L${t.x-1} ${t.y+bh/2}"/>`;
+  else{const ly=H0-2+10*(k+1)-4;s+=`<path class="ln" marker-end="url(#xva)" d="M${f.x+bw} ${f.y+bh/2}H${f.x+bw+12}V${ly}H${t.x-12-4*k}V${t.y+bh/2}H${t.x-1}"/>`}}));
+ acts.forEach(a=>{const q=P[a.id];s+=`<rect class="nb" x="${q.x}" y="${q.y}" width="${bw}" height="${bh}" rx="8"/><text class="b" x="${q.x+bw/2}" y="${q.y+17}" text-anchor="middle">${a.id}</text><text x="${q.x+bw/2}" y="${q.y+33}" text-anchor="middle">${a.d} ${unit}</text>`});
+ return xvWrap(W,H,'Network diagram of the project activities, each box showing the activity and its duration, arrows showing which must finish first',s)}
+function xvActs(stem,stim){
+ let acts=[],unit='days',m;const re=/\b([A-Z])\s*\((\d+)\s*(days?|weeks?)\s*,\s*([^)]*)\)/g;
+ while((m=re.exec(stem))){unit=m[3].replace(/s?$/,'s');acts.push({id:m[1],d:+m[2],pre:/after/i.test(m[4])?(m[4].replace(/^.*after/i,'').match(/[A-Z]/g)||[]):[]})}
+ if(acts.length>=4)return xvNet(acts,unit);
+ acts=[];const rt=/<tr><td>([A-Z])<\/td><td>(\d+)<\/td><td>([^<]*)<\/td><\/tr>/g;
+ while((m=rt.exec(String(stim||'')))){acts.push({id:m[1],d:+m[2],pre:m[3].match(/\b[A-Z]\b/g)||[]})}
+ if(acts.length>=4)return xvNet(acts,/Days/i.test(stim)?'days':'weeks');
+ return''}
+const XVE=[
+ [/^A tariff on imported (cars|motor vehicles)/i,()=>xvWrap(300,232,'Supply and demand diagram of an import market with the world price and the price after a tariff',xvAx('Quantity','Price')+'<path class="c1" d="M60 170L250 50"/><path class="c2" d="M60 40L250 170"/>'+xvT(254,48,'S')+xvT(254,178,'D')+'<path class="ln d" d="M44 150H221M44 118H174M92 150V196M142 118V196M174 118V196M221 150V196"/>'+xvT(40,154,'Pw','end')+xvT(40,122,'Pw+t','end')+xvT(92,210,'Qs1','middle')+xvT(142,210,'Qs2','middle')+xvT(174,210,'Qd2','middle')+xvT(221,210,'Qd1','middle'))],
+ [/^A negative externality exists when|carbon pricing scheme corrects a negative externality/i,()=>xvWrap(300,232,'Market with a negative externality: demand, marginal private cost and marginal social cost',xvAx('Quantity','Price')+'<path class="c2" d="M60 40L250 170"/><path class="c1" d="M60 170L250 70"/><path class="c3" d="M60 140L250 40"/>'+xvT(254,176,'D')+xvT(254,70,'MPC')+xvT(254,38,'MSC')+'<path class="ln d" d="M44 96.5H142.6V196M44 113.5H167.4V196"/>'+xvT(40,100,'P*','end')+xvT(40,117,'Pm','end')+xvT(142.6,210,'Q*','middle')+xvT(167.4,210,'Qm','middle'))],
+ [/Production Possibility Curve represents/i,()=>xvWrap(300,232,'Two production possibility curves, the second further from the origin than the first',xvAx('Good X','Good Y')+'<path class="c1" d="M44 120Q190 110 200 196"/><path class="c2" d="M44 62Q250 50 262 196"/>'+xvT(162,120,'PPC1')+xvT(206,82,'PPC2'))],
+ [/Phillips Curve is most accurate|movement along the Phillips Curve/i,()=>xvWrap(300,232,'A downward-sloping short-run Phillips curve',xvAx('Unemployment rate','Inflation rate')+'<path class="c1" d="M70 40Q95 180 262 184"/>'+xvT(222,168,'SRPC'))],
+ [/^On a Lorenz curve/i,()=>xvWrap(300,232,'Lorenz curve below the line of perfect equality',xvAx('Cumulative % of population','Cumulative % of income')+'<path class="ln d" d="M44 196L244 16"/><path class="c1" d="M44 196Q190 190 244 16"/><path class="ln d" d="M54 32H76"/>'+xvT(82,36,'Line of equality')+'<path class="c1" d="M54 50H76"/>'+xvT(82,54,'Lorenz curve'))],
+ [/price floor set above the equilibrium/i,()=>xvWrap(300,232,'Supply and demand with a price floor drawn above the equilibrium price',xvAx('Quantity','Price')+'<path class="c1" d="M60 170L250 50"/><path class="c2" d="M60 40L250 170"/>'+xvT(254,48,'S')+xvT(254,178,'D')+'<path class="ln d" d="M44 107.6H158.8V196"/>'+xvT(40,111,'Pe','end')+'<path class="c3" d="M44 80H282"/>'+xvT(48,74,'Price floor'))]
+];
+/* ---- extra diagrams (Economics and Business): set-ups only, no answers drawn ---- */
+const xvN=s=>+String(s).replace(/[\s\u00a0,]/g,'').replace(/[−–]/g,'-').replace(/[^\d.\-]/g,'');
+const xvLn=(X,Y,q1,p1,q2,p2,qa,qb,c)=>{const f=q=>p1+(p2-p1)*(q-q1)/(q2-q1);return `<path class="${c}" d="M${X(qa).toFixed(1)} ${Y(f(qa)).toFixed(1)}L${X(qb).toFixed(1)} ${Y(f(qb)).toFixed(1)}"/>`};
+function xvBars(label,cats,series,unit){
+ const mx=Math.max(...series.flatMap(s=>s.v))*1.2,gw=238/cats.length,bw=Math.min(40,(gw-16)/series.length);let g='<path class="ax" d="M44 14V196H282"/>';
+ cats.forEach((c,i)=>{const x0=44+i*gw+(gw-bw*series.length)/2;series.forEach((s,k)=>{const h=s.v[i]/mx*170,x=x0+k*bw;g+=`<rect class="f${k+1}" x="${x.toFixed(1)}" y="${(196-h).toFixed(1)}" width="${bw-3}" height="${h.toFixed(1)}"/>`+xvT((x+(bw-3)/2).toFixed(1),(196-h-4).toFixed(1),s.v[i]+(unit||''),'middle')});g+=xvT((44+i*gw+gw/2).toFixed(1),212,c,'middle')});
+ if(series.length>1)series.forEach((s,k)=>{g+=`<rect class="f${k+1}" x="${50+k*120}" y="222" width="10" height="10"/>`+xvT(64+k*120,231,s.n)});
+ return xvWrap(300,240,label,g)}
+const xvTbl=(h,rows)=>`<div class="xv"><table style="width:auto;margin:0 auto"><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table></div>`;
+const XVE2=[
+ [/^The price of a good falls from \$(\d+) to \$(\d+) and quantity demanded rises from (\d+) to (\d+)/i,(m)=>{
+  const p0=+m[1],p1=+m[2],q0=+m[3],q1=+m[4],qm=Math.ceil(Math.max(q0,q1)*1.3/50)*50,pm=Math.ceil(p0*1.2/10)*10,X=q=>44+q/qm*230,Y=p=>196-p/pm*170;
+  return xvWrap(300,232,'Demand curve through two points: price $'+p0+' at quantity '+q0+' and price $'+p1+' at quantity '+q1,xvAx('Quantity','Price ($)')+xvLn(X,Y,q0,p0,q1,p1,Math.min(q0,q1)*.7,Math.max(q0,q1)*1.12,'c2')+xvT(X(Math.max(q0,q1)*1.12)+4,Y(p0+(p1-p0)*(Math.max(q0,q1)*1.12-q0)/(q1-q0))+4,'D')+
+   `<path class="ln d" d="M44 ${Y(p0)}H${X(q0)}V196M44 ${Y(p1)}H${X(q1)}V196"/><circle cx="${X(q0)}" cy="${Y(p0)}" r="3.5" fill="currentColor"/><circle cx="${X(q1)}" cy="${Y(p1)}" r="3.5" fill="currentColor"/>`+
+   xvT(40,Y(p0)+4,p0,'end')+xvT(40,Y(p1)+4,p1,'end')+xvT(X(q0),210,q0,'middle')+xvT(X(q1),210,q1,'middle'))}],
+ [/Country X can make (\d+) wheat or (\d+) cloth; Country Y can make (\d+) wheat or (\d+) cloth/i,(m)=>{
+  const wx=+m[1],cx=+m[2],wy=+m[3],cy=+m[4],xm=Math.ceil(Math.max(wx,wy)*1.15/10)*10,ym=Math.ceil(Math.max(cx,cy)*1.2/5)*5,X=q=>44+q/xm*230,Y=p=>196-p/ym*170;
+  return xvWrap(300,232,'Production possibilities of Country X and Country Y, wheat on the horizontal axis and cloth on the vertical axis',xvAx('Wheat','Cloth')+`<path class="c1" d="M${X(wx)} 196L44 ${Y(cx)}"/><path class="c2" d="M${X(wy)} 196L44 ${Y(cy)}"/>`+
+   xvT(X(wx)+3,190,'X')+xvT(X(wy)+3,190,'Y')+xvT(40,Y(cx)+4,cx,'end')+xvT(40,Y(cy)+4,cy,'end')+xvT(X(wx),210,wx,'middle')+xvT(X(wy),210,wy,'middle')+
+   '<path class="c1" d="M200 22H218"/>'+xvT(222,26,'Country X')+'<path class="c2" d="M200 40H218"/>'+xvT(222,44,'Country Y'))}],
+ [/^Using the data, the government.s tariff revenue is|^Using the same data, the volume of imports after the tariff/i,(m,q)=>{
+  const t=xvTx(q.stim),g=re=>{const r=t.match(re);return r?+r[1].replace(/,/g,''):NaN},pw=g(/world price of \$(\d+)/),pt=g(/domestic price to \$(\d+)/),qs0=g(/quantity supplied is (\d+)/),qd0=g(/quantity demanded is (\d+)/),qs1=g(/supplied rises to (\d+)/),qd1=g(/demanded falls to (\d+)/);
+  if([pw,pt,qs0,qd0,qs1,qd1].some(isNaN))return'';
+  const qm=Math.ceil(qd0*1.15/100)*100,pm=Math.ceil(pt*1.3/2)*2,X=q=>44+q/qm*230,Y=p=>196-p/pm*170;
+  return xvWrap(300,232,'Import market: world price $'+pw+', price with tariff $'+pt+', and the quantities supplied and demanded at each price',xvAx('Quantity','Price ($)')+xvLn(X,Y,qs0,pw,qs1,pt,qs0*.6,qs1*1.2,'c1')+xvLn(X,Y,qd0,pw,qd1,pt,qd1*.85,qd0*1.1,'c2')+xvT(X(qs1*1.2)+3,Y(pw+(pt-pw)*(qs1*1.2-qs0)/(qs1-qs0))+4,'S')+xvT(X(qd1*.85)-4,Y(pw+(pt-pw)*(qd1*.85-qd0)/(qd1-qd0))-6,'D','end')+
+   `<path class="ln d" d="M44 ${Y(pw)}H${X(qd0)}M44 ${Y(pt)}H${X(qd1)}M${X(qs0)} ${Y(pw)}V196M${X(qs1)} ${Y(pt)}V196M${X(qd1)} ${Y(pt)}V196M${X(qd0)} ${Y(pw)}V196"/>`+xvT(40,Y(pw)+4,'$'+pw,'end')+xvT(40,Y(pt)+4,'$'+pt,'end')+[qs0,qs1,qd1,qd0].map(v=>xvT(X(v),210,v,'middle')).join(''))}],
+ [/J-?Curve effect/i,()=>xvWrap(300,232,'Axes for trade balance over time, with a dashed line marking when the currency depreciates',xvAx('Time','Trade balance')+'<path class="ln d" d="M44 105H282"/>'+xvT(40,109,'0','end')+xvT(48,60,'Surplus')+xvT(48,152,'Deficit')+'<path class="ln d" d="M110 14V196"/>'+xvT(114,28,'Currency depreciates'))],
+ [/export price index falls from (\d+) to (\d+) while the import price index rises from (\d+) to (\d+)/i,(m)=>xvBars('Export and import price indexes before and after',['Before','After'],[{n:'Export price index',v:[+m[1],+m[2]]},{n:'Import price index',v:[+m[3],+m[4]]}]) ]
+];
+const XVB=[
+ [/current ratio falls from (\d+\.?\d*) to (\d+\.?\d*) over two years, while the industry average is (\d+\.?\d*)/i,m=>xvBars('Current ratio two years ago, now, and the industry average',['Two years ago','Now','Industry average'],[{n:'Current ratio',v:[+m[1],+m[2],+m[3]]}])],
+ [/gross profit ratio stays at (\d+)% but its net profit ratio falls from (\d+)% to (\d+)%/i,m=>xvBars('Gross and net profit ratios before and after',['Before','After'],[{n:'Gross profit ratio',v:[+m[1],+m[1]]},{n:'Net profit ratio',v:[+m[2],+m[3]]}],'%')],
+ [/Businesses A and B both have a net profit ratio of (\d+)%\. A.s return on equity is (\d+)% and B.s is (\d+)%/i,m=>xvBars('Net profit ratio and return on equity for Business A and Business B',['Business A','Business B'],[{n:'Net profit ratio',v:[+m[1],+m[1]]},{n:'Return on equity',v:[+m[2],+m[3]]}],'%')],
+ [/^Week 1: a factory produced ([\d ]+) units with (\d+) workers\. Week 2: it produced ([\d ]+) units with (\d+) workers/i,m=>xvTbl(['','Units produced','Workers'],[['Week 1',m[1].replace(/ /g,' '),m[2]],['Week 2',m[3].replace(/ /g,' '),m[4]]])],
+ [/Maslow/i,()=>{const L=['Self-actualisation','Esteem','Social (belonging)','Safety','Physiological'];return xvWrap(300,200,'Maslow\u2019s hierarchy of needs as five stacked levels',L.map((t,i)=>{const w=110+i*32,x=150-w/2,y=8+i*36;return `<rect class="nb" x="${x}" y="${y}" width="${w}" height="32" rx="6"/>`+xvT(150,y+20,t,'middle')}).join(''))}],
+ [/product life cycle/i,()=>xvWrap(300,232,'Product life cycle curve of sales over time, divided into four stages',xvAx('Time','Sales')+'<path class="c1" d="M46 190C80 188 95 150 125 100C145 66 165 50 195 50C225 50 240 90 276 170"/><path class="ln d" d="M105 36V196M175 36V196M225 36V196"/>'+xvT(75,30,'Introduction','middle')+xvT(140,30,'Growth','middle')+xvT(200,30,'Maturity','middle')+xvT(254,30,'Decline','middle'))]
+];
+function xvPlc(stim){const rows=[],re=/<tr><td>(\d+)<\/td><td>([^<]+)<\/td><td>([^<]+)<\/td><\/tr>/g;let m;if(!/Year<\/th><th>Sales[^]*Profit/.test(stim||''))return'';
+ while((m=re.exec(stim)))rows.push([+m[1],xvN(m[2]),xvN(m[3])]);if(rows.length<4)return'';
+ const all=rows.flatMap(r=>[r[1],r[2]]),mx=Math.max(...all)*1.1,mn=Math.min(0,...all)*1.1,X=i=>60+i*(210/(rows.length-1)),Y=v=>196-(v-mn)/(mx-mn)*170,pl=k=>'M'+rows.map((r,i)=>X(i).toFixed(1)+' '+Y(r[k]).toFixed(1)).join('L');
+ return xvWrap(300,232,'Line chart of sales and profit for each year',xvAx('Year','$')+`<path class="ln d" d="M44 ${Y(0).toFixed(1)}H282"/><path class="c1" d="${pl(1)}"/><path class="c2" d="${pl(2)}"/>`+rows.map((r,i)=>xvT(X(i).toFixed(1),210,r[0],'middle')).join('')+xvT(X(rows.length-1)-6,Y(rows[rows.length-1][1])-8,'Sales','end')+xvT(X(rows.length-1)-6,Y(rows[rows.length-1][2])-8,'Profit','end'))}
+function xAddViz(p,subj){if(!/^(economics|business)$/.test(subj))return;
+ (p.sections||[]).forEach(sc=>(sc.qs||[]).forEach(q=>{if(q.type!=='mc'||/<(svg|img|canvas)\b/i.test(q.stim||''))return;
+  const stem=xvTx(q.q);let v='';
+  if(subj==='business'){v=xvActs(stem,q.stim);if(!v){const b=XVB.find(x=>x[0].test(stem));if(b)v=b[1](stem.match(b[0]),q)}if(!v)v=xvPlc(q.stim)}
+  else{const e=XVE.find(x=>x[0].test(stem));if(e)v=e[1]();else{const e2=XVE2.find(x=>x[0].test(stem));if(e2)v=e2[1](stem.match(e2[0]),q)}}
+  if(v)q.stim=(q.stim||'')+v}))}
+
 const xCalc=(r,q)=>{if(!q||q.type!=='mc')return false;if(r.subj==='maths')return true;if(!/^(economics|business)$/.test(r.subj))return false;
- const t=[q.q,q.stim].concat(q.options||[]).join(' ').replace(/<[^>]*>/g,' ');
- return /calculat/i.test(t)||(/\d/.test(t)&&/[%$]|percent|per cent|ratio|break-?even|margin|rate|index|profit|revenue|cost|price|growth|average|mean|multiplier|total/i.test(t))};
+ const tx=h=>String(h==null?'':h).replace(/<[^>]*>/g,' ').replace(/&[a-z#0-9]+;/gi,' ').replace(/\s+/g,' ').trim(),stem=tx(q.q),stim=tx(q.stim),opts=(q.options||[]).map(tx);
+ /* Working is offered only for a genuine calculation: there are figures to work from (in the question or its data) AND the answer choices are mostly figures. Recall questions (which year, which body, a formula, reading one value off a chart) never get it, so it appears consistently. */
+ if(!/\d/.test(stem+' '+stim))return false;
+ if(/calculated (as|by|using)|calculating and|responsible for|in which year|which (year|quarter|body|country|statement|of the following)|how many of|equals:?\s*$|is defined as/i.test(stem))return false;
+ const fig=o=>{const c=o.replace(/\b[PQ]\s?\d\b/g,' ').trim();return !!c&&c.length<=60&&/\d/.test(c)&&!/^(19|20)\d\d$/.test(c.replace(/\s/g,''))};
+ if(opts.filter(fig).length>=3)return true;
+ if(/terms of trade|elasticity|multiplier|\bPED\b/i.test(stem)&&((stem+' '+stim).match(/\d[\d,.]*/g)||[]).length>=3)return true;
+ return /critical path|minimum time|break-?even|payback|net present/i.test(stem)&&/\d/.test(stim)};
 function xwk(r,q,lock){if(!xCalc(r,q))return'';const d=(r.dw||{})[q.id+':w'],has=!!(((r.wk||{})[q.id])||'').trim()||!!(d&&d.st&&d.st.length),open=!!(r.wo&&r.wo[q.id]);
  return `<div class="xc-wk"><button type="button" class="btn xc-wkb${open?' on':''}" aria-expanded="${open}" data-xc="wktog" data-q="${q.id}">${open?'Hide working':'Working'}${has?' •':''}</button>${open?xpad(r,q,'w',lock):''}</div>`}
 function xopt(id){const r=X.run,m=$('#xcmain');if(!r||!m)return;m.querySelectorAll('.xc-opt').forEach(b=>b.classList.toggle('on',+b.dataset.v===r.a[id]))}
