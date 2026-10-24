@@ -45669,11 +45669,16 @@ const HubBackup=(()=>{
  const valid=j=>!!j&&j.app==='hsc-hub'&&j.ls&&typeof j.ls==='object'&&!Array.isArray(j.ls)&&(j.v==null||j.v<=2);
  function download(b,name){const u=URL.createObjectURL(new Blob([JSON.stringify(b)],{type:'application/json'})),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),1e3)}
  async function restore(b,o){if(!(o&&o.nosafe))await snap('safety');window.__hubRestoring=true;   /* stops the page saving its old in-memory state over the restored data as it reloads */
+  try{
+  const put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){   /* storage full: free per-device backup copies (keep only the newest), then retry; last resort drops them all */
+   try{const a=snaps();if(a.length>1){a.length=1;localStorage.setItem(SK,JSON.stringify(a))}}catch(_){}
+   try{localStorage.setItem(k,v)}catch(e2){try{localStorage.removeItem(SK)}catch(_){}localStorage.setItem(k,v)}}};
   for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);if(k&&k!==SK&&k.indexOf('hsc-hub')===0&&!(k in b.ls))localStorage.removeItem(k)}
-  Object.entries(b.ls).forEach(([k,v])=>{if(typeof v==='string'&&k!==SK)localStorage.setItem(k,v)});
+  Object.entries(b.ls).forEach(([k,v])=>{if(typeof v==='string'&&k!==SK)put(k,v)});
   for(const id of Object.keys(mods))if(b.mods&&id in b.mods){try{await mods[id].import(b.mods[id])}catch(e){}}
   try{await xrestore(Array.isArray(b.xh)?b.xh:[])}catch(e){}
-  location.reload()}
+  location.reload()
+  }catch(e){window.__hubRestoring=false;throw e}}   /* if anything failed, saving must come back on or this page would never save or sync again */
  const info=b=>{let s={};try{s=JSON.parse(b.ls[KEY])||{}}catch(e){}return{subj:Object.values(s.subj||{}).filter(x=>x&&(x.pct!=null||x.min||x.topic)).length,act:(s.act||[]).length,sess:(s.sess||[]).length,saved:(s.saved||[]).length,att:(b.xh||[]).length,mods:Object.keys(b.mods||{}).length}};
  const due=()=>{const m=g('data.auto'),w=m==='daily'?864e5:m==='weekly'?6048e5:0;return w&&Date.now()-g('data.lastAuto')>=w};
  async function auto(){if(!due())return;HubSettings.set('data.lastAuto',Date.now());await snap('auto')}
@@ -51345,7 +51350,7 @@ async function check(mode){if(!sess)return;if(busy){if(Date.now()-lastRun<60000)
     setSt('Newer data from your other device');return}
    await baseSet(L);setMeta({at,hash:L.hash});lastFp=fp0;doneAt('Synced');return}
   setSt('Save kept conflicting (the account row was not updated). Will retry.')
- }catch(e){try{console.error('[hub sync]',e)}catch(_){}setSt(sess?('Sync problem: '+((e&&e.name==='AbortError')?'timed out':((e&&e.message)||'unknown'))+'. Will retry.'):st)}
+ }catch(e){try{console.error('[hub sync]',e)}catch(_){}setSt(sess?('Sync problem: '+((e&&/quota/i.test(String(e.name)+' '+String(e.message)))?'storage on this device is full. Delete saved backups in Settings > Data':((e&&e.name==='AbortError')?'timed out':((e&&e.message)||'unknown')))+'. Will retry.'):st)}
  finally{busy=false;if(again){const m=again;again=null;setTimeout(()=>check(m),300)}}}
 
 /* set / change password (also used after opening a reset link) */
