@@ -331,7 +331,10 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}body.xc-on .hx-rp{display:no
 .xc-nb button.ok{background:color-mix(in srgb,#2fbf86 16%,var(--sf2));border-color:color-mix(in srgb,#2fbf86 75%,var(--sf2))}
 .xc-nb button.fl{border-color:#f59e0b}
 .xc-nb button.cur{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.xc-nb button.pk{outline:2px solid var(--br);outline-offset:2px}
+.xc-nb button.pk{outline:2px solid var(--br);outline-offset:2px}.xc-nb button.np{opacity:.5}
+.xc-pkb{margin:0 0 16px;padding:14px 16px;border:2px solid var(--br);border-radius:16px;background:color-mix(in srgb,var(--br) 8%,var(--sf))}.xc-pkh{margin:0 0 10px;font-size:15px;line-height:1.4}.xc-pko{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.xc-pko{grid-template-columns:1fr}}
+.xc-pkc{display:flex;flex-direction:column;gap:6px;text-align:left;padding:12px 14px;border:1.5px solid var(--ln);border-radius:12px;background:var(--sf);color:var(--ink);font:inherit;cursor:pointer}.xc-pkc:hover:not(:disabled){border-color:var(--br)}.xc-pkc:disabled{opacity:.6;cursor:not-allowed}.xc-pkc.vw{box-shadow:0 0 0 2px color-mix(in srgb,var(--mu) 45%,transparent)}.xc-pkc.on{border-color:var(--br);background:color-mix(in srgb,var(--br) 14%,var(--sf));box-shadow:0 0 0 2px var(--br)}
+.xc-pkt{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.xc-pkt em{font-style:normal;font-size:12px;font-weight:700;color:var(--br)}.xc-pks{font-size:13px;line-height:1.4;color:var(--mu)}.xc-pkm{margin:10px 0 0;font-size:13px;line-height:1.45;color:var(--mu)}.xc-pkm.ok{color:var(--ink);font-weight:600}
 .xc-nb button.ok::after,.xc-nb button.fl::before{content:"";position:absolute;bottom:max(5px,12%);left:calc(50% - 3px);width:6px;height:6px;border-radius:50%;pointer-events:none}
 .xc-nb button.ok::after{background:#2fbf86}
 .xc-nb button.fl::before{background:#f59e0b}
@@ -30510,7 +30513,7 @@ setSection(initialSection());
         });
         var e4 = s4pool.map(function (e, k) {
           return { id: e.id, type: 'essay', lb: String(26 + k), ttl: 'Question ' + (26 + k), marks: e.marks, topic: e.focus, rows: 26,
-            q: tasks(e), guide: guide(e), glabel: 'Marking guide' };
+            q: '<p style="margin:0">' + H(e.task || e.question || '') + '</p>', guide: guide(e), glabel: 'Marking guide' };   /* Section IV is ONE question per option: no extra bullet restating it */
         });
         var sm = function (l) { return l.reduce(function (t, q) { return t + q.marks; }, 0); };
         var secs = [{ id: 'I', title: 'Section I', sub: 'Multiple choice \u00B7 ' + sm(mcs) + ' marks \u00B7 ' + T(0), qs: mcs }];
@@ -44598,13 +44601,17 @@ function xtick(){const r=X.run;if(!r||!xo||xpre)return;const now=Date.now();xbea
  const rd=$('#xcrdt');if(rd)rd.textContent=xm(left)}
 function xnav(){const r=X.run,el=$('#xcnv');if(!el)return;const its=xitems(r);
  el.innerHTML='<button class="btn xc-nvx" data-xc="qclose">Close list</button>'+r.paper.sections.map(sec=>{const si=its.filter(i=>i.sec.id===sec.id),na=si.filter(i=>i.q&&xhas(r,i.q)).length;
-  return`<div class="xc-ns"><b>${esc(sec.title)}<span class="xc-cnt">${na}/${si.length}</span></b><span>${sec.sub}</span><div class="xc-nb">${sec.qs.map(q=>`<button class="${[q.id===r.cur?'cur':'',xhas(r,q)?'ok':'',r.fl[q.id]?'fl':'',sec.choose&&r.pick[sec.id]===q.id?'pk':''].join(' ')}" data-xc="go" data-q="${q.id}" aria-label="${esc(sec.title)}, ${esc(xttl(q))}${xhas(r,q)?', answered':''}${r.fl[q.id]?', flagged':''}">${q.lb}</button>`).join('')}</div></div>`}).join('')+'<div class="xc-leg">Green dot = answered · amber dot = flagged · filled = this question · outline = chosen question</div>';
+  return`<div class="xc-ns"><b>${esc(sec.title)}<span class="xc-cnt">${na}/${si.length}</span></b><span>${sec.sub}</span><div class="xc-nb">${sec.qs.map(q=>`<button class="${[q.id===r.cur?'cur':'',xhas(r,q)?'ok':'',r.fl[q.id]?'fl':'',sec.choose&&r.pick[sec.id]===q.id?'pk':'',sec.choose&&r.pick[sec.id]&&r.pick[sec.id]!==q.id?'np':''].join(' ')}" data-xc="go" data-q="${q.id}" aria-label="${esc(sec.title)}, ${esc(xttl(q))}${xhas(r,q)?', answered':''}${r.fl[q.id]?', flagged':''}">${q.lb}</button>`).join('')}</div></div>`}).join('')+'<div class="xc-leg">Green dot = answered · amber dot = flagged · filled = this question · outline = chosen question</div>';
  const need=xneeded(r).length,tot=its.length,pr=$('#xcpr');if(pr)pr.textContent=(tot-need)+'/'+tot+' answered';
  const f=$('#xcfl');if(f)f.textContent=r.fl[r.cur]?'⚑ Unflag':'⚑ Flag for review'}
-function xpk(r,q){const sec=r.paper.sections.find(s=>s.id===q.sec);if(!sec.choose)return'';const on=r.pick[sec.id]===q.id;
- return `<div class="xc-rd" id="xcpk"><span>${on?'✓ You are answering this question.':'Answer <b>one</b> question in this section.'}${sec.note?'<br><span class="mu sm">'+sec.note+'</span>':''}</span>${on?'':`<button class="btn" data-xc="pick" data-q="${q.id}" ${r.phase==='reading'?'disabled':''}>Choose this question</button>`}</div>`}
+function xpk(r,q){const sec=r.paper.sections.find(s=>s.id===q.sec);if(!sec.choose)return'';const pk=r.pick[sec.id],lockR=r.phase==='reading';
+ const snip=x=>{const t=String(x.q==null?'':x.q).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();return esc(t.length>95?t.slice(0,95).trim()+'\u2026':t)};
+ const labs=sec.qs.map(x=>'Question '+x.lb),or=labs.length>2?labs.slice(0,-1).join(', ')+' or '+labs[labs.length-1]:labs.join(' or ');
+ const cq=sec.qs.find(x=>x.id===pk),here=pk===q.id;
+ const msg=lockR?'Reading time: you can read both questions, but choosing and writing open when writing time starts. Use the "Begin writing now" button at the top if you want to start early.':!pk?'You have not chosen yet. Pick one below, or just start typing in the question you want.':here?'\u2713 You are answering this question. Only this one will be marked.':'You are answering Question '+cq.lb+'. This question will not be marked. To answer this one instead, choose it below (your other answer is kept).';
+ return `<div class="xc-pkb" id="xcpk" role="group" aria-label="Choose one question"><div class="xc-pkh"><b>${esc(sec.title)}: answer ONE question (${or})</b>${sec.note?'<span class="mu sm"> '+sec.note+'</span>':''}</div><div class="xc-pko">${sec.qs.map(x=>{const on=pk===x.id;return `<button type="button" class="xc-pkc${on?' on':''}${x.id===q.id?' vw':''}" data-xc="pick" data-q="${x.id}" aria-pressed="${on}" ${lockR||on?'':''} ${lockR?'disabled':''}><span class="xc-pkt"><b>Question ${esc(x.lb)}</b><em>${on?'\u2713 Your choice':(lockR?'Opens in writing time':(pk?'Switch to this':'Choose this'))}</em></span><span class="xc-pks">${snip(x)}</span></button>`}).join('')}</div><div class="xc-pkm${here?' ok':''}">${msg}</div></div>`}
 function xmk(q){const t=String(q.q==null?'':q.q),m=q.marks?` <span class="xc-mk" title="${q.marks} mark${q.marks>1?'s':''}">(${q.marks})</span>`:'';return/<\/p>\s*$/i.test(t)?t.replace(/<\/p>\s*$/i,m+'</p>'):t+m}
-function xmain(keep){const r=X.run,q=xfind(r.paper,r.cur),el=$('#xcmain');if(!q||!el)return;const lock=r.phase==='reading',dis=lock?'disabled':'',sec=r.paper.sections.find(s=>s.id===q.sec),y=el.scrollTop;let h='<div class="xc-w">';
+function xmain(keep){const r=X.run,q=xfind(r.paper,r.cur),el=$('#xcmain');if(!q||!el)return;const lock=r.phase==='reading',sec=r.paper.sections.find(s=>s.id===q.sec),off=!!(sec.choose&&r.pick[sec.id]&&r.pick[sec.id]!==q.id),dis=(lock||off)?'disabled':'',y=el.scrollTop;let h='<div class="xc-w">';
  if(lock)h+=`<div class="xc-rd"><span><b>Reading time.</b> Writing is disabled. Writing time starts in <b id="xcrdt"></b>.</span><button class="btn" data-xc="skiprd">Begin writing now</button></div>`;
  h+=`<div class="xc-meta">${esc(sec.title)} · ${esc(xttl(q))} · ${q.marks} mark${q.marks>1?'s':''}</div>`+xpk(r,q);
  if(sec.booklet)h+=`<details class="xc-bk" open><summary>${sec.bookTitle||'Reference material'}</summary>${sec.booklet}</details>`;
@@ -45610,7 +45617,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!
  else if(a==='refsheet'){xrefOpen()}else if(a==='refclose'){xrefClose()}else if(a==='qlist'){const n=$('#xcnv');if(n)n.classList.add('open')}else if(a==='qclose'){const n=$('#xcnv');if(n)n.classList.remove('open')}
  else if(a==='opt'&&r.phase==='writing'){r.a[t.dataset.q]=+t.dataset.v;xsaveD();xnav();xopt(t.dataset.q)}
  else if(a==='wktog'){r.wo=r.wo||{};r.wo[t.dataset.q]=!r.wo[t.dataset.q];xsaveD();xmain(true)}
- else if(a==='pick'&&r.phase==='writing'){const q=xfind(r.paper,t.dataset.q);r.pick[q.sec]=q.id;xsaveD();xnav();xmain(true)}
+ else if(a==='pick'&&r.phase==='writing'){const q=xfind(r.paper,t.dataset.q);r.pick[q.sec]=q.id;r.cur=q.id;xsaveD();xnav();xmain()}
  else if(a.slice(0,2)==='dw')xpadAct(a.slice(2),t.dataset.k,t.dataset.v);
  else if(a==='flag'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
  else if(a==='skiprd'){r.rEnd=Date.now();xtick();xnav()}
