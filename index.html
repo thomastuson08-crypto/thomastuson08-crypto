@@ -51344,8 +51344,8 @@ async function check(mode){if(!sess)return;if(busy){if(Date.now()-lastRun<60000)
     /* no banner: this waits quietly and is added when you next open the app or switch away (or press Sync now) */
     setSt('Newer data from your other device');return}
    await baseSet(L);setMeta({at,hash:L.hash});lastFp=fp0;doneAt('Synced');return}
-  setSt('Will retry shortly')
- }catch(e){setSt(sess?'Offline. Will sync when you are back online.':st)}
+  setSt('Save kept conflicting (the account row was not updated). Will retry.')
+ }catch(e){try{console.error('[hub sync]',e)}catch(_){}setSt(sess?('Sync problem: '+((e&&e.name==='AbortError')?'timed out':((e&&e.message)||'unknown'))+'. Will retry.'):st)}
  finally{busy=false;if(again){const m=again;again=null;setTimeout(()=>check(m),300)}}}
 
 /* set / change password (also used after opening a reset link) */
