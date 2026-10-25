@@ -45271,8 +45271,13 @@ const HubTavily=(()=>{
  const rd=()=>{try{return JSON.parse(localStorage.getItem(K))||{}}catch(e){return{}}};
  const wr=o=>{try{localStorage.setItem(K,JSON.stringify(o));return true}catch(e){return false}};
  const month=()=>new Date().toISOString().slice(0,7);
- const used=()=>{try{const u=JSON.parse(localStorage.getItem(UK))||{};return u.m===month()?(+u.n||0):0}catch(e){return 0}};
- const bump=()=>{try{localStorage.setItem(UK,JSON.stringify({m:month(),n:used()+1}))}catch(e){}};
+ /* Usage is kept per device ({m:month, d:{deviceId:count}}) and the total is the sum, so two devices searching at once never overwrite each other. When signed in, the counts ride along in the account's private row (data.tav.use) and are merged back in with max() per device. */
+ const DV='hsc-hub-dev-v1',dev=(()=>{try{let v=localStorage.getItem(DV);if(!v){v=Math.random().toString(36).slice(2,10);localStorage.setItem(DV,v)}return v}catch(e){return'x'}})();
+ const useRead=()=>{try{const u=JSON.parse(localStorage.getItem(UK))||{};if(u.m!==month())return{m:month(),d:{}};const d=Object.assign({},u.d||{});if(!u.d&&u.n)d[dev]=+u.n||0;return{m:u.m,d:d}}catch(e){return{m:month(),d:{}}}};
+ const useWrite=u=>{try{localStorage.setItem(UK,JSON.stringify(u))}catch(e){}};
+ const used=()=>{const u=useRead();let t=0;for(const k in u.d)t+=(+u.d[k]||0);return t};
+ const mergeUse=r=>{try{if(!r||typeof r!=='object'||!r.d||r.m!==month())return false;const l=useRead();let ch=false;for(const k in r.d){const v=+r.d[k]||0;if(String(k).length<=32&&v>(+l.d[k]||0)){l.d[k]=v;ch=true}}if(ch)useWrite(l);return ch}catch(e){return false}};
+ const bump=()=>{const u=useRead();u.d[dev]=(+u.d[dev]||0)+1;useWrite(u);try{if(window.HubAccount&&HubAccount.signedIn()&&window.HubKeySync)HubKeySync.push().catch(()=>{})}catch(e){}};
  const key=()=>String(rd().key||'').trim();
  const official=()=>rd().official!==false;
  const host=u=>{try{return new URL(u).hostname.toLowerCase().replace(/^www\./,'')}catch(e){return ''}};
@@ -45308,14 +45313,14 @@ const HubTavily=(()=>{
  <p class="mu sm" style="margin:0 0 8px">Gives the Career Adviser free web search when you use a Gemini key. Make a free key at tavily.com (1,000 searches a month, no card needed). The key is stored in plain text in this browser. When you are signed in it is also saved to your account, the same private place as your AI key, so it follows you to your other devices. It is not part of Hub backups. Remove it on a shared device.</p>
  ${setRow('Tavily key',k?((window.HubAccount&&HubAccount.signedIn())?'A key is saved on this device and in your account.':'A key is saved on this device only. Sign in to keep it with your account.'):'Not set up yet.',`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input name=hf63-tv class="xmk-sel" style="flex:1 1 220px;width:auto;margin:0" type="password" data-tv-f="key" placeholder="${k?'Saved. Type a new key to replace it':'Paste your Tavily key'}" autocomplete="off" spellcheck="false" aria-label="Tavily key"><button type="button" class="btn p" data-tv="save">Save key</button></div>`)}
  ${setRow('Official sites only','Searches UAC, NSW university sites and Australian government sites first. If nothing comes back it tries the wider web and says so.',`<button type="button" class="sw" role="switch" aria-checked="${official()}" aria-label="Official sites only" data-tv="official"></button>`)}
- <p class="mu sm" style="margin:6px 0 0">Searches used this month on this device: ${n} of ${CAP}.</p>
+ <p class="mu sm" style="margin:6px 0 0">Searches used this month ${(window.HubAccount&&HubAccount.signedIn())?'across your account (all devices)':'on this device. Sign in to count searches across all your devices'}: ${n} of ${CAP}.</p>
  <p style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 0"><button type="button" class="btn" data-tv="test">Test search</button>${k?'<button type="button" class="btn" data-tv="forget">Remove saved key</button>':''}</p><p class="mu sm" data-tv-msg role="status" style="margin:8px 0 0"></p></div>`};
  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-tv]');if(!b)return;const a=b.dataset.tv,msg=t=>{const m=document.querySelector('[data-tv-msg]');if(m)m.textContent=t},again=t=>{try{rerender()}catch(x){}try{toast(t)}catch(x){}},sync=()=>{try{if(window.HubAccount&&HubAccount.signedIn()&&window.HubKeySync)HubKeySync.push().catch(()=>{})}catch(x){}};
   if(a==='save'){const i=document.querySelector('[data-tv-f="key"]'),v=String(i&&i.value||'').trim();if(!v){msg('Paste your Tavily key first.');return}const o=rd();o.key=v;if(wr(o)){if(i)i.value='';sync();again('Tavily key saved.')}else msg('Could not save: this browser is blocking storage.')}
   else if(a==='forget'){const si=!!(window.HubAccount&&HubAccount.signedIn());(async()=>{try{if(si&&window.HubKeySync&&HubKeySync.dropTav)await HubKeySync.dropTav()}catch(x){msg('Could not remove it from your account. Check your connection and try again.');return}const o=rd();delete o.key;wr(o);again(si?'Tavily key removed from this device and your account.':'Tavily key removed from this device.')})()}
   else if(a==='official'){const o=rd();o.official=!official();wr(o);sync();again(o.official?'Official sites only: on.':'Official sites only: off.')}
   else if(a==='test'){if(!key()){msg('Save your Tavily key first.');return}msg('Testing...');call('University Admissions Centre UAC selection rank',official()).then(r=>msg(r.length?'Working. '+r.length+' results came back. '+used()+' of '+CAP+' searches used this month.':'Connected, but no results came back.')).catch(x=>msg(String((x&&x.message)||x)))}});
- return{has:()=>!!key(),run:run,card:card,used:used,CAP:CAP}})();
+ return{has:()=>!!key(),run:run,card:card,used:used,usage:useRead,mergeUse:mergeUse,CAP:CAP}})();
 try{window.HubTavily=HubTavily}catch(e){}
 
 const XAIN='<p class="xc-sugn"><b>Marked by AI.</b> The AI marks your answer against the question\'s marking points and NESA-style criteria. It can be wrong or inconsistent, so treat it as a study guide, not a prediction of your real HSC mark. Your own mark below always counts.</p>';
@@ -52369,27 +52374,31 @@ const kapi=async(q,o)=>{const t=await token();return api('/rest/v1/hub_secret'+q
 const kcanon=o=>JSON.stringify(Object.keys(o||{}).sort().map(k=>[k,o[k]]));
 const kloc=()=>{try{return JSON.parse(localStorage.getItem(KK))||{}}catch(e){return{}}};
 /* The Tavily key (Live lookup) rides along in the same private row as the AI key: data.tav = {key, official}. */
-const TVK='hsc-hub-tavily-v1',TVH='hsc-sb-tavhash';
+const TVK='hsc-hub-tavily-v1',TVH='hsc-sb-tavhash',TVU='hsc-sb-tavuse';
 const tvLoc=()=>{try{return JSON.parse(localStorage.getItem(TVK))||{}}catch(e){return{}}};
-const tvPack=()=>{const t=tvLoc();return t.key?{key:String(t.key),official:t.official!==false}:null};
+const tvPack=()=>{const t=tvLoc();if(!t.key)return null;const p={key:String(t.key),official:t.official!==false};try{const u=window.HubTavily&&HubTavily.usage&&HubTavily.usage();if(u&&u.d&&Object.keys(u.d).length)p.use=u}catch(e){}return p};
+const tvUSig=o=>{const u=o&&o.use;return u&&u.d?u.m+':'+Object.keys(u.d).sort().map(k=>k+'='+u.d[k]).join(','):''};
 const tvSig=o=>JSON.stringify([String(o&&o.key||''),o&&o.official===false?0:1]);
-async function keyPush(){if(!sess)return;const cfg=kloc(),tav=tvPack();if(!cfg.key&&!tav)return;
+async function keyPush(){if(!sess)return;const cfg=kloc();if(!cfg.key&&!tvPack())return;
  let rem={};try{const g=await kapi('?select=data&user_id=eq.'+sess.uid);if(g.ok&&g.j&&g.j[0])rem=g.j[0].data||{}}catch(e){}
+ try{if(rem.tav&&rem.tav.use&&window.HubTavily&&HubTavily.mergeUse)HubTavily.mergeUse(rem.tav.use)}catch(e){}   /* pull other devices' search counts in first so ours never overwrites them */
+ const tav=tvPack();
  const data=Object.assign({},rem);if(cfg.key)data.cfg=cfg;if(tav)data.tav=tav;
  const r=await kapi('?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:sess.uid,data:data,updated_at:new Date().toISOString()})});
- if(r.ok)try{if(cfg.key)localStorage.setItem(KH,kcanon(cfg));localStorage.setItem(TVH,tvSig(tav))}catch(e){}}
+ if(r.ok)try{if(cfg.key)localStorage.setItem(KH,kcanon(cfg));localStorage.setItem(TVH,tvSig(tav));localStorage.setItem(TVU,tvUSig(tav))}catch(e){}}
 async function keyTick(){try{if(!sess)return;const cur=kloc(),here=kcanon(cur),last=localStorage.getItem(KH)||'',tl=tvPack(),tnow=tvSig(tl),tlast=localStorage.getItem(TVH);
- if((cur.key&&here!==last)||(tl&&tnow!==tlast)){await keyPush();return}   /* changed on this device: save it to the account */
+ if((cur.key&&here!==last)||(tl&&(tnow!==tlast||tvUSig(tl)!==(localStorage.getItem(TVU)||'')))){await keyPush();return}   /* changed on this device: save it to the account */
  const r=await kapi('?select=data&user_id=eq.'+sess.uid);if(!r.ok||!r.j||!r.j[0])return;
  const dd=r.j[0].data||{},rem=dd.cfg,rt=dd.tav;let ch=false;
  if(rt&&rt.key&&(!tl||tvSig(rt)!==tnow)){try{const o=tvLoc();o.key=String(rt.key);o.official=rt.official!==false;localStorage.setItem(TVK,JSON.stringify(o));localStorage.setItem(TVH,tvSig(rt))}catch(e){}ch=true}
  if(rem&&rem.key&&(!cur.key||kcanon(rem)!==here)){try{localStorage.setItem(KK,JSON.stringify(rem));localStorage.setItem(KH,kcanon(rem))}catch(e){return}ch=true}
+ try{if(rt&&rt.use&&window.HubTavily&&HubTavily.mergeUse&&HubTavily.mergeUse(rt.use)){localStorage.setItem(TVU,tvUSig(tvPack()));ch=true}}catch(e){}   /* other devices' searches this month */
  if(ch)try{if(typeof render==='function')render()}catch(e){}}catch(e){}}
 async function keyRemove(){if(!sess)return;const r=await kapi('?user_id=eq.'+sess.uid,{method:'DELETE'});if(!r.ok&&r.status!==404)throw new Error('remove '+r.status);try{localStorage.removeItem(KH);localStorage.removeItem(TVH)}catch(e){}}
 async function tavRemove(){if(!sess)return;const g=await kapi('?select=data&user_id=eq.'+sess.uid);if(!g.ok)throw new Error('read '+g.status);if(!g.j||!g.j[0])return;
  const d=Object.assign({},g.j[0].data||{});delete d.tav;
  const r=await kapi('?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:sess.uid,data:d,updated_at:new Date().toISOString()})});
- if(!r.ok)throw new Error('remove '+r.status);try{localStorage.removeItem(TVH)}catch(e){}}
+ if(!r.ok)throw new Error('remove '+r.status);try{localStorage.removeItem(TVH);localStorage.removeItem(TVU)}catch(e){}}
 window.HubKeySync={pull:async()=>{await keyTick();return !!kloc().key},push:keyPush,remove:keyRemove,dropTav:tavRemove};
 
 window.HubAccount={view,gate,check:()=>check('manual'),signedIn:()=>!!sess};
