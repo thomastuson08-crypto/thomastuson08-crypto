@@ -29595,8 +29595,8 @@ function examSaHTML(q, qn){
         <div class="sa-part">
           <div class="sa-part-head"><span>(${pt.label})</span><span>${pt.text}</span><span class="sa-part-mk">${pt.marks} ${pt.marks===1?'mark':'marks'}</span></div>
           <div class="sa-part-ans"><textarea name=hf37-sa-textarea class="sa-textarea exam-sa-part-ta" spellcheck="false" autocorrect="off" autocomplete="off" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" data-label="${pt.label}" style="min-height:${60+pt.marks*30}px;" placeholder="(${pt.label}) ${pt.marks} ${pt.marks===1?'mark':'marks'}">${saEsc(ans[pt.label] || '')}</textarea></div>
+          <div class="sa-wordcount exam-sa-part-wc" data-wc-for="${pt.label}" style="margin-top:6px;text-align:right;">${examWordCount(ans[pt.label] || '')} words</div>
         </div>`).join('')}
-      <div class="sa-wordcount" id="examSaWordCount" style="margin-top:14px;text-align:right;">${words} words</div>
     </div>`;
 }
 function examErScenarioHTML(q){
@@ -29706,8 +29706,10 @@ function renderExamActive(wrap){
     const tas = wrap.querySelectorAll('.exam-sa-part-ta');
     const sync = () => {
       examAnswers.sa[item.data.id] = saJoinParts(tas);
-      const wc = document.getElementById('examSaWordCount');
-      if(wc) wc.textContent = `${[...tas].reduce((t,x)=>t+examWordCount(x.value),0)} words`;
+      tas.forEach(x => {
+        const wc = [...wrap.querySelectorAll('.exam-sa-part-wc')].find(w => w.dataset.wcFor === x.dataset.label);
+        if(wc) wc.textContent = `${examWordCount(x.value)} words`;
+      });
       examUpdatePaletteDot(key);
       examPersistDebounced();
     };
@@ -49647,21 +49649,33 @@ const TTD=(()=>{
   const ce=E.filter(([p,m])=>crit(p)&&crit(m)&&eq(by[p].est+by[p].d,by[m].est));
   const paths=[];const walk=(m,pa)=>{if(paths.length>=4)return;const nx=ce.filter(e=>e[0]===m);if(!nx.length){if(eq(by[m].est+by[m].d,T))paths.push(pa.concat(m));return}nx.forEach(e=>walk(e[1],pa.concat(m)))};
   names.filter(m=>crit(m)&&!by[m].p.length).forEach(m=>walk(m,[]));
-  const times=s.times!==false,{ly,yy}=layer(names,E),nl=ly.length,bw=56,bh=times?52:36,gap=26,mg=Math.max(...ly.map(g=>g.length)),
-   Wd=Math.max(340,nl*bw+(nl-1)*gap+24),H=Math.max(130,24+(mg+1)*(bh+16)),x0=(Wd-(nl*bw+(nl-1)*gap))/2+bw/2,pos={};
-  ly.forEach((g,d)=>g.forEach(m=>{pos[m]=[x0+d*(bw+gap),12+yy[m]*(H-24)]}));
-  const clip=(c,u,sg)=>{const t=Math.min((bw/2)/(Math.abs(u[0])||1e-9),(bh/2)/(Math.abs(u[1])||1e-9));return[c[0]+sg*u[0]*(t+(sg<0?0:0)),c[1]+sg*u[1]*t]};
+  const times=s.times!==false,{ly,yy}=layer(names,E),nl=ly.length,
+   wrap2=m=>{m=String(m);if(m.length<=16)return[m];const ws=m.split(' ');if(ws.length<2)return[m];let best=1,bd=1e9;for(let i=1;i<ws.length;i++){const d=Math.abs(ws.slice(0,i).join(' ').length-ws.slice(i).join(' ').length);if(d<bd){bd=d;best=i}}return[ws.slice(0,best).join(' '),ws.slice(best).join(' ')]},
+   WL={};names.forEach(m=>WL[m]=wrap2(m));
+  const nlines=Math.max(...names.map(m=>WL[m].length)),cw=Math.max(...names.map(m=>Math.max(...WL[m].map(t=>t.length))))*8.6+26,
+   bw=Math.round(Math.max(times?156:104,Math.min(cw,214))),h1=nlines*20+16,bh=h1+28,gap=64,slot=bh+30,mg=Math.max(...ly.map(g=>g.length)),
+   Wd=nl*bw+(nl-1)*gap+28,H=mg*slot+24+44,x0=14+bw/2,pos={};
+  ly.forEach((g,d)=>g.forEach((m,i)=>{pos[m]=[x0+d*(bw+gap),34+(H-68-g.length*slot)/2+(i+.5)*slot]}));
+  const clip=(c,u,sg)=>{const t=Math.min((bw/2)/(Math.abs(u[0])||1e-9),(bh/2)/(Math.abs(u[1])||1e-9));return[c[0]+sg*u[0]*t,c[1]+sg*u[1]*t]};
   const o=[],isC=(p,m)=>times&&ce.some(e=>e[0]===p&&e[1]===m);
-  E.slice().sort((p,q)=>isC(p[0],p[1])-isC(q[0],q[1])).forEach(([p,m])=>{const P=pos[p],Q=pos[m],u=unit(P,Q),a=clip(P,u,1),b=clip(Q,u,-1),h=isC(p,m),bl=[b[0]-u[0]*6,b[1]-u[1]*6];
+  const li={};ly.forEach((g,d)=>g.forEach(m=>li[m]=d));
+  const blocked=(P,Q,p,m)=>{for(let t=.04;t<1;t+=.02){const x=P[0]+(Q[0]-P[0])*t,y=P[1]+(Q[1]-P[1])*t;for(const q of names){if(q===p||q===m||li[q]<=li[p]||li[q]>=li[m])continue;const c=pos[q];if(Math.abs(x-c[0])<bw/2+5&&Math.abs(y-c[1])<bh/2+5)return true}}return false};
+  const yT=Math.min(...names.map(m=>pos[m][1]))-bh/2-13,yB=Math.max(...names.map(m=>pos[m][1]))+bh/2+13;
+  E.slice().sort((p,q)=>isC(p[0],p[1])-isC(q[0],q[1])).forEach(([p,m])=>{const P=pos[p],Q=pos[m],h=isC(p,m);
+   if(li[m]-li[p]>1&&blocked(P,Q,p,m)){const yd=(P[1]+Q[1])/2<H/2?yT:yB,x1=P[0]+bw/2,x2=Q[0]-bw/2,k=gap/2-4;
+    o.push(`<path class="k${h?' a':''}" d="M${f1(x1)} ${f1(P[1])}H${f1(x1+k)}V${f1(yd)}H${f1(x2-k)}V${f1(Q[1])}H${f1(x2-6)}"/>`,arrow([x2,Q[1]],[1,0],h));return}
+   const u=unit(P,Q),a=clip(P,u,1),b=clip(Q,u,-1),bl=[b[0]-u[0]*6,b[1]-u[1]*6];
    o.push(`<line class="k${h?' a':''}" x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(bl[0])}" y2="${f1(bl[1])}"/>`,arrow(b,u,h))});
-  names.forEach(m=>{const a=by[m],c=pos[m],x=c[0]-bw/2,y=c[1]-bh/2,hl=times&&crit(m);
-   o.push(`<rect class="k f${hl?' a':''}" x="${f1(x)}" y="${f1(y)}" width="${bw}" height="${bh}" rx="6"/>`);
-   if(times)o.push(`<line class="gr" x1="${f1(x)}" y1="${f1(y+bh/2-1)}" x2="${f1(x+bw)}" y2="${f1(y+bh/2-1)}"/>`,TX([c[0],y+bh-8],fv(a.est)+' | '+fv(a.lst),'n'));
-   o.push(TX([x+8,y+(times?bh/2-9:bh/2+5)],m,'v p','start'),TX([x+bw-8,y+(times?bh/2-9:bh/2+5)],fv(a.d),'v','end'))});
+  names.forEach(m=>{const a=by[m],c=pos[m],x=c[0]-bw/2,y=c[1]-bh/2,hl=times&&crit(m),L2=WL[m];
+   o.push(`<rect style="fill:var(--sf);stroke:none" x="${f1(x)}" y="${f1(y)}" width="${bw}" height="${bh}" rx="8"/>`,`<rect class="k f${hl?' a':''}" x="${f1(x)}" y="${f1(y)}" width="${bw}" height="${bh}" rx="8"/>`,
+    `<line class="gr" x1="${f1(x)}" y1="${f1(y+h1)}" x2="${f1(x+bw)}" y2="${f1(y+h1)}"/>`);
+   L2.forEach((t,i)=>o.push(TX([c[0],y+(h1-L2.length*20)/2+15+i*20],t,'v p')));
+   if(times)o.push(TX([x+10,y+bh-9],'EST '+fv(a.est),'n','start'),TX([c[0],y+bh-9],'d = '+fv(a.d),'n'),TX([x+bw-10,y+bh-9],'LST '+fv(a.lst),'n','end'));
+   else o.push(TX([c[0],y+bh-9],'duration '+fv(a.d),'n'))});
   const fl=names.filter(m=>!crit(m)).map(m=>m+' '+fv(by[m].fl));
   return{w:Wd,h:H,svg:o.join(''),
    alt:'Activity network. '+A.map(a=>'Activity '+a.n+' takes '+fv(a.d)+(a.p.length?', after '+a.p.join(' and '):', no predecessors')+(times?'; EST '+fv(a.est)+', LST '+fv(a.lst)+', float '+fv(a.fl):'')).join('. ')+'.'+(times?' Minimum completion time '+fv(T)+'. Critical path '+paths.map(p=>p.join(' to ')).join(' and ')+'.':''),
-   cap:times?'Each box shows the activity (left) and its duration (right); the bottom row is EST | LST. Minimum completion time = '+fv(T)+'. Critical path'+(paths.length>1?'s':'')+': '+paths.map(p=>p.join(' → ')).join(' and ')+'.'+(fl.length?' Float: '+fl.join(', ')+'.':''):'Each box shows the activity (left) and its duration (right); arrows run from an activity to the ones that depend on it. Not drawn to scale.'}}
+   cls:'tt-wide',cap:times?'Each box shows the activity, its duration (d), and its earliest and latest start times (EST, LST). Highlighted boxes and arrows are the critical path. Minimum completion time = '+fv(T)+'. Critical path'+(paths.length>1?'s':'')+': '+paths.map(p=>p.join(' → ')).join(' and ')+'.'+(fl.length?' Float: '+fl.join(', ')+'.':''):'Each box shows an activity and its duration; arrows run from an activity to the ones that depend on it. Not drawn to scale.'}}
 
  /* ===== phase 2: compass bearings (compass rose), compass radial surveys, scale drawings and maps =====
     Same rule as above: the Tutor names the shape and gives the numbers; this code converts the bearings, scales the lengths and works out the areas. */
@@ -51169,6 +51183,7 @@ main:has(#tt){max-width:none!important}.tt{max-width:none;width:100%}.tt-box.emp
 .tt-b{padding:10px 14px;border-radius:18px;line-height:1.55;overflow-wrap:anywhere;font-size:calc(15px*var(--fs,1))}.tt-m.u .tt-b{background:var(--br);color:var(--on-br,#fff);border-bottom-right-radius:6px}.tt-m.a .tt-b{background:var(--sf2);border:1px solid var(--ln);border-bottom-left-radius:6px}
 .tt-dg{margin:4px 0 10px;padding:8px 4px 6px;background:var(--sf);border:1px solid var(--ln);border-radius:14px;color:var(--ink);max-width:100%;box-sizing:border-box}.tt-b>.tt-dg:last-child{margin-bottom:0}
 .tt-dg svg{display:block;width:min(400px,84vw);max-width:100%;height:auto;margin:0 auto;overflow:visible}
+.tt-dg.tt-wide svg{width:min(980px,100%)}
 .tt-dg .k{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.tt-dg .k.f{fill:color-mix(in srgb,var(--br) 12%,transparent)}.tt-dg .k.d{stroke-dasharray:6 4;stroke-width:1.6;opacity:.75}.tt-dg .k.a{stroke:var(--br);stroke-width:2.4}
 .tt-dg text{fill:currentColor;font-size:15px;font-weight:600;font-family:inherit;paint-order:stroke;stroke:var(--sf);stroke-width:3px;stroke-linejoin:round}.tt-dg text.g{fill:var(--br);font-weight:800}.tt-dg text.p{font-weight:800}.tt-dg text.n{font-weight:500;font-size:12.5px;fill:var(--mu)}
 .tt-dg figcaption{margin-top:4px;padding:0 6px;font-size:12.5px;line-height:1.4;color:var(--mu);text-align:center}
