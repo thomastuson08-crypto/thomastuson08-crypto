@@ -48687,6 +48687,8 @@ const SYLFILL=new Set(tok('let go going full whole entire complete everything al
 const SYLNEXT=/^\s*(?:yes|yeah|yep|yup|ok(?:ay)?|sure|next|go on|go|continue|keep going|next topic|next one|go ahead|please|y|more)\b/i;
 /* "the full syllabus", "everything", "all the dot points": the student wants every topic in one reply */
 const SYLFULL=/\b(?:full|whole|entire|complete)\b[^.?!]{0,30}\b(?:syllabus|checklist|dot[\s-]?points?|list)\b|\b(?:syllabus|checklist|dot[\s-]?points?)\b[^.?!]{0,25}\b(?:in full|all at once|all of it|in one go)\b|\ball\s+(?:of\s+)?(?:the\s+|my\s+)?(?:syllabus|checklist|dot[\s-]?points?|topics)\b|\beverything\b/i;
+/* broad asks about the whole subject ("crash course on the entire syllabus") must reach the Syllabus Checklist even when they carry extra words such as extensive, simplified or tomorrow */
+const SYLBROAD=new RegExp(SYLFULL.source+'|\\bcrash\\s*course\\b|\\b(?:whole|entire)\\s+(?:course|subject)\\b|\\b(?:overview|summary|summari[sz]e|recap)\\b[^.?!]{0,30}\\b(?:syllabus|course|subject)\\b','i');
 const sylShort=t=>tok(t).length<3&&String(t).trim().length<60;
 function sylPlan(sj,last,ch,depth){depth=depth|0;last=String(last||'');
  if(/\b(?:quiz|test) me\b|\bask me (?:a |some )?(?:few )?questions?\b/i.test(last))return null;   /* a quiz request stays a quiz */
@@ -48713,9 +48715,9 @@ function sylPlan(sj,last,ch,depth){depth=depth|0;last=String(last||'');
     if(bi>=0)focus={topic:bi};
     else{const need=Math.max(1,Math.ceil(.6*L.length)),hit=[];
      S.topics.forEach((t,ti)=>t.groups.forEach((g,gi)=>g.items.forEach((it,ii)=>{const D=it._tk||(it._tk=sylTk(it.t));let o=0;L.forEach(w=>{if(D.has(w))o++});if(o>=need)hit.push([ti,gi,ii])})));
-     if(!hit.length)return null;   /* not about the checklist after all (e.g. "dot points on the multiplier" with no such dot point): normal question */
-     focus={dp:hit.slice(0,40)}}}}}
- return{hit:1,subj,remaining,ask,focus,carry,full:!!(I.hit&&SYLFULL.test(last)&&!(focus&&focus.topic!=null))}}
+     if(!hit.length&&!SYLBROAD.test(last))return null;   /* not about the checklist after all (e.g. "dot points on the multiplier" with no such dot point): normal question */
+     if(hit.length)focus={dp:hit.slice(0,40)}}}}}
+ return{hit:1,subj,remaining,ask,focus,carry,full:!!(I.hit&&SYLBROAD.test(last)&&!(focus&&focus.topic!=null))}}
 window.__ttSyl.plan=sylPlan;window.__ttSyl.intent=sylIntent;
 /* ---- Syllabus prompt data (only used when the message is a syllabus question, i.e. system() gets an `sy`) ----
    sylPick(): which ONE topic to show. A topic named in the message; else "next/yes/continue" moves on from the topic stored on the last reply ({s,t,n,mode});
