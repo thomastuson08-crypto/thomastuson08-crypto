@@ -50425,6 +50425,7 @@ const TTD=(()=>{
 /* the instruction that teaches the Tutor to ask for a diagram (maths and General tabs only) */
 
 const ecoRule=()=>(T.subj==='economics'||T.subj==='all')?`
+MATHS FORMAT (Economics): never wrap variables or formulas in dollar signs or any LaTeX. Write AD, MPS and k = 1 / MPS as plain text. Only use the $ symbol for actual money, such as $5 or $2 million.
 DIAGRAMS (Economics): when the student asks you to draw, show or sketch ANY economics graph or diagram, or when a picture would help, never describe it in text or ASCII art. Draw it with ONE line, [[DIAGRAM {json}]], type "econ". You only describe the shapes on a 0 to 100 grid (0,0 is the bottom left); the Hub draws them and works out where curves cross, so every equilibrium and area is exact. Never type coordinates of a crossing yourself.
 Fields: "title", "xaxis" and "yaxis" (axis labels), "curves", "points", "areas".
 CURVES, each {"name":"D","label":"D1",...}. Types: "demand" (falling line), "supply" (rising line), "line" (with "from":[x,y],"to":[x,y]), "h" (horizontal, "at":y), "v" (vertical, "at":x), "convex" (bowed in towards the origin, from top left to bottom right: Phillips curve, AD, hyperbola), "concave" (bowed out: PPF), "u" ("from":[x,y],"min":[x,y],"to":[x,y]: cost curves), "bezier" (from, to and "control":[x,y]: Lorenz curve) and "curve" ("points":[[x,y],...] with 4 to 8 points: J-curve, business cycle, anything else). "shift":"right|left|up|down" (optional "by":14, "shiftLabel":"D2") adds a dashed shifted copy named D* and an arrow. Presets "demand" and "supply" need no coordinates. Up to 7 curves.
@@ -50509,7 +50510,7 @@ DIAGRAMS (maths questions only): The student cannot practise maths without seein
 For graphs, statistics, probability and measurement, only draw what the question gives you: never invent data points, counts or measurements, and make the picture match your working.
 Draw at most two diagrams in a reply, only when a picture helps, and make sure it matches the numbers in your working. After it, refer to the picture in words ("the side opposite the 35° angle is x"). If a question needs a shape these cannot show, describe it in words instead.`:'';
 
-const mdText=t=>{const inl=s=>s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');
+const mdText=t=>{const inl=s=>s.replace(/\$([A-Za-z\\][^$\n]*?)(?<!\s)\$/g,'$1').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');
  let h='',list=null,tb=null,oc=0;const close=()=>{if(list){h+='</'+list+'>';list=null}};
  const tfl=()=>{if(!tb)return;const rs=tb;tb=null;const sp=c=>/^:?-{2,}:?$/.test(c);let hd=null;if(rs.length>1&&rs[1].every(sp)){hd=rs[0];rs.splice(0,2)}else if(rs.length&&rs.every(r=>r.every(sp)))return;
   const nm=c=>/^[-\u2212($]?\s*[\d.,]+%?\)?$/.test(c.replace(/&[a-z#0-9]+;/g,'').trim()),cell=(g,c,i)=>'<'+g+(i>0&&nm(c)?' class="r"':'')+'>'+inl(c)+'</'+g+'>';
