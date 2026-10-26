@@ -385,14 +385,28 @@ body.xc-on{overflow:hidden;overscroll-behavior:none}body.xc-on .hx-rp{display:no
 .xc-tbl .xc-opt .tr>span{padding:12px 14px}.xc-tbl .xc-opt .tr>span+span{border-left:1px solid var(--ln)}
 .xc-tbl .xc-opt.on{background:color-mix(in srgb,var(--br) 20%,var(--sf));box-shadow:none;border-color:var(--ln);font-weight:600}
 .xc-tbl .xc-opt.on>b{background:var(--br);color:#fff;border-right-color:var(--br)}
-/* Clear selected-answer state (fixed colours, so it reads in light, dark and embedded themes) */
-:root{--xsel:#3b82f6;--xsel-ink:#fff}
-.xc-opt.on{border:2px solid var(--xsel)!important;background:color-mix(in srgb,var(--xsel) 24%,var(--sf))!important;box-shadow:inset 5px 0 0 var(--xsel)!important;font-weight:600}
-.xc-opt.on>b{background:var(--xsel);color:var(--xsel-ink)!important;border-radius:6px;padding:0 4px;width:auto;min-width:26px;text-align:center}
-.xc-opt.on>span::after{content:' \2713';color:var(--xsel);font-weight:800}
-.xc-tbl .xc-opt.on{border:0!important;border-top:1px solid var(--ln)!important;background:color-mix(in srgb,var(--xsel) 26%,var(--sf))!important;box-shadow:inset 5px 0 0 var(--xsel)!important}
-.xc-tbl .xc-opt.on>b{background:var(--xsel)!important;color:var(--xsel-ink)!important;border-radius:0;border-right:1px solid var(--xsel)!important;padding:12px 0;width:auto;min-width:0}
-.xc-tbl .xc-opt.on>span::after{content:none}
+/* Selected-answer state: soft accent tint, ring + glow, round letter badge, check on the right */
+:root{--xsel:var(--br);--xsel-ink:var(--on-br,#fff)}
+.xc-opt{transition:none;align-items:center}
+.xc-opt>b{transition:none}
+.xc-opt:not(.xc-tbl .xc-opt)>b{display:inline-flex;align-items:center;justify-content:center;flex:none;width:26px;height:26px;border-radius:50%;font-size:13px}
+.xc-opt:not(.xc-tbl .xc-opt)>b:after{content:none}
+.xc-opt:hover:not(:disabled):not(.on){border-color:color-mix(in srgb,var(--xsel) 45%,var(--ln))}
+.xc-opt.on{border:1px solid var(--xsel)!important;background:color-mix(in srgb,var(--xsel) 11%,var(--sf))!important;box-shadow:0 0 0 1px var(--xsel),0 0 0 4px color-mix(in srgb,var(--xsel) 16%,transparent)!important}
+.xc-opt.on>b{background:var(--xsel);color:var(--xsel-ink)!important}
+.xc-opt:not(.xc-tbl .xc-opt)>span{position:relative;padding-right:34px}
+.xc-opt:not(.xc-tbl .xc-opt)>span::after{content:'\2713';position:absolute;right:0;top:50%;margin-top:-11px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:color-mix(in srgb,var(--xsel) 18%,transparent);color:var(--xsel);font-size:13px;font-weight:800;opacity:0;transition:none}
+.xc-opt.on:not(.xc-tbl .xc-opt)>span::after{opacity:1}
+.xc-opt{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+/* table-style questions: tinted row, filled letter cell, inner ring */
+.xc-tbl .xc-opt.on{position:relative;z-index:2;border:0!important;border-top:1px solid var(--ln)!important;background:color-mix(in srgb,var(--xsel) 14%,var(--sf))!important;box-shadow:none!important}
+.xc-tbl .xc-opt.on::after{content:'';position:absolute;inset:0;border:2px solid var(--xsel);pointer-events:none;z-index:3}
+.xc-tbl .xc-th+.xc-opt.on{border-top:0!important}
+.xc-tbl .xc-opt.on>b{width:auto;height:auto;border-radius:0;background:var(--xsel)!important;color:var(--xsel-ink)!important;border-right:1px solid var(--xsel)!important;padding:12px 0;font-size:inherit}
+.xc-tbl .xc-opt.on>b:after{content:'.'}
+.xc-tbl .xc-opt>span{padding-right:0}
+.xc-tbl .xc-opt>span::after{content:none}
+@media(prefers-reduced-motion:reduce){.xc-opt,.xc-opt>b,.xc-opt>span::after{transition:none}}
 .xc-sheet{display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;max-width:760px;margin:16px 0 6px;padding:10px 14px;border:1.5px solid var(--hsc-ln);background:var(--sf)}
 .xc-sheet>em{font-style:normal;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-right:auto}
 .xc-bub{display:inline-flex;padding:2px;border:0;background:none;cursor:pointer;font:inherit;color:var(--ink)}
@@ -45852,7 +45866,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-xc]');if(!
  else if(!r||!xo)return;
  else if(a==='go')xgo(t.dataset.q);else if(a==='prev')xstep(-1);else if(a==='next')xstep(1);
  else if(a==='refsheet'){xrefOpen()}else if(a==='refclose'){xrefClose()}else if(a==='qlist'){const n=$('#xcnv');if(n)n.classList.add('open')}else if(a==='qclose'){const n=$('#xcnv');if(n)n.classList.remove('open')}
- else if(a==='opt'&&r.phase==='writing'){r.a[t.dataset.q]=+t.dataset.v;xsaveD();xnav();xopt(t.dataset.q)}
+ else if(a==='opt'&&r.phase==='writing'){{const q0=xfind(r.paper,t.dataset.q),had=q0&&xhas(r,q0);r.a[t.dataset.q]=+t.dataset.v;xopt(t.dataset.q);requestAnimationFrame(()=>setTimeout(()=>{xsaveD();if(!had)xnav()},0))}}
  else if(a==='wktog'){r.wo=r.wo||{};r.wo[t.dataset.q]=!r.wo[t.dataset.q];xsaveD();xmain(true)}
  else if(a==='pick'&&r.phase==='writing'){const q=xfind(r.paper,t.dataset.q);r.pick[q.sec]=q.id;r.cur=q.id;xsaveD();xnav();xmain()}
  else if(a.slice(0,2)==='dw')xpadAct(a.slice(2),t.dataset.k,t.dataset.v);
@@ -45870,7 +45884,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset.xm)return;
 document.addEventListener('keydown',e=>{if(xo&&X.run&&$('#xcrs')){if(e.key==='Escape'){xrefClose();e.preventDefault()}return}if(!xo||!X.run||e.metaKey||e.ctrlKey||e.altKey||$('#xcmd'))return;if(typingNow(e))return;if(X.run.bs)return;const r=X.run,k=e.key;
  if(k==='ArrowRight'){xstep(1);e.preventDefault()}else if(k==='ArrowLeft'){xstep(-1);e.preventDefault()}
  else if(k.length===1&&k.toLowerCase()==='f'){r.fl[r.cur]=!r.fl[r.cur];xsaveD();xnav()}
- else if(/^[a-d]$/i.test(k)){const q=xfind(r.paper,r.cur),i=k.toLowerCase().charCodeAt(0)-97;if(q&&q.type==='mc'&&r.phase==='writing'&&q.options[i]!=null){r.a[q.id]=i;xsaveD();xnav();xopt(q.id)}}});
+ else if(/^[a-d]$/i.test(k)){const q=xfind(r.paper,r.cur),i=k.toLowerCase().charCodeAt(0)-97;if(q&&q.type==='mc'&&r.phase==='writing'&&q.options[i]!=null){const had=xhas(r,q);r.a[q.id]=i;xopt(q.id);requestAnimationFrame(()=>setTimeout(()=>{xsaveD();if(!had)xnav()},0))}}});
 addEventListener('keydown',e=>{if(xo&&(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();e.stopPropagation()}},true);
 addEventListener('beforeunload',e=>{if(X.run&&xo){xsaveNow();e.preventDefault();e.returnValue=''}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&X.run)xsaveNow()});addEventListener('pagehide',()=>{if(X.run)xsaveNow()});
