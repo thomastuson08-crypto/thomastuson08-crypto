@@ -48567,11 +48567,11 @@ function units(C,query){const ws=norm(query).split(' ').filter(Boolean),cw=ws.fi
   if(d)idf=idfOf(C,t);else if(fz.length)idf=idfOf(C,fz[0].v);else if(w.length>=5&&!dig)idf=Math.log(1+(C.chunks.length+.5)/1.5);else if(w.length===4&&!dig)idf=.5*Math.log(1+(C.chunks.length+.5)/1.5);else known=false;
   U.push({alts,idf,syn:0,dig,known,w:t})});
  return U}
-const QSTOP=new Set('make makes making made good best better find finding ways way work works working calculate calculating'.split(' '));
+const QSTOP=new Set('make makes making made good best better find finding ways way work works working calculate calculating role roles purpose function functions'.split(' '));
 /* a matched word only counts fully if it is central to the note: in a heading or topic title, or repeated in the text. A one-off mention (tides, vaccines in an unrelated note) counts for little. */
 const INC=.4;
 function titleToks(C){if(C.ttk)return C.ttk;const o=new Set();for(const k in C.maps)C.maps[k].forEach(t=>tok(t).forEach(w=>o.add(w)));C.chunks.forEach(c=>c.hd.forEach(h=>h.forEach(w=>o.add(w))));return C.ttk=o}
-const isCore=(c,w,TTK)=>(c.tf.get(w)||0)>=2||TTK.has(w);
+const isCore=(c,w,TTK,C)=>(c.tf.get(w)||0)>=2||TTK.has(w)||(!!C&&(C.df.get(w)||0)<=4);   /* a term found in only a handful of chunks (e.g. OECD) is specific enough that one mention counts */
 /* do the question's words sit close together in the note? (periodic ... table in two unrelated sentences is not 'the periodic table') */
 const JW=12;
 function joint(U,c){const pos=[];for(const u of U){if(!u.known||u.dig)continue;const ws=new Set();u.alts.forEach(a=>a.t.forEach(w=>ws.add(w)));const p=[];c.tk.forEach((w,i)=>{if(ws.has(w))p.push(i)});if(p.length)pos.push({i:u.idf,p})}
@@ -48600,7 +48600,7 @@ function search(C,query,subj,n){const U=units(C,query),res=[];res.conf=1;if(!U.l
  /* a question with words but none the notes recognise is NOT covered (it used to default to fully covered) */
  if(!nk&&U.some(u=>!u.dig))res.conf=0;
  const TTK=titleToks(C);
- if(tot>0){let bc=0;for(const h of res.slice(0,3)){let g=0;for(const u of U){if(!u.known||u.dig)continue;let f=0;for(const a of u.alts){let pr=0,sg=0;for(const w of a.t)if(h.c.tf.get(w)){pr++;if(isCore(h.c,w,TTK))sg++}if(!pr)continue;const v=(pr/a.t.length)*Math.min(1,a.w)*(INC+(1-INC)*(sg/pr));if(v>f)f=v}
+ if(tot>0){let bc=0;for(const h of res.slice(0,3)){let g=0;for(const u of U){if(!u.known||u.dig)continue;let f=0;for(const a of u.alts){let pr=0,sg=0;for(const w of a.t)if(h.c.tf.get(w)){pr++;if(isCore(h.c,w,TTK,C))sg++}if(!pr)continue;const v=(pr/a.t.length)*Math.min(1,a.w)*(INC+(1-INC)*(sg/pr));if(v>f)f=v}
     g+=u.idf*f}
    let cf=g/tot;cf*=joint(U,h.c);let hf=0;for(const hd of h.c.hd){let pa=0,ov=0,ih=0;for(const w of hd){if(qa.has(w))pa++;if(qo.has(w))ov++;ih+=idf(w)}if(pa===hd.length&&ov>=1&&ih>=.5*tot)hf=1}
    if(hf)cf=Math.max(cf,.8);if(cf>bc)bc=cf}res.conf=bc}
@@ -48617,6 +48617,9 @@ const plain=t=>String(t).replace(/\\\(|\\\)|\\\[|\\\]/g,'').replace(/\\times/g,'
 
 /* note search: keyword search over the Hub's notes (the AI keyword-expansion step in the tutor handles reworded questions) */
 async function hsearch(C,q,subj,n){return search(C,q,subj,n)}
+/* a short message that names something specific the notes know (e.g. 'what is the OECD and its role') is a new question, not a vague follow-up, so it must NOT have the previous chat glued onto its search */
+const REFW=/\b(?:it|that|this|those|these|them|they|one|ones|again|another|next|previous|former|latter|above|first|second|third|point|points|more|continue|carry on|go on)\b/i;
+const selfContained=(C,m,sj)=>{try{const h=search(C,m,sj,10);if(!h.length)return false;const L=GATES[T.gm][0],H=GATES[T.gm][1];if(h.conf>=L&&units(C,m).some(u=>u.known&&!u.dig&&u.idf>=5))return true;return h.conf>=H&&!REFW.test(m)}catch(e){return false}};
 /* tidy up fingerprints saved in this browser by the removed 'smarter note search' */
 try{indexedDB.deleteDatabase('hsc-hub-emb')}catch(e){}
 
@@ -51427,7 +51430,7 @@ async function run(){if(T.busy||!T.msgs.length||T.msgs[T.msgs.length-1].r!=='u')
   const rest=last.replace(new RegExp(QZ.source,'gi'),' ').replace(/\b\d+\b|short|few|more|questions?|this|that|it/gi,' '),prior=()=>{for(let i=us.length-1;i>=0;i--)if(tok(us[i].t).length>=1&&!QZ.test(us[i].t))return us[i].t;return''};
   if(sy){hits=sy.wrong||!(sy.focus&&sy.focus.dp)?[]:await hsearch(C,last,sy.subj||sj,8)}
   else if(QZ.test(last)&&tok(rest).length<1){const p=prior();hits=p?await hsearch(C,p,sj,10):sample(C,sj,6)}
-  else{if(tok(last).length<3){const p=prior();if(p)q=p+' '+last;{const la=[...ch].reverse().find(m=>m.r==='a'&&!m.sw);if(la)q+=' '+la.t.replace(/\s+/g,' ').slice(0,300)}if(T.paper&&PAPERS[T.paper]&&sj==='english')q+=' '+PAPERS[T.paper][2]}if(KF&&KF.kw)q+=' '+KF.kw;hits=await hsearch(C,q,sj,10);cfv=hits.conf;
+  else{if(tok(last).length<3&&!selfContained(C,last,sj)){const p=prior();if(p)q=p+' '+last;{const la=[...ch].reverse().find(m=>m.r==='a'&&!m.sw);if(la)q+=' '+la.t.replace(/\s+/g,' ').slice(0,300)}if(T.paper&&PAPERS[T.paper]&&sj==='english')q+=' '+PAPERS[T.paper][2]}if(KF&&KF.kw)q+=' '+KF.kw;hits=await hsearch(C,q,sj,10);cfv=hits.conf;
    if(T.rw!==false&&!hits.sem&&(!hits.length||hits[0].cov<.6||hits.length<4)){const kw=await as(()=>expand(q));if(kw){const r2=search(C,q+' '+kw,sj,10);if(r2.conf>=.6)cfv=Math.max(cfv,Math.min(r2.conf,GATES[T.gm][1]-.01));const mm=new Map();[...hits,...r2].forEach(h=>{const o=mm.get(h.c.id);if(!o||h.s>o.s)mm.set(h.c.id,h)});hits=[...mm.values()].sort((x,y)=>y.s-x.s).slice(0,10)}}}
   /* three-way gate: covered -> send notes; weak -> send notes + warn the AI; not covered -> send no notes. Quiz, study-skills and planning messages, and pure chat, are never gated. */
   const FMTQ=FMTINT.test(last)&&EXAMW.test(last+' '+(us.length?us[us.length-1].t:''))&&as(()=>formatSubjects(last)).length>0;
